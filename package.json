@@ -1,16 +1,23 @@
 {
-  "name": "IoT",
+  "name": "FreshCheck_IoT",
   "version": "1.0.0",
-  "description": "",
-  "main": "dist/index.js",
+  "description": "Backend pro FreshCheck IoT projekt",
+  "main": "src/backend/app.js",
   "scripts": {
-    "build": "tsc"
+    "start": "node src/backend/app.js",
+    "dev": "nodemon src/backend/app.js"
   },
   "dependencies": {
+    "bcrypt": "^6.0.0",
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.1.4",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.20.0"
   },
   "devDependencies": {
-    "typescript": "^5.5.3"
+    "nodemon": "^3.0.1"
   },
   "private": true
 }
