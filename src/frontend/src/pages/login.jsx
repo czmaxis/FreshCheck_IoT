@@ -1,14 +1,35 @@
 import React, { useState } from "react";
 import { TextField, Button, Box, Typography } from "@mui/material";
 import { Link } from "react-router-dom";
+import { login } from "../services/authService.js";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Email:", email, "Password:", password);
+    setError("");
+    setLoading(true);
+
+    try {
+      const data = await login(email, password);
+      console.log("Přihlášený uživatel:", data);
+
+      // tady můžeš:
+      // - uložit token do localStorage / contextu
+      // - přesměrovat na jinou stránku (např. dashboard)
+    } catch (err) {
+      console.error(err);
+      setError(
+        err.response?.data?.message ||
+          "Přihlášení se nezdařilo. Zkuste to znovu."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -22,6 +43,7 @@ export default function Login() {
       <Typography variant="h4" mb={3}>
         Přihlášení
       </Typography>
+
       <Box component="form" onSubmit={handleSubmit} width="300px">
         <TextField
           fullWidth
@@ -41,11 +63,24 @@ export default function Login() {
           onChange={(e) => setPassword(e.target.value)}
           required
         />
-        <Button variant="contained" type="submit" fullWidth sx={{ mt: 2 }}>
-          Přihlásit se
+
+        {error && (
+          <Typography variant="body2" color="error" sx={{ mt: 1 }}>
+            {error}
+          </Typography>
+        )}
+
+        <Button
+          variant="contained"
+          type="submit"
+          fullWidth
+          sx={{ mt: 2 }}
+          disabled={loading}
+        >
+          {loading ? "Přihlašuji..." : "Přihlásit se"}
         </Button>
 
-        <Typography variant="body2" sx={{ mt: 2 }}>
+        <Typography variant="body2" textAlign="center" sx={{ mt: 2 }}>
           Nemáte účet? <Link to="/register">Registrujte se</Link>
         </Typography>
       </Box>
