@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { TextField, Button, Box, Typography } from "@mui/material";
-import { Link } from "react-router-dom";
-import { login } from "../services/authService.js";
+import { Link, useNavigate } from "react-router-dom";
+import { login } from "../services/authService.js"; // axios volání na backend
+import { useAuth } from "../context/AuthContext.jsx";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -9,18 +10,23 @@ export default function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const { login: loginToContext } = useAuth();
+  const navigate = useNavigate();
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
     try {
+      // { token: "...", user: { ... } }
       const data = await login(email, password);
-      console.log("Přihlášený uživatel:", data);
 
-      // tady můžeš:
-      // - uložit token do localStorage / contextu
-      // - přesměrovat na jinou stránku (např. dashboard)
+      // uložit do kontextu + localStorage
+      loginToContext(data.token, data.user);
+
+      // přesměrování na dashboard
+      navigate("/dashboard");
     } catch (err) {
       console.error(err);
       setError(
