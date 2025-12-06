@@ -47,7 +47,7 @@ export default function Login() {
       minHeight="100vh"
     >
       <Typography variant="h4" mb={3}>
-        Přihlášení
+        Přihlášení "email": "test@example.com", "password": "123456"
       </Typography>
 
       <Box component="form" onSubmit={handleSubmit} width="300px">
