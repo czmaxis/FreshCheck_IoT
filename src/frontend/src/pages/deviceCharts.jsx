@@ -1,6 +1,14 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Box, Typography, CircularProgress } from "@mui/material";
+import {
+  Box,
+  Typography,
+  CircularProgress,
+  Button,
+  Collapse,
+} from "@mui/material";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import {
   ResponsiveContainer,
   LineChart,
@@ -26,6 +34,7 @@ export default function DeviceCharts({ deviceId }) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [expanded, setExpanded] = useState(true);
 
   useEffect(() => {
     if (!deviceId) return;
@@ -77,11 +86,21 @@ export default function DeviceCharts({ deviceId }) {
     };
   }, [deviceId, token]);
 
+  const toggle = () => setExpanded((v) => !v);
+
   return (
     <Box mt={4}>
-      <Typography variant="h6" gutterBottom>
-        Grafy (teplota / vlhkost)
-      </Typography>
+      <Box display="flex" alignItems="center" justifyContent="space-between">
+        <Typography variant="h6">Grafy (teplota / vlhkost)</Typography>
+        <Button
+          size="small"
+          variant="outlined"
+          onClick={toggle}
+          startIcon={expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+        >
+          {expanded ? "Skrýt graf" : "Zobrazit graf"}
+        </Button>
+      </Box>
 
       {loading && <CircularProgress />}
 
@@ -91,41 +110,47 @@ export default function DeviceCharts({ deviceId }) {
         </Typography>
       )}
 
-      {data && data.length > 0 ? (
-        <Box sx={{ width: "100%", height: 300 }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart
-              data={data}
-              margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="time" />
-              <YAxis yAxisId="left" orientation="left" />
-              <YAxis yAxisId="right" orientation="right" />
-              <Tooltip />
-              <Legend />
-              <Line
-                yAxisId="left"
-                type="monotone"
-                dataKey="temperature"
-                name="Teplota (°C)"
-                stroke="#ff5722"
-                dot={false}
-              />
-              <Line
-                yAxisId="right"
-                type="monotone"
-                dataKey="humidity"
-                name="Vlhkost (%)"
-                stroke="#2196f3"
-                dot={false}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </Box>
-      ) : (
-        !loading && <Typography>Žádná data pro zvolené zařízení.</Typography>
-      )}
+      <Collapse in={expanded}>
+        {data && data.length > 0 ? (
+          <Box sx={{ width: "100%", height: 300, mt: 2 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart
+                data={data}
+                margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="time" />
+                <YAxis yAxisId="left" orientation="left" />
+                <YAxis yAxisId="right" orientation="right" />
+                <Tooltip />
+                <Legend />
+                <Line
+                  yAxisId="left"
+                  type="monotone"
+                  dataKey="temperature"
+                  name="Teplota (°C)"
+                  stroke="#ff5722"
+                  dot={false}
+                />
+                <Line
+                  yAxisId="right"
+                  type="monotone"
+                  dataKey="humidity"
+                  name="Vlhkost (%)"
+                  stroke="#2196f3"
+                  dot={false}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </Box>
+        ) : (
+          !loading && (
+            <Typography sx={{ mt: 2 }}>
+              Žádná data pro zvolené zařízení.
+            </Typography>
+          )
+        )}
+      </Collapse>
     </Box>
   );
 }
