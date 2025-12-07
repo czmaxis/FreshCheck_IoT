@@ -118,6 +118,7 @@ export default function Dashboard() {
           <>
             <SensorData deviceId={selectedDeviceId} />
             <DeviceCharts deviceId={selectedDeviceId} />
+            <h1>Alerty: TODO</h1>
           </>
         ) : (
           <Typography sx={{ mt: 2 }}>
