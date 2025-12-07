@@ -5,6 +5,7 @@ import { AuthProvider } from "./context/AuthContext.jsx";
 import Login from "./pages/login.jsx";
 import Register from "./pages/register.jsx";
 import Dashboard from "./pages/dashboard.jsx";
+import Profile from "./pages/profile.jsx";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 
@@ -16,6 +17,7 @@ root.render(
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />¨
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/profile" element={<Profile />} />
       </Routes>
     </AuthProvider>
   </BrowserRouter>

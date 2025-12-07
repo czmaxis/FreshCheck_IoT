@@ -106,15 +106,6 @@ export default function SensorData({ deviceId }) {
         <Typography variant="h5">Sensor data</Typography>
 
         <Stack direction="row" spacing={2} alignItems="center">
-          <Button
-            onClick={toggleExpandAll}
-            variant="outlined"
-            size="small"
-            startIcon={expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-          >
-            {expanded ? "Skrýt data" : "Zobrazit data"}
-          </Button>
-
           <FormControl size="small" sx={{ minWidth: 120 }}>
             <InputLabel id="page-size-label">Na stránce</InputLabel>
             <Select
@@ -133,14 +124,14 @@ export default function SensorData({ deviceId }) {
               ))}
             </Select>
           </FormControl>
-
-          <Pagination
-            count={totalPages}
-            page={page}
-            onChange={(_, v) => setPage(v)}
-            color="primary"
+          <Button
+            onClick={toggleExpandAll}
+            variant="outlined"
             size="small"
-          />
+            startIcon={expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+          >
+            {expanded ? "Skrýt data" : "Zobrazit data"}
+          </Button>
         </Stack>
       </Stack>
 

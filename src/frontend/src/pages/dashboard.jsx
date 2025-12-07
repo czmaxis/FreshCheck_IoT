@@ -13,6 +13,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { getDevices } from "../services/deviceService.js";
 import SensorData from "./sensorData.jsx";
 import DeviceCharts from "./deviceCharts.jsx";
+import NavBar from "./navBar.jsx";
 
 export default function Dashboard() {
   const { user, token } = useAuth();
@@ -68,8 +69,9 @@ export default function Dashboard() {
       alignItems="center"
       justifyContent="flex-start"
       minHeight="100vh"
-      p={4}
+      p={2}
     >
+      <NavBar />
       <Typography variant="h4" gutterBottom>
         Vítej na dashboardu!
       </Typography>
