@@ -12,6 +12,7 @@ import {
 import { useAuth } from "../context/AuthContext.jsx";
 import { getDevices } from "../services/deviceService.js";
 import SensorData from "./sensorData.jsx";
+import DeviceCharts from "./deviceCharts.jsx";
 
 export default function Dashboard() {
   const { user, token } = useAuth();
@@ -114,7 +115,10 @@ export default function Dashboard() {
 
       <Box width="100%" mt={4}>
         {selectedDeviceId ? (
-          <SensorData deviceId={selectedDeviceId} />
+          <>
+            <SensorData deviceId={selectedDeviceId} />
+            <DeviceCharts deviceId={selectedDeviceId} />
+          </>
         ) : (
           <Typography sx={{ mt: 2 }}>
             Zvolte zařízení z nabídky pro zobrazení dat.
