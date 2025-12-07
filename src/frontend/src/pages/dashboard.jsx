@@ -39,6 +39,12 @@ export default function Dashboard() {
   const [limitHumidity, setLimitHumidity] = useState(60);
   const [openTime, setOpenTime] = useState("08:00");
 
+  // dialog state for add device
+  const [addOpen, setAddOpen] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newLocation, setNewLocation] = useState("");
+  const [newType, setNewType] = useState("");
+
   // selected device id
   const [selectedDeviceId, setSelectedDeviceId] = useState(null);
 
@@ -88,8 +94,8 @@ export default function Dashboard() {
       // open dialog for limits
       setLimitsOpen(true);
     } else if (action === "add") {
-      // future: open add device dialog / route
-      console.log("Přidat zařízení - TODO");
+      // open add device dialog
+      setAddOpen(true);
     }
   };
 
@@ -106,6 +112,39 @@ export default function Dashboard() {
 
   const handleLimitsCancel = () => {
     setLimitsOpen(false);
+  };
+
+  // add device handlers
+  const handleAddConfirm = () => {
+    // UI only — no backend: just log and close
+    console.log("Přidat zařízení:", {
+      name: newName,
+      location: newLocation,
+      type: newType,
+    });
+
+    // optionally add to local list so user sees it immediately (generated id)
+    const fakeId = `local-${Date.now()}`;
+    setDevices((prev) => [
+      ...prev,
+      {
+        _id: fakeId,
+        name: newName || "Nové zařízení",
+        location: newLocation || "-",
+        type: newType || "-",
+      },
+    ]);
+    setSelectedDeviceId(fakeId);
+
+    // reset form
+    setNewName("");
+    setNewLocation("");
+    setNewType("");
+    setAddOpen(false);
+  };
+
+  const handleAddCancel = () => {
+    setAddOpen(false);
   };
 
   return (
@@ -234,6 +273,39 @@ export default function Dashboard() {
           <Button onClick={handleLimitsCancel}>Zrušit</Button>
           <Button variant="contained" onClick={handleLimitsConfirm}>
             Potvrdit
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Add device dialog (UI only) */}
+      <Dialog open={addOpen} onClose={handleAddCancel} maxWidth="xs" fullWidth>
+        <DialogTitle>Přidat nové zařízení</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            <TextField
+              label="Název zařízení"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              fullWidth
+            />
+            <TextField
+              label="Lokace"
+              value={newLocation}
+              onChange={(e) => setNewLocation(e.target.value)}
+              fullWidth
+            />
+            <TextField
+              label="Typ zařízení"
+              value={newType}
+              onChange={(e) => setNewType(e.target.value)}
+              fullWidth
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleAddCancel}>Zrušit</Button>
+          <Button variant="contained" onClick={handleAddConfirm}>
+            Přidat
           </Button>
         </DialogActions>
       </Dialog>
