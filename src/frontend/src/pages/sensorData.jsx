@@ -117,7 +117,7 @@ export default function SensorData({ deviceId }) {
                 setPage(1);
               }}
             >
-              {[5, 10, 20, 50].map((n) => (
+              {[1, 5, 10, 20, 50].map((n) => (
                 <MenuItem key={n} value={n}>
                   {n}
                 </MenuItem>
