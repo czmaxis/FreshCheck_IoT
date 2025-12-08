@@ -4,6 +4,7 @@ const sensorDataSchema = new mongoose.Schema({
     deviceId: { type: mongoose.Schema.Types.ObjectId, ref: 'Device', required: true },
     temperature: Number,
     humidity: Number,
+    light: Number,
     doorState: Boolean,
     acc: {
         x: Number,

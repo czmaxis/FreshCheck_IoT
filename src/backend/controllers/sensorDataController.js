@@ -17,6 +17,7 @@ exports.addData = async (req, res) => {
             deviceId: req.body.deviceId,
             temperature: req.body.temperature,
             humidity: req.body.humidity,
+            light: req.body.light,
             doorState: req.body.doorState,
             acc: req.body.acc
         });
