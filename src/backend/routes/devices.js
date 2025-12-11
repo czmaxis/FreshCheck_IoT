@@ -15,10 +15,10 @@ router.get('/', async (req, res) => {
     }
 });
 
-// POST /devices - vytvoření nového zařízení
+// POST /devices - vytvoření nového zařízení s možností thresholdů
 router.post('/', async (req, res) => {
     try {
-        const { name, type, location } = req.body;
+        const { name, type, location, threshold } = req.body;
 
         if (!name || !type) {
             return res.status(400).json({ message: 'Name and type are required' });
@@ -28,7 +28,8 @@ router.post('/', async (req, res) => {
             ownerId: req.user.id,
             name,
             type,
-            location
+            location,
+            threshold // volitelné pole pro limity
         });
 
         await device.save();
@@ -38,14 +39,14 @@ router.post('/', async (req, res) => {
     }
 });
 
-// PUT /devices/:id - aktualizace zařízení
+// PUT /devices/:id - aktualizace zařízení a thresholdů
 router.put('/:id', async (req, res) => {
     try {
-        const { name, type, location } = req.body;
+        const { name, type, location, threshold } = req.body;
 
         const updated = await Device.findOneAndUpdate(
             { _id: req.params.id, ownerId: req.user.id },
-            { name, type, location },
+            { name, type, location, threshold },
             { new: true }
         );
 

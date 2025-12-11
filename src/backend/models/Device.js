@@ -7,7 +7,12 @@ const deviceSchema = new mongoose.Schema({
     type: { type: String, required: true },
     location: { type: String },
     permanentToken: { type: String, required: true, unique: true },
-    createdAt: { type: Date, default: Date.now }
+    createdAt: { type: Date, default: Date.now },
+    threshold: { // volitelně můžeš nechat pro historická/experimentální data
+        temperature: Number,
+        humidity: Number,
+        doorOpenMaxSeconds: Number
+    }
 });
 
 // Vygeneruje permanentní token, pokud ještě neexistuje

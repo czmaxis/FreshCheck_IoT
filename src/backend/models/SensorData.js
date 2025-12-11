@@ -11,7 +11,8 @@ const sensorDataSchema = new mongoose.Schema({
         y: Number,
         z: Number
     },
-    timestamp: { type: Date, default: Date.now }
+    timestamp: { type: Date, default: Date.now },
+    doors: { type: Boolean, default: false },
 });
 
 // Index pro rychlé dotazy na time-series
