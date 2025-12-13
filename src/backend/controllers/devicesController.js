@@ -1,3 +1,5 @@
+const Device = require('../models/Device');
+
 exports.getDevices = async (req, res) => {
     try {
         const devices = await Device.find({ ownerId: req.user.id });
@@ -9,17 +11,21 @@ exports.getDevices = async (req, res) => {
 
 exports.createDevice = async (req, res) => {
     try {
-        const { name, type, location } = req.body;
+        const { name, type, location, threshold } = req.body; // přidáno threshold
+        if (!name || !type) {
+            return res.status(400).json({ message: 'Name and type are required' });
+        }
+
         const device = new Device({
             name,
             type,
             location,
-            ownerId: req.user.id
+            ownerId: req.user.id,
+            threshold // ukládáme limity
         });
 
         await device.save();
-        res.json(device);
-
+        res.json({ status: 'created', device });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -27,16 +33,18 @@ exports.createDevice = async (req, res) => {
 
 exports.updateDevice = async (req, res) => {
     try {
+        const { name, type, location, threshold } = req.body;
+
         const updated = await Device.findOneAndUpdate(
             { _id: req.params.id, ownerId: req.user.id },
-            { ...req.body },
+            { name, type, location, threshold }, // aktualizujeme i threshold
             { new: true }
         );
 
         if (!updated)
             return res.status(404).json({ message: 'Device not found' });
 
-        res.json(updated);
+        res.json({ status: 'updated', device: updated });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -52,7 +60,7 @@ exports.deleteDevice = async (req, res) => {
         if (!result)
             return res.status(404).json({ message: 'Device not found' });
 
-        res.json({ message: 'Device deleted' });
+        res.json({ status: 'deleted', device: result });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

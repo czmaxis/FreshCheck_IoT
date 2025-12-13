@@ -4,8 +4,10 @@ const userSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true },
     passwordHash: { type: String, required: true },
     name: { type: String, required: true },
+
+    permanentToken: { type: String, default: null },
+
     createdAt: { type: Date, default: Date.now }
 });
 
-// _id je zde implicitně
 module.exports = mongoose.model('User', userSchema);

@@ -1,12 +1,13 @@
 const mongoose = require('mongoose');
 
-const logSchema = new mongoose.Schema({
+const alertSchema = new mongoose.Schema({
     deviceId: { type: mongoose.Schema.Types.ObjectId, ref: 'Device', required: true },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    type: { type: String, enum: ['temperature', 'humidity', 'door'], required: true },
+    value: Number,
+    active: { type: Boolean, default: true },
     timestamp: { type: Date, default: Date.now },
-    value: { type: mongoose.Schema.Types.Mixed, required: true } // může být číslo, string, boolean...
+    resolvedAt: Date
 });
 
-// Index na rychlé hledání podle zařízení a času (volitelné)
-logSchema.index({ deviceId: 1, timestamp: -1 });
-
-module.exports = mongoose.model('Log', logSchema);
+module.exports = mongoose.model('Alert', alertSchema);
