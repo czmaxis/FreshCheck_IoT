@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE = "http://localhost:5000";
+const API_BASE = "http://localhost:5001";
 
 // 1) Jednoduchá funkce, která přijme token jako argument
 export async function getDevices(token) {

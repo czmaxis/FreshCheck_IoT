@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE = "http://localhost:5000";
+const API_BASE = "http://localhost:5001";
 
 export async function getSensorData(deviceId, token) {
   if (!deviceId) throw new Error("deviceId is required");
