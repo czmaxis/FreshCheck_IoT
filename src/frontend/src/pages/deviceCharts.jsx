@@ -39,12 +39,12 @@ export default function DeviceCharts({ deviceId }) {
   useEffect(() => {
     if (!deviceId) return;
     let cancelled = false;
-
+    //později přesunout na service
     async function load() {
       setLoading(true);
       setError("");
       try {
-        const url = `http://localhost:5000/sensordata/${encodeURIComponent(
+        const url = `http://localhost:5001/sensordata/${encodeURIComponent(
           deviceId
         )}`;
         const headers = {

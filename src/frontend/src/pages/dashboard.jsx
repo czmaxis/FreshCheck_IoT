@@ -15,7 +15,7 @@ import {
 } from "@mui/material";
 import SettingsIcon from "@mui/icons-material/Settings";
 import { useAuth } from "../context/AuthContext.jsx";
-import { getDevices } from "../services/deviceService.js";
+import { getDevices, updateDevice } from "../services/deviceService.js";
 import SensorData from "./sensorData.jsx";
 import DeviceCharts from "./deviceCharts.jsx";
 import NavBar from "./navBar.jsx";
@@ -99,15 +99,32 @@ export default function Dashboard() {
     }
   };
 
-  const handleLimitsConfirm = () => {
-    // no backend yet — just log values and close
-    console.log("Ulož limity:", {
-      limitTemp,
-      limitHumidity,
-      openTime,
-      selectedDeviceId,
-    });
-    setLimitsOpen(false);
+  const handleLimitsConfirm = async () => {
+    if (!selectedDeviceId) return;
+
+    try {
+      const payload = {
+        threshold: {
+          temperature: limitTemp,
+          humidity: limitHumidity,
+          doorOpenMaxSeconds: openTime,
+        },
+      };
+
+      const res = await updateDevice(selectedDeviceId, payload, token);
+
+      // aktualizace lokálního stavu zařízení
+      setDevices((prev) =>
+        prev.map((d) => (d._id === selectedDeviceId ? res.device : d))
+      );
+
+      setLimitsOpen(false);
+    } catch (err) {
+      console.error("Chyba při ukládání limitů:", err);
+      setError(
+        err.response?.data?.message || "Nepodařilo se uložit limity zařízení."
+      );
+    }
   };
 
   const handleLimitsCancel = () => {
@@ -256,9 +273,9 @@ export default function Dashboard() {
 
             <TextField
               label="Čas otevření"
-              type="time"
+              type="number"
               value={openTime}
-              onChange={(e) => setOpenTime(e.target.value)}
+              onChange={(e) => setOpenTime(Number(e.target.value))}
               InputLabelProps={{ shrink: true }}
               fullWidth
             />
