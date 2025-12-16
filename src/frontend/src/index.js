@@ -6,6 +6,7 @@ import Login from "./pages/login.jsx";
 import Register from "./pages/register.jsx";
 import Dashboard from "./pages/dashboard.jsx";
 import Profile from "./pages/profile.jsx";
+import History from "./pages/alertsHistory.jsx";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 
@@ -18,6 +19,7 @@ root.render(
         <Route path="/register" element={<Register />} />¨
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/history" element={<History />} />
       </Routes>
     </AuthProvider>
   </BrowserRouter>
