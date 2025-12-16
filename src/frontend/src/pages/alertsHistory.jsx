@@ -18,16 +18,28 @@ import { getAlerts } from "../services/alertService.js";
 export default function AlertsHistory() {
   const { token } = useAuth();
 
-  // devices
+  /* =====================
+     DEVICES
+  ====================== */
   const [devices, setDevices] = useState([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState(null);
   const [anchorEl, setAnchorEl] = useState(null);
 
-  // alerts
+  /* =====================
+     ALERTS
+  ====================== */
   const [alerts, setAlerts] = useState([]);
   const [error, setError] = useState("");
 
-  // pagination
+  /* =====================
+     FILTERS
+  ====================== */
+  const [statusFilter, setStatusFilter] = useState("all"); // all | active | resolved
+  const [typeFilter, setTypeFilter] = useState("all"); // all | temperature | humidity | door | doorOpen
+
+  /* =====================
+     PAGINATION
+  ====================== */
   const [perPage, setPerPage] = useState(10);
   const [page, setPage] = useState(1);
 
@@ -51,7 +63,7 @@ export default function AlertsHistory() {
   }, [token]);
 
   /* =====================
-     LOAD ALERTS (by device)
+     LOAD ALERTS (BY DEVICE)
   ====================== */
   useEffect(() => {
     if (!selectedDeviceId) return;
@@ -76,7 +88,14 @@ export default function AlertsHistory() {
     return () => {
       cancelled = true;
     };
-  }, [selectedDeviceId, token, perPage]);
+  }, [selectedDeviceId, token]);
+
+  /* =====================
+     RESET PAGE ON FILTER CHANGE
+  ====================== */
+  useEffect(() => {
+    setPage(1);
+  }, [statusFilter, typeFilter, perPage, selectedDeviceId]);
 
   /* =====================
      HELPERS
@@ -96,11 +115,28 @@ export default function AlertsHistory() {
   }
 
   /* =====================
+     FILTERING
+  ====================== */
+  const filteredAlerts = alerts.filter((alert) => {
+    // status
+    if (statusFilter === "active" && !alert.active) return false;
+    if (statusFilter === "resolved" && alert.active) return false;
+
+    // type
+    if (typeFilter !== "all" && alert.type !== typeFilter) return false;
+
+    return true;
+  });
+
+  /* =====================
      PAGINATION
   ====================== */
-  const totalItems = alerts.length;
+  const totalItems = filteredAlerts.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / perPage));
-  const pagedAlerts = alerts.slice((page - 1) * perPage, page * perPage);
+  const pagedAlerts = filteredAlerts.slice(
+    (page - 1) * perPage,
+    page * perPage
+  );
 
   return (
     <>
@@ -113,10 +149,12 @@ export default function AlertsHistory() {
           justifyContent="space-between"
           alignItems="center"
           mb={2}
+          flexWrap="wrap"
+          gap={2}
         >
           <Typography variant="h4">Historie výstrah</Typography>
 
-          <Box display="flex" alignItems="center" gap={2}>
+          <Box display="flex" alignItems="center" gap={2} flexWrap="wrap">
             {/* DEVICE SELECTOR */}
             <Button
               variant="outlined"
@@ -145,19 +183,54 @@ export default function AlertsHistory() {
               ))}
             </Menu>
 
-            {/* PER PAGE */}
+            {/* STATUS FILTER */}
             <TextField
               select
               size="small"
-              value={perPage}
-              onChange={(e) => setPerPage(Number(e.target.value))}
+              label="Stav"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
             >
-              {[1, 5, 10, 20, 50].map((n) => (
-                <MenuItem key={n} value={n}>
-                  {n}
-                </MenuItem>
-              ))}
+              <MenuItem value="all">Vše</MenuItem>
+              <MenuItem value="active">Nevyřešené</MenuItem>
+              <MenuItem value="resolved">Vyřešené</MenuItem>
             </TextField>
+
+            {/* TYPE FILTER */}
+            <TextField
+              select
+              size="small"
+              label="Typ"
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+            >
+              <MenuItem value="all">Vše</MenuItem>
+              <MenuItem value="temperature">Teplota</MenuItem>
+              <MenuItem value="humidity">Vlhkost</MenuItem>
+              <MenuItem value="door">Dveře</MenuItem>
+              <MenuItem value="doorOpen">Dveře</MenuItem>
+            </TextField>
+
+            {/* PER PAGE */}
+            <Box display="flex" alignItems="center" gap={1}>
+              <Typography variant="body2" whiteSpace="nowrap">
+                Na stránce
+              </Typography>
+
+              <TextField
+                select
+                size="small"
+                value={perPage}
+                onChange={(e) => setPerPage(Number(e.target.value))}
+                sx={{ minWidth: 80 }}
+              >
+                {[1, 5, 10, 20, 50].map((n) => (
+                  <MenuItem key={n} value={n}>
+                    {n}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Box>
           </Box>
         </Box>
 
@@ -170,7 +243,7 @@ export default function AlertsHistory() {
 
         {/* ALERTS LIST */}
         {pagedAlerts.length === 0 ? (
-          <Typography>Žádné výstrahy pro zvolené zařízení.</Typography>
+          <Typography>Žádné výstrahy pro zvolené filtry.</Typography>
         ) : (
           <Box px={3}>
             {pagedAlerts.map((alert) => (
