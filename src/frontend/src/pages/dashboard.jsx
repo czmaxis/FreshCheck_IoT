@@ -14,12 +14,18 @@ import {
   Stack,
 } from "@mui/material";
 import SettingsIcon from "@mui/icons-material/Settings";
+import Alert from "@mui/material/Alert";
+import AlertTitle from "@mui/material/AlertTitle";
+import CloseIcon from "@mui/icons-material/Close";
+
 import { useAuth } from "../context/AuthContext.jsx";
 import {
   getDevices,
   updateDevice,
   createDevice,
 } from "../services/deviceService.js";
+import { getAlerts, resolveAlert } from "../services/alertService.js";
+
 import SensorData from "./sensorData.jsx";
 import DeviceCharts from "./deviceCharts.jsx";
 import NavBar from "./navBar.jsx";
@@ -51,6 +57,22 @@ export default function Dashboard() {
 
   // selected device id
   const [selectedDeviceId, setSelectedDeviceId] = useState(null);
+
+  const [alerts, setAlerts] = useState([]);
+  const [alertsError, setAlertsError] = useState("");
+
+  const handleResolveAlert = async (alertId) => {
+    try {
+      setAlerts((prev) => prev.filter((a) => a._id !== alertId));
+
+      await resolveAlert(alertId, token);
+    } catch (err) {
+      console.error("Chyba při řešení alertu:", err);
+      setAlertsError(
+        err.response?.data?.message || "Nepodařilo se vyřešit alert."
+      );
+    }
+  };
 
   useEffect(() => {
     async function load() {
@@ -165,6 +187,33 @@ export default function Dashboard() {
   const handleAddCancel = () => {
     setAddOpen(false);
   };
+  //alert useEffect
+  useEffect(() => {
+    if (!selectedDeviceId) return;
+
+    let cancelled = false;
+
+    async function loadAlerts() {
+      try {
+        setAlertsError("");
+        const data = await getAlerts(selectedDeviceId, { active: true }, token);
+        if (!cancelled) setAlerts(data);
+      } catch (err) {
+        console.error("Chyba při načítání alertů:", err);
+        if (!cancelled) {
+          setAlertsError(
+            err.response?.data?.message || "Nepodařilo se načíst alerty."
+          );
+        }
+      }
+    }
+
+    loadAlerts();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedDeviceId, token]);
 
   return (
     <Box
@@ -227,6 +276,33 @@ export default function Dashboard() {
           </MenuItem>
         </Menu>
       </Box>
+      <p></p>
+      {alerts.length > 0 && (
+        <Box width="100%" mb={3}>
+          {alerts.map((alert) => (
+            <Alert
+              key={alert._id}
+              severity="warning"
+              sx={{ mb: 1 }}
+              action={
+                <IconButton
+                  aria-label="vyřešit alert"
+                  color="inherit"
+                  size="small"
+                  onClick={() => handleResolveAlert(alert._id)}
+                >
+                  <CloseIcon fontSize="inherit" />
+                </IconButton>
+              }
+            >
+              <AlertTitle>Výstraha</AlertTitle>
+              Typ: <strong>{alert.type}</strong> <br />
+              Hodnota: <strong>{alert.value}</strong> <br />
+              Čas: {new Date(alert.timestamp).toLocaleString("cs-CZ")}
+            </Alert>
+          ))}
+        </Box>
+      )}
 
       {error && (
         <Typography color="error" sx={{ mb: 2, mt: 2 }}>
