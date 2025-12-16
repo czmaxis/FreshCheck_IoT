@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { TextField, Button, Box, Typography } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
-import { login } from "../services/authService.js"; // axios volání na backend
+import { login } from "../services/authService.js";
 import { useAuth } from "../context/AuthContext.jsx";
 
 export default function Login() {
