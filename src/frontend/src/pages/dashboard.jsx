@@ -215,6 +215,23 @@ export default function Dashboard() {
     };
   }, [selectedDeviceId, token]);
 
+  function getAlertMessage(alert) {
+    switch (alert.type) {
+      case "humidity":
+        return `Byla překročena hranice vlhkosti ${alert.value} %`;
+
+      case "temperature":
+        return `Byla překročena hranice teploty ${alert.value} °C`;
+
+      case "door":
+      case "doorOpen":
+        return `Dveře byly otevřené déle než ${alert.value} sekund`;
+
+      default:
+        return `Došlo k překročení nastaveného limitu (${alert.type})`;
+    }
+  }
+
   return (
     <Box
       display="flex"
@@ -296,9 +313,11 @@ export default function Dashboard() {
               }
             >
               <AlertTitle>Výstraha</AlertTitle>
-              Typ: <strong>{alert.type}</strong> <br />
-              Hodnota: <strong>{alert.value}</strong> <br />
-              Čas: {new Date(alert.timestamp).toLocaleString("cs-CZ")}
+              {getAlertMessage(alert)}
+              <br />
+              <small>
+                Čas: {new Date(alert.timestamp).toLocaleString("cs-CZ")}
+              </small>
             </Alert>
           ))}
         </Box>
