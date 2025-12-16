@@ -79,12 +79,13 @@ export default function Alerts({ deviceId }) {
     <Box width="100%" mb={3}>
       {/* HLAVIČKA */}
       <Box
+        p={3}
         display="flex"
         justifyContent="space-between"
         alignItems="center"
         mb={1}
       >
-        <Typography variant="h6">Výstrahy</Typography>
+        <Typography variant="h5">Výstrahy</Typography>
 
         <Box display="flex" alignItems="center" gap={2}>
           <Box display="flex" alignItems="center" gap={1}>
@@ -119,30 +120,33 @@ export default function Alerts({ deviceId }) {
         </Alert>
       )}
 
-      {visible &&
-        visibleAlerts.map((alert) => (
-          <Alert
-            key={alert._id}
-            severity="warning"
-            sx={{ mb: 1 }}
-            action={
-              <IconButton
-                size="small"
-                color="inherit"
-                onClick={() => handleResolve(alert._id)}
-              >
-                <CloseIcon fontSize="inherit" />
-              </IconButton>
-            }
-          >
-            <AlertTitle>Výstraha</AlertTitle>
-            {getMessage(alert)}
-            <br />
-            <small>
-              Čas: {new Date(alert.timestamp).toLocaleString("cs-CZ")}
-            </small>
-          </Alert>
-        ))}
+      {visible && (
+        <Box px={3}>
+          {visibleAlerts.map((alert) => (
+            <Alert
+              key={alert._id}
+              severity="warning"
+              sx={{ mb: 2 }}
+              action={
+                <IconButton
+                  size="small"
+                  color="inherit"
+                  onClick={() => handleResolve(alert._id)}
+                >
+                  <CloseIcon fontSize="inherit" />
+                </IconButton>
+              }
+            >
+              <AlertTitle>Výstraha</AlertTitle>
+              {getMessage(alert)}
+              <br />
+              <small>
+                Čas: {new Date(alert.timestamp).toLocaleString("cs-CZ")}
+              </small>
+            </Alert>
+          ))}
+        </Box>
+      )}
 
       {!visible && (
         <Typography variant="body2" color="text.secondary">

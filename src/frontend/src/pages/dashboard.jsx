@@ -14,9 +14,6 @@ import {
   Stack,
 } from "@mui/material";
 import SettingsIcon from "@mui/icons-material/Settings";
-import Alert from "@mui/material/Alert";
-import AlertTitle from "@mui/material/AlertTitle";
-import CloseIcon from "@mui/icons-material/Close";
 
 import { useAuth } from "../context/AuthContext.jsx";
 import {
@@ -24,7 +21,6 @@ import {
   updateDevice,
   createDevice,
 } from "../services/deviceService.js";
-import { getAlerts, resolveAlert } from "../services/alertService.js";
 
 import SensorData from "./sensorData.jsx";
 import DeviceCharts from "./deviceCharts.jsx";
@@ -191,7 +187,6 @@ export default function Dashboard() {
   const handleAddCancel = () => {
     setAddOpen(false);
   };
-  //alert useEffect
 
   return (
     <Box
@@ -254,7 +249,9 @@ export default function Dashboard() {
         </Menu>
       </Box>
       <p />
-      {selectedDeviceId && <Alerts deviceId={selectedDeviceId} />}
+      {selectedDeviceId && (
+        <Alerts deviceId={selectedDeviceId} sx={{ mb: 2, mt: 2 }} />
+      )}
       {error && (
         <Typography color="error" sx={{ mb: 2, mt: 2 }}>
           {error}
@@ -320,7 +317,7 @@ export default function Dashboard() {
           </Button>
         </DialogActions>
       </Dialog>
-      ;{/* Add device dialog (UI only) */}
+      ;
       <Dialog open={addOpen} onClose={handleAddCancel} maxWidth="xs" fullWidth>
         <DialogTitle>Přidat nové zařízení</DialogTitle>
         <DialogContent>
