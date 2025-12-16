@@ -18,7 +18,7 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import { useAuth } from "../context/AuthContext.jsx";
 import { getSensorData } from "../services/sensorDataService.js";
-
+import DoorFrontIcon from "@mui/icons-material/DoorFront";
 function formatTimestamp(ts) {
   if (!ts) return "-";
   const d = new Date(ts);
@@ -29,6 +29,17 @@ function formatTimestamp(ts) {
   const minutes = String(d.getMinutes()).padStart(2, "0");
   const seconds = String(d.getSeconds()).padStart(2, "0");
   return `${day}.${month}.${year} ${hours}:${minutes}:${seconds}`;
+}
+function getDoorState(illuminance) {
+  if (illuminance === undefined || illuminance === null) {
+    return { label: "—", color: "default" };
+  }
+
+  if (Number(illuminance) === 0) {
+    return { label: "Zavřeno", color: "success" };
+  }
+
+  return { label: "Otevřeno", color: "warning" };
 }
 
 export default function SensorData({ deviceId }) {
@@ -184,6 +195,18 @@ export default function SensorData({ deviceId }) {
                         }${item.humidity !== undefined ? " %" : ""}`}
                         variant="outlined"
                       />
+
+                      {(() => {
+                        const door = getDoorState(item.illuminance);
+                        return (
+                          <Chip
+                            icon={<DoorFrontIcon />}
+                            label={`Dveře: ${door.label}`}
+                            color={door.color}
+                            variant="outlined"
+                          />
+                        );
+                      })()}
                     </Stack>
                   </Stack>
                 </Box>
