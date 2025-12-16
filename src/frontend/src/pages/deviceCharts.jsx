@@ -177,7 +177,7 @@ export default function DeviceCharts({ deviceId }) {
                   dataKey="temperature"
                   name="Teplota (°C)"
                   stroke="#ff5722"
-                  dot={false}
+                  dot={true}
                 />
                 <Line
                   yAxisId="right"
@@ -185,7 +185,7 @@ export default function DeviceCharts({ deviceId }) {
                   dataKey="humidity"
                   name="Vlhkost (%)"
                   stroke="#2196f3"
-                  dot={false}
+                  dot={true}
                 />
               </LineChart>
             </ResponsiveContainer>
