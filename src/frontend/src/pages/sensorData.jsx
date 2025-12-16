@@ -7,12 +7,10 @@ import {
   Chip,
   IconButton,
   Collapse,
-  Select,
   MenuItem,
-  FormControl,
-  InputLabel,
   Pagination,
   Button,
+  TextField,
 } from "@mui/material";
 import DeviceThermostatIcon from "@mui/icons-material/DeviceThermostat";
 import OpacityIcon from "@mui/icons-material/Opacity";
@@ -102,28 +100,29 @@ export default function SensorData({ deviceId }) {
 
   return (
     <Box p={3}>
-      <Stack direction="row" justifyContent="space-between" alignItems="center">
+      <Box display="flex" justifyContent="space-between" alignItems="center">
         <Typography variant="h5">Sensor data</Typography>
 
-        <Stack direction="row" spacing={2} alignItems="center">
-          <FormControl size="small" sx={{ minWidth: 120 }}>
-            <InputLabel id="page-size-label">Na stránce</InputLabel>
-            <Select
-              labelId="page-size-label"
+        <Box display="flex" alignItems="center" gap={2}>
+          <Box display="flex" alignItems="center" gap={1}>
+            <Typography variant="body2">Na stránce</Typography>
+            <TextField
+              select
+              size="small"
               value={pageSize}
-              label="Na stránce"
               onChange={(e) => {
                 setPageSize(Number(e.target.value));
                 setPage(1);
               }}
             >
-              {[1, 5, 10, 20, 50].map((n) => (
+              {[1, 5, 10, 20].map((n) => (
                 <MenuItem key={n} value={n}>
                   {n}
                 </MenuItem>
               ))}
-            </Select>
-          </FormControl>
+            </TextField>
+          </Box>
+
           <Button
             onClick={toggleExpandAll}
             variant="outlined"
@@ -132,9 +131,8 @@ export default function SensorData({ deviceId }) {
           >
             {expanded ? "Skrýt data" : "Zobrazit data"}
           </Button>
-        </Stack>
-      </Stack>
-
+        </Box>
+      </Box>
       {loading && <CircularProgress sx={{ mt: 2 }} />}
 
       {error && (
