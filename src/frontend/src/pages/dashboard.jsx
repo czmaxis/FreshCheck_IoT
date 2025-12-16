@@ -253,18 +253,6 @@ export default function Dashboard() {
           </Typography>
         )}
       </Box>
-      <Box width="100%" mt={4}>
-        {selectedDeviceId ? (
-          <>
-            <SensorData deviceId={selectedDeviceId} />
-            <DeviceCharts deviceId={selectedDeviceId} />
-          </>
-        ) : (
-          <Typography sx={{ mt: 2 }}>
-            Zvolte zařízení z nabídky pro zobrazení dat.
-          </Typography>
-        )}
-      </Box>
       ;{/* Limits dialog */}
       <Dialog
         open={limitsOpen}
