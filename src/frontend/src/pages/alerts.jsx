@@ -8,6 +8,7 @@ import {
   Button,
   MenuItem,
   TextField,
+  Pagination,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { getAlerts, resolveAlert } from "../services/alertService.js";
@@ -20,6 +21,7 @@ export default function Alerts({ deviceId }) {
   const [error, setError] = useState("");
   const [visible, setVisible] = useState(true);
   const [perPage, setPerPage] = useState(5);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     if (!deviceId) return;
@@ -45,6 +47,9 @@ export default function Alerts({ deviceId }) {
       cancelled = true;
     };
   }, [deviceId, token]);
+  useEffect(() => {
+    setPage(1);
+  }, [deviceId, perPage]);
 
   const handleResolve = async (alertId) => {
     try {
@@ -73,18 +78,23 @@ export default function Alerts({ deviceId }) {
 
   if (alerts.length === 0) return null;
 
-  const visibleAlerts = alerts.slice(0, perPage);
+  // pagination calculations
+  const totalItems = alerts.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / perPage));
+
+  const pagedAlerts = alerts.slice((page - 1) * perPage, page * perPage);
 
   return (
     <Box width="100%" mb={3}>
       {/* HLAVIČKA */}
       <Box
+        p={3}
         display="flex"
         justifyContent="space-between"
         alignItems="center"
         mb={1}
       >
-        <Typography variant="h6">Výstrahy</Typography>
+        <Typography variant="h5">Výstrahy</Typography>
 
         <Box display="flex" alignItems="center" gap={2}>
           <Box display="flex" alignItems="center" gap={1}>
@@ -119,31 +129,51 @@ export default function Alerts({ deviceId }) {
         </Alert>
       )}
 
-      {visible &&
-        visibleAlerts.map((alert) => (
-          <Alert
-            key={alert._id}
-            severity="warning"
-            sx={{ mb: 1 }}
-            action={
-              <IconButton
-                size="small"
-                color="inherit"
-                onClick={() => handleResolve(alert._id)}
-              >
-                <CloseIcon fontSize="inherit" />
-              </IconButton>
-            }
-          >
-            <AlertTitle>Výstraha</AlertTitle>
-            {getMessage(alert)}
-            <br />
-            <small>
-              Čas: {new Date(alert.timestamp).toLocaleString("cs-CZ")}
-            </small>
-          </Alert>
-        ))}
-
+      {visible && (
+        <Box px={3}>
+          {pagedAlerts.map((alert) => (
+            <Alert
+              key={alert._id}
+              severity="warning"
+              sx={{ mb: 2 }}
+              action={
+                <IconButton
+                  size="small"
+                  color="inherit"
+                  onClick={() => handleResolve(alert._id)}
+                >
+                  <CloseIcon fontSize="inherit" />
+                </IconButton>
+              }
+            >
+              <AlertTitle>Výstraha</AlertTitle>
+              {getMessage(alert)}
+              <br />
+              <small>
+                Čas: {new Date(alert.timestamp).toLocaleString("cs-CZ")}
+              </small>
+            </Alert>
+          ))}
+        </Box>
+      )}
+      {visible && totalPages > 1 && (
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            mt: 2,
+            px: 3,
+          }}
+        >
+          <Pagination
+            count={totalPages}
+            page={page}
+            onChange={(_, value) => setPage(value)}
+            color="primary"
+            size="small"
+          />
+        </Box>
+      )}
       {!visible && (
         <Typography variant="body2" color="text.secondary">
           Výstrahy jsou skryté.

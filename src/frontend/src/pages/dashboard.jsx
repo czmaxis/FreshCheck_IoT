@@ -14,9 +14,6 @@ import {
   Stack,
 } from "@mui/material";
 import SettingsIcon from "@mui/icons-material/Settings";
-import Alert from "@mui/material/Alert";
-import AlertTitle from "@mui/material/AlertTitle";
-import CloseIcon from "@mui/icons-material/Close";
 
 import { useAuth } from "../context/AuthContext.jsx";
 import {
@@ -24,7 +21,6 @@ import {
   updateDevice,
   createDevice,
 } from "../services/deviceService.js";
-import { getAlerts, resolveAlert } from "../services/alertService.js";
 
 import SensorData from "./sensorData.jsx";
 import DeviceCharts from "./deviceCharts.jsx";
@@ -46,9 +42,9 @@ export default function Dashboard() {
 
   // dialog state for limits
   const [limitsOpen, setLimitsOpen] = useState(false);
-  const [limitTemp, setLimitTemp] = useState(25);
-  const [limitHumidity, setLimitHumidity] = useState(60);
-  const [openTime, setOpenTime] = useState("08:00");
+  const [limitTemp, setLimitTemp] = useState(null);
+  const [limitHumidity, setLimitHumidity] = useState(null);
+  const [openTime, setOpenTime] = useState(null);
 
   // dialog state for add device
   const [addOpen, setAddOpen] = useState(false);
@@ -113,21 +109,40 @@ export default function Dashboard() {
   const handleLimitsConfirm = async () => {
     if (!selectedDeviceId) return;
 
+    // sestavení threshold jen z vyplněných hodnot
+    const threshold = {};
+
+    if (limitTemp !== null && limitTemp !== "") {
+      threshold.temperature = Number(limitTemp);
+    }
+
+    if (limitHumidity !== null && limitHumidity !== "") {
+      threshold.humidity = Number(limitHumidity);
+    }
+
+    if (openTime !== null && openTime !== "") {
+      threshold.doorOpenMaxSeconds = Number(openTime);
+    }
+
+    // pokud uživatel nevyplnil NIC → nedělej request
+    if (Object.keys(threshold).length === 0) {
+      setError("Vyplň alespoň jednu hodnotu limitu.");
+      return;
+    }
+
     try {
-      const payload = {
-        threshold: {
-          temperature: limitTemp,
-          humidity: limitHumidity,
-          doorOpenMaxSeconds: openTime,
-        },
-      };
+      const payload = { threshold };
 
       const res = await updateDevice(selectedDeviceId, payload, token);
 
-      // aktualizace lokálního stavu zařízení
       setDevices((prev) =>
         prev.map((d) => (d._id === selectedDeviceId ? res.device : d))
       );
+
+      // reset formuláře
+      setLimitTemp(null);
+      setLimitHumidity(null);
+      setOpenTime(null);
 
       setLimitsOpen(false);
     } catch (err) {
@@ -172,7 +187,6 @@ export default function Dashboard() {
   const handleAddCancel = () => {
     setAddOpen(false);
   };
-  //alert useEffect
 
   return (
     <Box
@@ -235,7 +249,9 @@ export default function Dashboard() {
         </Menu>
       </Box>
       <p />
-      {selectedDeviceId && <Alerts deviceId={selectedDeviceId} />}
+      {selectedDeviceId && (
+        <Alerts deviceId={selectedDeviceId} sx={{ mb: 2, mt: 2 }} />
+      )}
       {error && (
         <Typography color="error" sx={{ mb: 2, mt: 2 }}>
           {error}
@@ -301,7 +317,7 @@ export default function Dashboard() {
           </Button>
         </DialogActions>
       </Dialog>
-      ;{/* Add device dialog (UI only) */}
+      ;
       <Dialog open={addOpen} onClose={handleAddCancel} maxWidth="xs" fullWidth>
         <DialogTitle>Přidat nové zařízení</DialogTitle>
         <DialogContent>

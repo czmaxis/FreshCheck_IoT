@@ -19,6 +19,7 @@ import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import { useAuth } from "../context/AuthContext.jsx";
 import { getSensorData } from "../services/sensorDataService.js";
 import DoorFrontIcon from "@mui/icons-material/DoorFront";
+import { useTheme, useMediaQuery } from "@mui/material";
 function formatTimestamp(ts) {
   if (!ts) return "-";
   const d = new Date(ts);
@@ -44,6 +45,8 @@ function getDoorState(illuminance) {
 
 export default function SensorData({ deviceId }) {
   const { token } = useAuth();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -201,7 +204,9 @@ export default function SensorData({ deviceId }) {
                         return (
                           <Chip
                             icon={<DoorFrontIcon />}
-                            label={`Dveře: ${door.label}`}
+                            label={
+                              isMobile ? undefined : `Dveře: ${door.label}`
+                            }
                             color={door.color}
                             variant="outlined"
                           />
@@ -216,7 +221,6 @@ export default function SensorData({ deviceId }) {
               )}
         </Box>
 
-        {/* bottom pagination for convenience */}
         {totalPages > 1 && (
           <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
             <Pagination
