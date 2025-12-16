@@ -207,8 +207,8 @@ export default function AlertsHistory() {
               <MenuItem value="all">Vše</MenuItem>
               <MenuItem value="temperature">Teplota</MenuItem>
               <MenuItem value="humidity">Vlhkost</MenuItem>
-              <MenuItem value="door">Dveře</MenuItem>
-              <MenuItem value="doorOpen">Dveře</MenuItem>
+              {/*  <MenuItem value="door">Dveře</MenuItem>*/}
+              <MenuItem value="doorOpen"> Otevřené dveře</MenuItem>
             </TextField>
 
             {/* PER PAGE */}
