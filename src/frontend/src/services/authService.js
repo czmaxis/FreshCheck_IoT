@@ -23,3 +23,23 @@ export async function registerUser({ email, password, name }) {
 
   return response.data;
 }
+
+/**
+ * Update user details.
+ * @param {Object} payload - etc. { name, email, password }
+ * @param {string} token
+ */
+export async function updateUser(payload, token) {
+  if (!payload || Object.keys(payload).length === 0) {
+    throw new Error("Nejsou zadána žádná data k aktualizaci.");
+  }
+
+  const res = await axios.put(`${API_URL}/user`, payload, {
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return res.data;
+}

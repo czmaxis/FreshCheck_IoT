@@ -48,6 +48,9 @@ export default function NavBar() {
           <Button component={Link} to="/dashboard" color="inherit">
             Dashboard
           </Button>
+          <Button component={Link} to="/history" color="inherit">
+            Historie výstrah
+          </Button>
         </Box>
 
         <Box sx={{ flexGrow: 0 }}>
