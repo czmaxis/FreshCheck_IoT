@@ -11,9 +11,10 @@ Built with HARDWARIO Climate Monitor Kit + Radio Dongle.
 
 ## Stack
 - HARDWARIO (radio/firmware)
-- Web app (Vite + React + TypeScript)
+- Web app (React + JavaScript)
 
 ## Quick start
-```bash
+
 npm install
-npm run dev
+npm start
+
