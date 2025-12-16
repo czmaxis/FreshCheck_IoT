@@ -1,0 +1,154 @@
+import React, { useEffect, useState } from "react";
+import {
+  Box,
+  Typography,
+  Alert,
+  AlertTitle,
+  IconButton,
+  Button,
+  MenuItem,
+  TextField,
+} from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
+import { getAlerts, resolveAlert } from "../services/alertService.js";
+import { useAuth } from "../context/AuthContext.jsx";
+
+export default function Alerts({ deviceId }) {
+  const { token } = useAuth();
+
+  const [alerts, setAlerts] = useState([]);
+  const [error, setError] = useState("");
+  const [visible, setVisible] = useState(true);
+  const [perPage, setPerPage] = useState(5);
+
+  useEffect(() => {
+    if (!deviceId) return;
+
+    let cancelled = false;
+
+    async function load() {
+      try {
+        setError("");
+        const data = await getAlerts(deviceId, { active: true }, token);
+        if (!cancelled) setAlerts(data);
+      } catch (err) {
+        if (!cancelled) {
+          setError(
+            err.response?.data?.message || "Nepodařilo se načíst výstrahy."
+          );
+        }
+      }
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [deviceId, token]);
+
+  const handleResolve = async (alertId) => {
+    try {
+      setAlerts((prev) => prev.filter((a) => a._id !== alertId));
+      await resolveAlert(alertId, token);
+    } catch (err) {
+      setError(
+        err.response?.data?.message || "Nepodařilo se vyřešit výstrahu."
+      );
+    }
+  };
+
+  function getMessage(alert) {
+    switch (alert.type) {
+      case "humidity":
+        return `Byla překročena hranice vlhkosti ${alert.value} %`;
+      case "temperature":
+        return `Byla překročena hranice teploty ${alert.value} °C`;
+      case "door":
+      case "doorOpen":
+        return `Dveře byly otevřené déle než ${alert.value} sekund`;
+      default:
+        return `Došlo k překročení limitu (${alert.type})`;
+    }
+  }
+
+  if (alerts.length === 0) return null;
+
+  const visibleAlerts = alerts.slice(0, perPage);
+
+  return (
+    <Box width="100%" mb={3}>
+      {/* HLAVIČKA */}
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        mb={1}
+      >
+        <Typography variant="h6">Výstrahy</Typography>
+
+        <Box display="flex" alignItems="center" gap={2}>
+          <Box display="flex" alignItems="center" gap={1}>
+            <Typography variant="body2">Na stránce</Typography>
+            <TextField
+              select
+              size="small"
+              value={perPage}
+              onChange={(e) => setPerPage(Number(e.target.value))}
+            >
+              {[1, 5, 10, 20].map((n) => (
+                <MenuItem key={n} value={n}>
+                  {n}
+                </MenuItem>
+              ))}
+            </TextField>
+          </Box>
+
+          <Button
+            size="small"
+            variant="outlined"
+            onClick={() => setVisible((v) => !v)}
+          >
+            {visible ? "Skrýt výstrahy" : "Zobrazit výstrahy"}
+          </Button>
+        </Box>
+      </Box>
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 1 }}>
+          {error}
+        </Alert>
+      )}
+
+      {visible &&
+        visibleAlerts.map((alert) => (
+          <Alert
+            key={alert._id}
+            severity="warning"
+            sx={{ mb: 1 }}
+            action={
+              <IconButton
+                size="small"
+                color="inherit"
+                onClick={() => handleResolve(alert._id)}
+              >
+                <CloseIcon fontSize="inherit" />
+              </IconButton>
+            }
+          >
+            <AlertTitle>Výstraha</AlertTitle>
+            {getMessage(alert)}
+            <br />
+            <small>
+              Čas: {new Date(alert.timestamp).toLocaleString("cs-CZ")}
+            </small>
+          </Alert>
+        ))}
+
+      {!visible && (
+        <Typography variant="body2" color="text.secondary">
+          Výstrahy jsou skryté.
+        </Typography>
+      )}
+    </Box>
+  );
+}
