@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5001";
+const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5001";
 
 export async function getSensorData(deviceId, token) {
   const res = await axios.get(
