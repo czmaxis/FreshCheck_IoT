@@ -11,6 +11,8 @@ import {
   Pagination,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import { getAlerts, resolveAlert } from "../services/alertService.js";
 import { useAuth } from "../context/AuthContext.jsx";
 
@@ -117,6 +119,7 @@ export default function Alerts({ deviceId }) {
             size="small"
             variant="outlined"
             onClick={() => setVisible((v) => !v)}
+            startIcon={visible ? <ExpandLessIcon /> : <ExpandMoreIcon />}
           >
             {visible ? "Skrýt výstrahy" : "Zobrazit výstrahy"}
           </Button>
