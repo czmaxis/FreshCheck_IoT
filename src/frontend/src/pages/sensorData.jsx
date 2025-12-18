@@ -128,6 +128,9 @@ export default function SensorData({ deviceId }) {
                 setPageSize(Number(e.target.value));
                 setPage(1);
               }}
+              sx={{
+                minWidth: 60,
+              }}
             >
               {[1, 5, 10, 20].map((n) => (
                 <MenuItem key={n} value={n}>
@@ -143,7 +146,7 @@ export default function SensorData({ deviceId }) {
             size="small"
             startIcon={expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
           >
-            {expanded ? "Skrýt data" : "Zobrazit data"}
+            {expanded ? "Skrýt" : "Zobrazit"}
           </Button>
         </Box>
       </Box>

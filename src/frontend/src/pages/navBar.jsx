@@ -37,13 +37,15 @@ export default function NavBar() {
       <Toolbar disableGutters sx={{ px: 2 }}>
         <Typography
           variant="h6"
-          //component={Link}
-          to="/"
-          sx={{ textDecoration: "none", color: "inherit", mr: 2 }}
+          sx={{
+            textDecoration: "none",
+            color: "inherit",
+            mr: 2,
+            display: { xs: "none", md: "block" },
+          }}
         >
           FreshCheck IoT
         </Typography>
-
         <Box
           sx={{
             flexGrow: 1,
