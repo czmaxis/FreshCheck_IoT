@@ -96,7 +96,9 @@ export default function Alerts({ deviceId }) {
         alignItems="center"
         mb={1}
       >
-        <Typography variant="h5">Výstrahy</Typography>
+        <Typography variant="h5" mr={1}>
+          Výstrahy
+        </Typography>
 
         <Box display="flex" alignItems="center" gap={2}>
           <Box display="flex" alignItems="center" gap={1}>
@@ -106,6 +108,9 @@ export default function Alerts({ deviceId }) {
               size="small"
               value={perPage}
               onChange={(e) => setPerPage(Number(e.target.value))}
+              sx={{
+                minWidth: 60,
+              }}
             >
               {[1, 5, 10, 20].map((n) => (
                 <MenuItem key={n} value={n}>
@@ -121,7 +126,7 @@ export default function Alerts({ deviceId }) {
             onClick={() => setVisible((v) => !v)}
             startIcon={visible ? <ExpandLessIcon /> : <ExpandMoreIcon />}
           >
-            {visible ? "Skrýt výstrahy" : "Zobrazit výstrahy"}
+            {visible ? "Skrýt" : "Zobrazit"}
           </Button>
         </Box>
       </Box>

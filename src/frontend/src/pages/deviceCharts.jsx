@@ -125,7 +125,7 @@ export default function DeviceCharts({ deviceId }) {
           onClick={toggle}
           startIcon={expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
         >
-          {expanded ? "Skrýt graf" : "Zobrazit graf"}
+          {expanded ? "Skrýt" : "Zobrazit"}
         </Button>
       </Box>
 
