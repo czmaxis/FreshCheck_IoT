@@ -355,7 +355,6 @@ export default function Dashboard() {
             </Button>
           </DialogActions>
         </Dialog>
-        ;
       </Box>
     </>
   );

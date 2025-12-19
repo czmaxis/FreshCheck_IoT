@@ -177,6 +177,7 @@ export default function DeviceCharts({ deviceId }) {
                   name="Teplota (°C)"
                   stroke="#ff5722"
                   dot={true}
+                  connectNulls={true}
                 />
                 <Line
                   yAxisId="right"
@@ -185,6 +186,7 @@ export default function DeviceCharts({ deviceId }) {
                   name="Vlhkost (%)"
                   stroke="#2196f3"
                   dot={true}
+                  connectNulls={true}
                 />
               </LineChart>
             </ResponsiveContainer>
