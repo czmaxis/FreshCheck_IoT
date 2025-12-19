@@ -29,9 +29,9 @@ const RANGES = [
   { label: "7d", value: "7d" },
   { label: "Vše", value: "all" },
 ];
-
 function parseTimestamp(ts) {
   const d = new Date(ts);
+  d.setHours(d.getHours() + 1); //  +1 hour to temporarily fix timezone issue in CZ
   return d;
 }
 
@@ -86,7 +86,6 @@ export default function DeviceCharts({ deviceId }) {
     };
   }, [deviceId, token]);
 
-  // 🔹 filtrování dat jako u akcií
   const filteredData = useMemo(() => {
     if (range === "all") {
       return sorted.map((d) => ({
