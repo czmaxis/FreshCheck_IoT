@@ -27,14 +27,14 @@ app.use((req, res, next) => {
 
 // ----- MongoDB connection -----
 const MONGO_URI =
-  process.env.MONGO_URI || "mongodb://localhost:27017/iot_project";
+    process.env.MONGO_URI || "mongodb://localhost:27017/iot_project";
 
 mongoose
-  .connect(MONGO_URI)
-  .then(() => console.log("✅ Connected to MongoDB"))
-  .catch((err) => console.error("❌ MongoDB connection error:", err));
+    .connect(MONGO_URI)
+    .then(() => console.log("✅ Connected to MongoDB"))
+    .catch((err) => console.error("❌ MongoDB connection error:", err));
 
-// ----- Routes -----
+// ----- API Routes -----
 
 // Public auth endpoints (login / register)
 app.use("/auth", authRoutes);
@@ -43,9 +43,7 @@ app.use("/auth", authRoutes);
 app.use("/devices", authMiddleware, deviceRoutes);
 app.use("/alerts", authMiddleware, alertRoutes);
 
-// Sensor data route:
-// - POST /sensordata        → device token (handled inside routes/sensorData.js)
-// - GET  /sensordata/:id    → JWT (handled inside routes/sensorData.js)
+// Sensor data posting and reading
 app.use("/sensordata", sensorDataRoutes);
 
 // ----- Error handler -----
@@ -54,11 +52,20 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: "Internal server error" });
 });
 
+// ------------------------------------------------------
+// ----- Serve React Frontend (Production on Render) -----
+// ------------------------------------------------------
+
+const frontendPath = path.join(__dirname, "../frontend/build");
+app.use(express.static(frontendPath));
+
+app.get(/.*/, (req, res) => {
+  res.sendFile(path.join(frontendPath, "index.html"));
+});
+
 // ----- Start server -----
-// HARD-CODE PORT (ignore env for now while debugging)
-const PORT = 5001;
+const PORT = process.env.PORT || 5001;
 
 app.listen(PORT, () => {
   console.log("### DEBUG SERVER ### running on PORT =", PORT);
 });
-
