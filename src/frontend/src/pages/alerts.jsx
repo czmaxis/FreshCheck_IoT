@@ -70,7 +70,6 @@ export default function Alerts({ deviceId }) {
         return `Byla překročena hranice vlhkosti ${alert.value} %`;
       case "temperature":
         return `Byla překročena hranice teploty ${alert.value} °C`;
-      case "door":
       case "doorOpen":
         return `Dveře byly otevřené déle než ${alert.value} sekund`;
       default:

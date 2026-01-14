@@ -55,6 +55,8 @@ export default function Dashboard() {
   // selected device id
   const [selectedDeviceId, setSelectedDeviceId] = useState(null);
 
+  const selectedDevice = devices.find((d) => d._id === selectedDeviceId);
+
   useEffect(() => {
     async function load() {
       try {
@@ -98,11 +100,17 @@ export default function Dashboard() {
   const handleSettingsSelect = (action) => {
     handleCloseSettings();
     if (action === "limits") {
-      // open dialog for limits
+      if (selectedDevice?.threshold) {
+        setLimitTemp(selectedDevice.threshold.temperature ?? "");
+        setLimitHumidity(selectedDevice.threshold.humidity ?? "");
+        setOpenTime(selectedDevice.threshold.doorOpenMaxSeconds ?? "");
+      } else {
+        setLimitTemp("");
+        setLimitHumidity("");
+        setOpenTime("");
+      }
+
       setLimitsOpen(true);
-    } else if (action === "add") {
-      // open add device dialog
-      setAddOpen(true);
     }
   };
 
@@ -284,7 +292,12 @@ export default function Dashboard() {
                 label="Maximální teplota (°C)"
                 type="number"
                 value={limitTemp}
-                onChange={(e) => setLimitTemp(Number(e.target.value))}
+                onChange={(e) =>
+                  setLimitTemp(
+                    e.target.value === "" ? "" : Number(e.target.value)
+                  )
+                }
+                InputLabelProps={{ shrink: true }}
                 fullWidth
               />
 
@@ -293,11 +306,12 @@ export default function Dashboard() {
                 type="number"
                 value={limitHumidity}
                 onChange={(e) => setLimitHumidity(Number(e.target.value))}
+                InputLabelProps={{ shrink: true }}
                 fullWidth
               />
 
               <TextField
-                label="Čas otevření"
+                label="Čas otevření v sekundách"
                 type="number"
                 value={openTime}
                 onChange={(e) => setOpenTime(Number(e.target.value))}

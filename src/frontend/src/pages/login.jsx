@@ -48,6 +48,8 @@ export default function Login() {
     >
       <Typography variant="h4" mb={3}>
         Přihlášení "email": "test@example.com", "password": "123456"
+        <p></p>
+        reálný senzor: Novakovi_testing@seznam.cz password: 12345
       </Typography>
 
       <Box component="form" onSubmit={handleSubmit} width="300px">
