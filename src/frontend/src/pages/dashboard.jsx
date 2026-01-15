@@ -121,6 +121,9 @@ export default function Dashboard() {
 
       setLimitsOpen(true);
     }
+    if (action === "add") {
+      setAddOpen(true);
+    }
   };
 
   const handleLimitsConfirm = async () => {
