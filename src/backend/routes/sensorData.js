@@ -1,4 +1,3 @@
-// src/backend/routes/sensorData.js
 const express = require("express");
 const router = express.Router();
 
@@ -13,8 +12,8 @@ async function deviceAuth(req, res, next) {
     const token = req.headers["x-device-token"];
     if (!token) {
       return res
-        .status(401)
-        .json({ message: "DEVICE: Missing x-device-token header" });
+          .status(401)
+          .json({ message: "DEVICE: Missing x-device-token header" });
     }
 
     const device = await Device.findOne({ permanentToken: token });
@@ -31,14 +30,11 @@ async function deviceAuth(req, res, next) {
 }
 
 // =====================  POST /sensordata  =====================
-// Called by Node-RED / IoT device with:
-//   header: x-device-token: <permanentToken>
-//   body:   { temperature?, humidity?, illuminance?, doors? }
 router.post("/", deviceAuth, async (req, res) => {
   try {
-    const deviceId = req.device._id;
+    const device = req.device;
+    const deviceId = device._id;
 
-    // Debug: see EXACTLY what Node-RED sends
     console.log("POST /sensordata body:", req.body);
 
     const { temperature, humidity, illuminance, doors } = req.body;
@@ -46,70 +42,114 @@ router.post("/", deviceAuth, async (req, res) => {
     const entry = new SensorData({
       deviceId,
       temperature:
-        temperature !== undefined ? Number(temperature) : undefined,
+          temperature !== undefined ? Number(temperature) : undefined,
       humidity: humidity !== undefined ? Number(humidity) : undefined,
       illuminance:
-        illuminance !== undefined ? Number(illuminance) : undefined,
+          illuminance !== undefined ? Number(illuminance) : undefined,
       doors:
-        doors === true ||
-        doors === "true" ||
-        doors === 1 ||
-        doors === "1",
+          doors === true ||
+          doors === "true" ||
+          doors === 1 ||
+          doors === "1",
     });
 
     await entry.save();
 
-    // (optional) alert logic, kept simple
-    if (req.device.threshold) {
-      const t = req.device.threshold;
-      const alertsToCreate = [];
+    // ================= DOOR LOGIC =================
+    if (typeof entry.doors === "boolean") {
+      if (entry.doors === true) {
+        if (!device.lastDoorOpenAt) {
+          device.lastDoorOpenAt = new Date();
+          await device.save();
+        }
+      }
+
+      if (entry.doors === false && device.lastDoorOpenAt) {
+        device.lastDoorOpenAt = null;
+        await device.save();
+      }
+
+      const maxSeconds = device.threshold?.doorOpenMaxSeconds;
 
       if (
-        t.temperature !== undefined &&
-        entry.temperature !== undefined &&
-        entry.temperature > t.temperature
+          device.lastDoorOpenAt &&
+          maxSeconds &&
+          Date.now() - device.lastDoorOpenAt.getTime() >
+          maxSeconds * 1000
       ) {
-        alertsToCreate.push({
-          deviceId,
-          userId: req.device.ownerId,
-          type: "temperature",
-          value: entry.temperature,
-        });
-      }
-
-      if (
-        t.humidity !== undefined &&
-        entry.humidity !== undefined &&
-        entry.humidity > t.humidity
-      ) {
-        alertsToCreate.push({
-          deviceId,
-          userId: req.device.ownerId,
-          type: "humidity",
-          value: entry.humidity,
-        });
-      }
-
-      if (t.doorOpenMaxSeconds !== undefined && entry.doors) {
-        alertsToCreate.push({
-          deviceId,
-          userId: req.device.ownerId,
-          type: "door",
-          value: 1,
-        });
-      }
-
-      for (const alertData of alertsToCreate) {
         const existing = await Alert.findOne({
-          deviceId: alertData.deviceId,
-          userId: alertData.userId,
-          type: alertData.type,
+          deviceId,
+          userId: device.ownerId,
+          type: "door-open-too-long",
           active: true,
         });
 
         if (!existing) {
-          const alert = new Alert(alertData);
-          await alert.save();
+          await Alert.create({
+            deviceId,
+            userId: device.ownerId,
+            type: "door-open-too-long",
+            value: maxSeconds,
+            active: true,
+          });
+        }
+      }
+    }
+
+    // ================= TEMP / HUMIDITY LOGIC =================
+    if (device.threshold) {
+      const t = device.threshold;
+
+      if (
+          t.temperature &&
+          entry.temperature !== undefined &&
+          ((t.temperature.min !== undefined &&
+                  entry.temperature < t.temperature.min) ||
+              (t.temperature.max !== undefined &&
+                  entry.temperature > t.temperature.max))
+      ) {
+        const existing = await Alert.findOne({
+          deviceId,
+          userId: device.ownerId,
+          type: "temperature",
+          active: true,
+        });
+
+        if (!existing) {
+          await Alert.create({
+            deviceId,
+            userId: device.ownerId,
+            type: "temperature",
+            value: entry.temperature,
+            active: true,
+          });
+        }
+      }
+
+      // HUMIDITY
+      if (
+          t.humidity &&
+          entry.humidity !== undefined &&
+          ((t.humidity.min !== undefined &&
+                  entry.humidity < t.humidity.min) ||
+              (t.humidity.max !== undefined &&
+                  entry.humidity > t.humidity.max))
+      ) {
+        const existing = await Alert.findOne({
+          deviceId,
+          userId: device.ownerId,
+          type: "humidity",
+          active: true,
+        });
+
+        if (!existing) {
+          await Alert.create({
+            deviceId,
+            userId: device.ownerId,
+            type: "humidity",
+            value: entry.humidity,
+            active: true,
+          });
         }
       }
     }
@@ -122,7 +162,6 @@ router.post("/", deviceAuth, async (req, res) => {
 });
 
 // =====================  GET /sensordata/:deviceId  =====================
-// Web app reads data → needs JWT
 router.get("/:deviceId", authMiddleware, async (req, res) => {
   try {
     const deviceId = req.params.deviceId;
@@ -131,8 +170,8 @@ router.get("/:deviceId", authMiddleware, async (req, res) => {
     }
 
     const data = await SensorData.find({ deviceId })
-      .sort({ timestamp: -1 })
-      .limit(100);
+        .sort({ timestamp: -1 })
+        .limit(100);
 
     res.json(data);
   } catch (err) {
