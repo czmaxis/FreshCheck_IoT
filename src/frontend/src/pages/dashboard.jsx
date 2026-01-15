@@ -42,9 +42,11 @@ export default function Dashboard() {
 
   // dialog state for limits
   const [limitsOpen, setLimitsOpen] = useState(false);
-  const [limitTemp, setLimitTemp] = useState(null);
-  const [limitHumidity, setLimitHumidity] = useState(null);
-  const [openTime, setOpenTime] = useState(null);
+  const [maxTemp, setMaxTemp] = useState("");
+  const [minTemp, setMinTemp] = useState("");
+  const [maxHumidity, setMaxHumidity] = useState("");
+  const [minHumidity, setMinHumidity] = useState("");
+  const [openTime, setOpenTime] = useState("");
 
   // dialog state for add device
   const [addOpen, setAddOpen] = useState(false);
@@ -101,16 +103,26 @@ export default function Dashboard() {
     handleCloseSettings();
     if (action === "limits") {
       if (selectedDevice?.threshold) {
-        setLimitTemp(selectedDevice.threshold.temperature ?? "");
-        setLimitHumidity(selectedDevice.threshold.humidity ?? "");
+        const t = selectedDevice?.threshold;
+
+        setMaxTemp(t?.temperature?.max ?? "");
+        setMinTemp(t?.temperature?.min ?? "");
+        setMaxHumidity(t?.humidity?.max ?? "");
+        setMinHumidity(t?.humidity?.min ?? "");
+        setOpenTime(t?.doorOpenMaxSeconds ?? "");
         setOpenTime(selectedDevice.threshold.doorOpenMaxSeconds ?? "");
       } else {
-        setLimitTemp("");
-        setLimitHumidity("");
+        setMaxTemp("");
+        setMinTemp("");
+        setMaxHumidity("");
+        setMinHumidity("");
         setOpenTime("");
       }
 
       setLimitsOpen(true);
+    }
+    if (action === "add") {
+      setAddOpen(true);
     }
   };
 
@@ -120,18 +132,26 @@ export default function Dashboard() {
     // sestavení threshold jen z vyplněných hodnot
     const threshold = {};
 
-    if (limitTemp !== null && limitTemp !== "") {
-      threshold.temperature = Number(limitTemp);
+    if (minTemp !== "" || maxTemp !== "") {
+      threshold.temperature = {};
+      if (minTemp !== "") threshold.temperature.min = Number(minTemp);
+      if (maxTemp !== "") threshold.temperature.max = Number(maxTemp);
     }
 
-    if (limitHumidity !== null && limitHumidity !== "") {
-      threshold.humidity = Number(limitHumidity);
+    if (minHumidity !== "" || maxHumidity !== "") {
+      threshold.humidity = {};
+      if (minHumidity !== "") threshold.humidity.min = Number(minHumidity);
+      if (maxHumidity !== "") threshold.humidity.max = Number(maxHumidity);
     }
 
-    if (openTime !== null && openTime !== "") {
+    if (openTime !== "") {
       threshold.doorOpenMaxSeconds = Number(openTime);
     }
 
+    if (Object.keys(threshold).length === 0) {
+      setError("Vyplň alespoň jeden limit.");
+      return;
+    }
     // pokud uživatel nevyplnil NIC → nedělej request
     if (Object.keys(threshold).length === 0) {
       setError("Vyplň alespoň jednu hodnotu limitu.");
@@ -148,8 +168,10 @@ export default function Dashboard() {
       );
 
       // reset formuláře
-      setLimitTemp(null);
-      setLimitHumidity(null);
+      setMinTemp(null);
+      setMaxTemp(null);
+      setMinHumidity(null);
+      setMaxHumidity(null);
       setOpenTime(null);
 
       setLimitsOpen(false);
@@ -289,34 +311,38 @@ export default function Dashboard() {
           <DialogContent>
             <Stack spacing={2} sx={{ mt: 1 }}>
               <TextField
+                label="Minimální teplota (°C)"
+                type="number"
+                value={minTemp}
+                onChange={(e) => setMinTemp(e.target.value)}
+              />
+
+              <TextField
                 label="Maximální teplota (°C)"
                 type="number"
-                value={limitTemp}
-                onChange={(e) =>
-                  setLimitTemp(
-                    e.target.value === "" ? "" : Number(e.target.value)
-                  )
-                }
-                InputLabelProps={{ shrink: true }}
-                fullWidth
+                value={maxTemp}
+                onChange={(e) => setMaxTemp(e.target.value)}
+              />
+
+              <TextField
+                label="Minimální vlhkost (%)"
+                type="number"
+                value={minHumidity}
+                onChange={(e) => setMinHumidity(e.target.value)}
               />
 
               <TextField
                 label="Maximální vlhkost (%)"
                 type="number"
-                value={limitHumidity}
-                onChange={(e) => setLimitHumidity(Number(e.target.value))}
-                InputLabelProps={{ shrink: true }}
-                fullWidth
+                value={maxHumidity}
+                onChange={(e) => setMaxHumidity(e.target.value)}
               />
 
               <TextField
-                label="Čas otevření v sekundách"
+                label="Limit pro otevření dveří (s)"
                 type="number"
                 value={openTime}
-                onChange={(e) => setOpenTime(Number(e.target.value))}
-                InputLabelProps={{ shrink: true }}
-                fullWidth
+                onChange={(e) => setOpenTime(e.target.value)}
               />
 
               <Typography variant="body2" color="text.secondary">
