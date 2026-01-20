@@ -1,0 +1,10 @@
+parameters:
+    debugMode: true
+
+application:
+    mapping:
+        *: App\Presentation\*Presenter
+
+services:
+    router:
+        factory: App\Router\RouterFactory::createRouter
