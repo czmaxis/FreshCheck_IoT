@@ -17,6 +17,8 @@
     "nette/application": "^3.2",
     "nette/di": "^3.2",
     "nette/http": "^3.3",
-    "nette/bootstrap": "^3.2"
+    "nette/bootstrap": "^3.2",
+    "mongodb/mongodb": "^1.21",
+    "vlucas/phpdotenv": "^5.6"
   }
 }

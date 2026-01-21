@@ -8,3 +8,7 @@ application:
 services:
     router:
         factory: App\Router\RouterFactory::createRouter
+
+    mongo:
+         App\Database\MongoConnection
+       
