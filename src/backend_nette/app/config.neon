@@ -1,14 +1,15 @@
-parameters:
-    debugMode: true
+services:
+    mongoConnection:
+        factory: App\Database\MongoConnection
 
+    mongoDatabase:
+        factory: @mongoConnection::getDatabase
+
+    - App\Repository\UserRepository
+    - App\Service\AuthService
+    router:
+        factory: App\Router\RouterFactory::createRouter
 application:
     mapping:
         *: App\Presentation\*Presenter
-
-services:
-    router:
-        factory: App\Router\RouterFactory::createRouter
-
-    mongo:
-         App\Database\MongoConnection
        

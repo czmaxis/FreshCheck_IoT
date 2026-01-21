@@ -9,20 +9,20 @@ use MongoDB\Database;
 
 final class MongoConnection
 {
-    private Database $db;
+    private Database $database;
 
     public function __construct()
     {
-        $uri = $_ENV['MONGO_URI'] ?? 'mongodb://localhost:27017/freshcheck';
+        $uri = $_ENV['MONGO_URI'];
 
         $client = new Client($uri);
 
-        $dbName = ltrim(parse_url($uri, PHP_URL_PATH) ?? '', '/') ?: 'freshcheck';
-        $this->db = $client->selectDatabase($dbName);
+        // databázi bereme explicitně
+        $this->database = $client->selectDatabase('freshcheck');
     }
 
-    public function db(): Database
+    public function getDatabase(): Database
     {
-        return $this->db;
+        return $this->database;
     }
 }

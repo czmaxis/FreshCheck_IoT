@@ -13,7 +13,14 @@ final class RouterFactory
     {
         $router = new RouteList;
 
-        $router->addRoute('api/<action>', 'Api:Api');
+        // AUTH
+        $router->addRoute('auth/<action>', 'Auth:default');
+
+        // USER (JWT protected)
+        $router->addRoute('user[/<action>]', 'User:default');
+
+        // API (legacy / test)
+        $router->addRoute('api/<action>', 'Api:default');
 
         return $router;
     }

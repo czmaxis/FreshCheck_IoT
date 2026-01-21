@@ -31,24 +31,37 @@ final class ApiPresenter extends Presenter
     }
 public function actionUsers(): void
 {
-    $db = $this->mongo->db();
+    $collection = $this->mongo->db()->selectCollection('user');
 
-    $collections = [];
-    foreach ($db->listCollections() as $c) {
-        $collections[] = $c->getName();
+    $cursor = $collection->find(
+        [],
+        [
+            'projection' => [
+                'passwordHash' => 0,
+                'permanentToken' => 0,
+                '__v' => 0,
+            ],
+            'sort' => ['createdAt' => -1],
+        ]
+    );
+
+    $users = [];
+
+    foreach ($cursor as $doc) {
+        $users[] = [
+            'id' => (string) $doc->_id,
+            'email' => $doc->email ?? null,
+            'name' => $doc->name ?? null,
+            'createdAt' => isset($doc->createdAt)
+                ? $doc->createdAt->toDateTime()->format(DATE_ATOM)
+                : null,
+        ];
     }
 
     $this->sendJson([
-        'database' => $db->getDatabaseName(),
-        'collections' => $collections,
+        'count' => count($users),
+        'users' => $users,
     ]);
-    $this->sendJson([
-    'env_mongo_uri' => $_ENV['MONGO_URI'] ?? null,
-]);
-$this->sendJson([
-    'env_loaded' => isset($_ENV['MONGO_URI']),
-    'mongo_uri' => $_ENV['MONGO_URI'] ?? null,
-]);
 }
 
 }
