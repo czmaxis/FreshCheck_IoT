@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Router;
 
-use Nette\Application\Routers\RouteList;
 use Nette\Application\Routers\Route;
+use Nette\Application\Routers\RouteList;
 
 final class RouterFactory
 {
@@ -16,14 +16,11 @@ final class RouterFactory
         // AUTH
         $router->addRoute('auth/<action>', 'Auth:default');
 
-        // USER (JWT protected)
-        $router->addRoute('user[/<action>]', 'User:default');
+        // USERS
+        $router->addRoute('user/<action>', 'User:default');
 
-        // API (legacy / test)
-        $router->addRoute('api/<action>', 'Api:default');
-        
-        // DEVICES (JWT protected)
-        $router->addRoute('devices', 'Device:create');
+        // DEVICES (GET, POST )
+        $router->addRoute('devices', 'Device:default');
 
         return $router;
     }

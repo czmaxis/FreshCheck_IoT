@@ -5,32 +5,53 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use MongoDB\Database;
-use MongoDB\BSON\UTCDateTime;
+use MongoDB\Collection;
+use MongoDB\BSON\ObjectId;
 
 final class DeviceRepository
 {
-    public function __construct(
-        private Database $db
-    ) {}
+    private Collection $collection;
 
-    private function collection()
+    public function __construct(Database $database)
     {
-        return $this->db->selectCollection('device');
+        
+        $this->collection = $database->selectCollection('device');
     }
 
-    public function create(string $ownerId, string $name, string $type): array
+    public function create(string $userId, array $data): array
     {
-        $result = $this->collection()->insertOne([
-            'name' => $name,
-            'type' => $type,
-            'ownerId' => $ownerId,
-            'createdAt' => new UTCDateTime(),
-        ]);
+        $device = [
+            'name' => $data['name'],
+            'type' => $data['type'],
+            'ownerId' => new ObjectId($userId),
+            'createdAt' => new \MongoDB\BSON\UTCDateTime(),
+        ];
+
+        $result = $this->collection->insertOne($device);
 
         return [
             'id' => (string) $result->getInsertedId(),
-            'name' => $name,
-            'type' => $type,
+            'name' => $device['name'],
+            'type' => $device['type'],
+            'ownerId' => (string) $device['ownerId'],
+            'createdAt' => $device['createdAt']->toDateTime()->format(DATE_ATOM),
         ];
+    }
+
+    public function findByUser(string $userId): array
+    {
+        $cursor = $this->collection->find([
+            'ownerId' => new ObjectId($userId),
+        ]);
+
+        return array_map(function ($doc) {
+            return [
+                'id' => (string) $doc->_id,
+                'name' => $doc->name,
+                'type' => $doc->type,
+                'ownerId' => (string) $doc->ownerId,
+                'createdAt' => $doc->createdAt->toDateTime()->format(DATE_ATOM),
+            ];
+        }, iterator_to_array($cursor));
     }
 }

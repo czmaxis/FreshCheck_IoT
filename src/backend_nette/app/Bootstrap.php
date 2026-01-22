@@ -22,7 +22,7 @@ final class Bootstrap
         // load .env
         Dotenv::createImmutable($rootDir)->load();
 
-        // 👇 PŘEDAT ENV DO NETTE PARAMETERS
+        
         $configurator->addDynamicParameters([
             'jwtSecret' => $_ENV['JWT_SECRET'] ?? null,
             'mongoUri'  => $_ENV['MONGO_URI'] ?? null,
