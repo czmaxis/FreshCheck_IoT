@@ -15,24 +15,61 @@ final class AuthPresenter extends Presenter
         parent::__construct();
     }
 
-    public function actionLogin(): void
-    {
-        $data = $this->getHttpRequest()->getPost();
+public function actionLogin(): void
+{
+    $request = $this->getHttpRequest();
+    $data = json_decode($request->getRawBody(), true);
 
-        $token = $this->auth->login(
-            $data['email'] ?? '',
-            $data['password'] ?? ''
-        );
-
-        if (!$token) {
-            $this->sendJson([
-                'error' => 'Invalid credentials',
-            ]);
-            return;
-        }
-
-        $this->sendJson([
-            'token' => $token,
-        ]);
+    if (
+        !is_array($data) ||
+        empty($data['email']) ||
+        empty($data['password'])
+    ) {
+        $this->error('Missing credentials', 400);
     }
+
+    $token = $this->auth->login(
+        $data['email'],
+        $data['password']
+    );
+
+    if (!$token) {
+        $this->error('Invalid credentials', 401);
+    }
+
+    $this->sendJson([
+        'token' => $token,
+    ]);
+}
+
+    public function actionRegister(): void
+{
+    $request = $this->getHttpRequest();
+
+   
+    $raw = $request->getRawBody();
+    $data = json_decode($raw, true);
+
+    if (
+        !is_array($data) ||
+        empty($data['email']) ||
+        empty($data['password']) ||
+        empty($data['name'])
+    ) {
+        $this->error('Missing required fields', 400);
+    }
+
+    try {
+        $user = $this->auth->register(
+            $data['email'],
+            $data['password'],
+            $data['name']
+        );
+    } catch (\RuntimeException $e) {
+        $this->error($e->getMessage(), 409);
+    }
+
+    $this->sendJson($user);
+}
+
 }

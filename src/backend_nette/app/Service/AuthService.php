@@ -47,4 +47,15 @@ final class AuthService
             new Key($_ENV['JWT_SECRET'], 'HS256')
         );
     }
+
+    public function register(string $email, string $password, string $name): array
+{
+    if ($this->users->existsByEmail($email)) {
+        throw new \RuntimeException('User already exists');
+    }
+
+    $hash = password_hash($password, PASSWORD_BCRYPT);
+
+    return $this->users->create($email, $hash, $name);
+}
 }
