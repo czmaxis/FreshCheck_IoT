@@ -21,6 +21,9 @@ final class RouterFactory
 
         // API (legacy / test)
         $router->addRoute('api/<action>', 'Api:default');
+        
+        // DEVICES (JWT protected)
+        $router->addRoute('devices', 'Device:create');
 
         return $router;
     }

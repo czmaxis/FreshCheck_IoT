@@ -12,13 +12,24 @@ final class Bootstrap
     public static function boot(): \Nette\DI\Container
     {
         $configurator = new Configurator;
-        $configurator->setTempDirectory(__DIR__ . '/../temp');
 
-       
-        Dotenv::createImmutable(__DIR__ . '/../../../')->safeLoad();
-       
+        $appDir = __DIR__;
+        $rootDir = dirname($appDir); // src/backend_nette
 
-        $configurator->addConfig(__DIR__ . '/config.neon');
+        $configurator->setDebugMode(true);
+        $configurator->enableTracy($rootDir . '/log');
+
+        // load .env
+        Dotenv::createImmutable($rootDir)->load();
+
+        // 👇 PŘEDAT ENV DO NETTE PARAMETERS
+        $configurator->addDynamicParameters([
+            'jwtSecret' => $_ENV['JWT_SECRET'] ?? null,
+            'mongoUri'  => $_ENV['MONGO_URI'] ?? null,
+        ]);
+
+        $configurator->setTempDirectory($rootDir . '/temp');
+        $configurator->addConfig($appDir . '/config.neon');
 
         return $configurator->createContainer();
     }

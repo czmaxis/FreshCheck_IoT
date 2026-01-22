@@ -1,15 +1,20 @@
 services:
     mongoConnection:
-        factory: App\Database\MongoConnection
+        factory: App\Database\MongoConnection(%mongoUri%)
 
     mongoDatabase:
         factory: @mongoConnection::getDatabase
 
-    - App\Repository\UserRepository
-    - App\Service\AuthService
+    jwtService:
+        factory: App\Service\JwtService(%jwtSecret%)
+
     router:
         factory: App\Router\RouterFactory::createRouter
+
+    - App\Repository\UserRepository
+    - App\Repository\DeviceRepository
+    - App\Service\AuthService
+    - App\Service\DeviceService
 application:
     mapping:
         *: App\Presentation\*Presenter
-       

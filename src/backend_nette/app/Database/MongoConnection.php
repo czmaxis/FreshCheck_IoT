@@ -9,20 +9,21 @@ use MongoDB\Database;
 
 final class MongoConnection
 {
-    private Database $database;
+    private Client $client;
+    private string $databaseName;
 
-    public function __construct()
+    public function __construct(string $mongoUri, string $databaseName = 'freshcheck')
     {
-        $uri = $_ENV['MONGO_URI'];
+        if (!$mongoUri) {
+            throw new \RuntimeException('MONGO_URI is not set');
+        }
 
-        $client = new Client($uri);
-
-        // databázi bereme explicitně
-        $this->database = $client->selectDatabase('freshcheck');
+        $this->client = new Client($mongoUri);
+        $this->databaseName = $databaseName;
     }
 
     public function getDatabase(): Database
     {
-        return $this->database;
+        return $this->client->selectDatabase($this->databaseName);
     }
 }

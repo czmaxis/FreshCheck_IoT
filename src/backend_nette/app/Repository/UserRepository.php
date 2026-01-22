@@ -38,7 +38,7 @@ public function findByEmail(string $email): ?array
     {
         return $this->collection()->find()->toArray();
     }
-//registrace
+//registration
     public function existsByEmail(string $email): bool
     {
     return $this->collection()->countDocuments(['email' => $email]) > 0;
