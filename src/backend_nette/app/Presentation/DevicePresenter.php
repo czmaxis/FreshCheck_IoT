@@ -125,4 +125,28 @@ final class DevicePresenter extends Presenter
         'id' => $id,
     ]);
 }
+public function actionCreate(): void
+{
+    $userId = $this->getUserIdFromJwt();
+
+    $data = json_decode(
+        $this->getHttpRequest()->getRawBody(),
+        true
+    );
+
+    if (!is_array($data)) {
+        $this->error('Invalid JSON', 400);
+    }
+
+    if (!isset($data['name'], $data['type'])) {
+        $this->error('Missing required fields', 400);
+    }
+
+    // location je volitelná
+    $data['location'] = $data['location'] ?? null;
+
+    $device = $this->devices->createDevice($userId, $data);
+
+    $this->sendJson($device);
+}
 }

@@ -22,6 +22,7 @@ final class DeviceRepository
         $device = [
             'name' => $data['name'],
             'type' => $data['type'],
+            'location' => $data['location'] ?? null,
             'ownerId' => new ObjectId($userId),
             'createdAt' => new \MongoDB\BSON\UTCDateTime(),
         ];
@@ -30,6 +31,10 @@ final class DeviceRepository
 
         $device['_id'] = (string) $result->getInsertedId();
         $device['ownerId'] = (string) $device['ownerId'];
+        $device['createdAt'] = $device['createdAt']->toDateTime();
+        $device['location'] = $device['location'];
+        $device['name'] = $device['name'];
+        $device['type'] = $device['type'];
 
         return $device;
     }
