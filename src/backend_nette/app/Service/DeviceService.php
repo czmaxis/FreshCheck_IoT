@@ -42,4 +42,17 @@ final class DeviceService
 {
     return $this->devices->deleteByUserAndId($userId, $deviceId);
 }
+//update device
+public function updateDevice(
+    string $deviceId,
+    string $userId,
+    array $data
+): ?array
+{
+    return $this->devices->update(
+        $deviceId,
+        $userId,
+        $data
+    );
+}
 }

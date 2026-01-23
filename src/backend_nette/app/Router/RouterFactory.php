@@ -23,6 +23,7 @@ final class RouterFactory
         $router->addRoute('devices', 'Device:default');
         $router->addRoute('devices/<id>/delete', 'Device:delete'); // DELETE
         $router->addRoute('devices/<id>', 'Device:detail');      // GET/by id
+        $router->addRoute('devices/<id>/update', 'Device:update'); // PUT
         
         return $router;
     }

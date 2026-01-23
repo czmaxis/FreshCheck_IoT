@@ -88,4 +88,37 @@ final class DeviceRepository
 
     return $result->getDeletedCount() === 1;
 }
+
+public function update(
+    string $deviceId,
+    string $userId,
+    array $data
+): ?array
+{
+    $result = $this->collection->findOneAndUpdate(
+        [
+            '_id' => new ObjectId($deviceId),
+            'ownerId' => new ObjectId($userId),
+        ],
+        [
+            '$set' => $data,
+        ],
+        [
+            'returnDocument' => \MongoDB\Operation\FindOneAndUpdate::RETURN_DOCUMENT_AFTER,
+        ]
+    );
+
+    if (!$result) {
+        return null;
+    }
+
+    return [
+        'id' => (string) $result->_id,
+        'name' => $result->name ?? null,
+        'type' => $result->type ?? null,
+        'location' => $result->location ?? null,
+        'ownerId' => (string) $result->ownerId,
+        'createdAt' => $result->createdAt ?? null,
+    ];
+}
 }

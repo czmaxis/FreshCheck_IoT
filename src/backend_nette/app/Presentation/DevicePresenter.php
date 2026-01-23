@@ -149,4 +149,38 @@ public function actionCreate(): void
 
     $this->sendJson($device);
 }
+
+public function actionUpdate(string $id): void
+{
+    $userId = $this->getUserIdFromJwt();
+
+    $data = json_decode(
+        $this->getHttpRequest()->getRawBody(),
+        true
+    );
+
+    if (!is_array($data)) {
+        $this->error('Invalid JSON', 400);
+    }
+
+    
+    $allowed = ['name', 'type', 'location'];
+    $updateData = array_intersect_key($data, array_flip($allowed));
+
+    if ($updateData === []) {
+        $this->error('Nothing to update', 400);
+    }
+
+    $device = $this->devices->updateDevice(
+        $id,
+        $userId,
+        $updateData
+    );
+
+    if (!$device) {
+        $this->error('Device not found', 404);
+    }
+
+    $this->sendJson($device);
+}
 }
