@@ -17,30 +17,35 @@ final class SensorDataRepository
         $this->collection = $database->selectCollection('sensordata');
     }
 
-    public function create(string $userId, array $data): array
-    {
-        if (empty($data['deviceId'])) {
-            throw new \InvalidArgumentException('deviceId is required');
-        }
+   public function create(string $userId, array $data): array
+{
+    $document = [
+        'deviceId'  => new ObjectId($data['deviceId']),
+        'timestamp' => new \MongoDB\BSON\UTCDateTime(),
+    ];
 
-        $document = [
-            'deviceId' => new ObjectId($data['deviceId']),
-            'userId'   => new ObjectId($userId),
-            'type'     => $data['type']   ?? null,
-            'value'    => $data['value']  ?? null,
-            'unit'     => $data['unit']   ?? null,
-            'createdAt'=> new UTCDateTime(),
-        ];
-
-        $result = $this->collection->insertOne($document);
-
-        return [
-            'id'        => (string) $result->getInsertedId(),
-            'deviceId'  => $data['deviceId'],
-            'type'      => $document['type'],
-            'value'     => $document['value'],
-            'unit'      => $document['unit'],
-            'createdAt' => $document['createdAt']->toDateTime()->format(DATE_ATOM),
-        ];
+    // volitelná pole
+    if (array_key_exists('temperature', $data)) {
+        $document['temperature'] = (float) $data['temperature'];
     }
+
+    if (array_key_exists('humidity', $data)) {
+        $document['humidity'] = (int) $data['humidity'];
+    }
+
+    if (array_key_exists('illuminance', $data)) {
+        $document['illuminance'] = (int) $data['illuminance'];
+    }
+
+    if (array_key_exists('doors', $data)) {
+        $document['doors'] = (bool) $data['doors'];
+    }
+
+    $result = $this->collection->insertOne($document);
+
+    $document['_id'] = (string) $result->getInsertedId();
+    $document['deviceId'] = (string) $document['deviceId'];
+
+    return $document;
+}
 }
