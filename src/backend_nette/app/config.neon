@@ -15,6 +15,8 @@ services:
     - App\Repository\DeviceRepository
     - App\Service\AuthService
     - App\Service\DeviceService
+    - App\Repository\SensorDataRepository
+    - App\Service\SensorDataService
 application:
     mapping:
         *: App\Presentation\*Presenter

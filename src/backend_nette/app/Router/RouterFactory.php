@@ -24,7 +24,8 @@ final class RouterFactory
         $router->addRoute('devices/<id>/delete', 'Device:delete'); // DELETE
         $router->addRoute('devices/<id>', 'Device:detail');      // GET/by id
         $router->addRoute('devices/<id>/update', 'Device:update'); // PUT
-        
+        // SENSOR DATA
+        $router->addRoute('sensordata', 'SensorData:create');
         return $router;
     }
 }
