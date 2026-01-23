@@ -17,6 +17,12 @@ services:
     - App\Service\DeviceService
     - App\Repository\SensorDataRepository
     - App\Service\SensorDataService
+    - App\Repository\AlertRepository
+    - App\Service\AlertService
+    
+   
+    
+    
 application:
     mapping:
         *: App\Presentation\*Presenter

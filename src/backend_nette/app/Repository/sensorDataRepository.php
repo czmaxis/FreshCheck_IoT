@@ -56,7 +56,7 @@ public function findByDevice(string $deviceId): array
             'deviceId' => new ObjectId($deviceId),
         ],
         [
-            'sort' => ['timestamp' => -1], // nejnovější první
+            'sort' => ['timestamp' => -1], 
         ]
     );
 

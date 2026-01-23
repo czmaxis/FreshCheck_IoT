@@ -27,6 +27,9 @@ final class RouterFactory
         // SENSOR DATA
         $router->addRoute('sensordata', 'SensorData:create');
         $router->addRoute('sensordata/<deviceId>', 'SensorData:default');
+        // ALERTS
+        $router->addRoute('alerts', 'Alert:create');
+        $router->addRoute('alerts/<deviceId>', 'Alert:default');
         return $router;
     }
 }

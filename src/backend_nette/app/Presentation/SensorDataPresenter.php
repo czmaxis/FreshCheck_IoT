@@ -8,17 +8,16 @@ use App\Service\SensorDataService;
 
 final class SensorDataPresenter extends BaseApiPresenter
 {
-    private SensorDataService $sensorData;
+    
 
     public function __construct(
         JwtService $jwt,
-        SensorDataService $sensorData
+        private SensorDataService $sensorData
     ) {
         parent::__construct($jwt);
-        $this->sensorData = $sensorData;
     }
-
     /**
+    
      * POST /sensordata
      */
     public function actionCreate(): void
