@@ -65,6 +65,23 @@ final class DevicePresenter extends Presenter
         $this->error('Method not allowed', 405);
     }
 
+     /**
+     * GET /devices/{id}
+     */
+    public function actionDetail(string $id): void
+    {
+        $userId = $this->getUserIdFromJwt();
+
+        $device = $this->devices->getDeviceById($userId, $id);
+
+        if ($device === null) {
+            $this->error('Device not found', 404);
+        }
+
+        $this->sendJson($device);
+    }
+
+
     /**
      * get userId from JWT token
      */
@@ -92,6 +109,20 @@ final class DevicePresenter extends Presenter
             $this->error('Invalid token payload', 401);
         }
 
-        return (string) $payload->sub;
-    }
+            return (string) $payload->sub;
+        }
+        /**
+         * DELETE /devices/{id}
+         */
+  public function actionDelete(string $id): void
+{
+    $userId = $this->getUserIdFromJwt();
+
+    $result = $this->devices->deleteDevice($userId, $id);
+
+    $this->sendJson([
+        'deleted' => true,
+        'id' => $id,
+    ]);
+}
 }

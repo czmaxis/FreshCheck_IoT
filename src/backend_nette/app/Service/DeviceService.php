@@ -16,7 +16,7 @@ final class DeviceService
     }
 
     /**
-     * Vytvoří nové zařízení
+     * creates a new device for user
      */
     public function createDevice(string $userId, array $data): array
     {
@@ -25,10 +25,21 @@ final class DeviceService
     }
 
     /**
-     * Vrátí zařízení uživatele
+     * retrieves devices for user
      */
     public function getDevicesForUser(string $userId): array
     {
         return $this->devices->findByUser($userId);
     }
+
+    //get device by id
+        public function getDeviceById(string $userId, string $deviceId): ?array
+    {
+        return $this->devices->findOneByUserAndId($userId, $deviceId);
+    }
+
+    public function deleteDevice(string $userId, string $deviceId): bool
+{
+    return $this->devices->deleteByUserAndId($userId, $deviceId);
+}
 }

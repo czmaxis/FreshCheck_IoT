@@ -19,9 +19,11 @@ final class RouterFactory
         // USERS
         $router->addRoute('user/<action>', 'User:default');
 
-        // DEVICES (GET, POST )
+        // DEVICES (GET, POST, DELETE)
         $router->addRoute('devices', 'Device:default');
-
+        $router->addRoute('devices/<id>/delete', 'Device:delete'); // DELETE
+        $router->addRoute('devices/<id>', 'Device:detail');      // GET/by id
+        
         return $router;
     }
 }

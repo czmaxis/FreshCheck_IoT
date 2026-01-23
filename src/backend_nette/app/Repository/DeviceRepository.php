@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
-use MongoDB\Database;
 use MongoDB\Collection;
+use MongoDB\Database;
 use MongoDB\BSON\ObjectId;
 
 final class DeviceRepository
@@ -14,7 +14,6 @@ final class DeviceRepository
 
     public function __construct(Database $database)
     {
-        
         $this->collection = $database->selectCollection('device');
     }
 
@@ -29,13 +28,10 @@ final class DeviceRepository
 
         $result = $this->collection->insertOne($device);
 
-        return [
-            'id' => (string) $result->getInsertedId(),
-            'name' => $device['name'],
-            'type' => $device['type'],
-            'ownerId' => (string) $device['ownerId'],
-            'createdAt' => $device['createdAt']->toDateTime()->format(DATE_ATOM),
-        ];
+        $device['_id'] = (string) $result->getInsertedId();
+        $device['ownerId'] = (string) $device['ownerId'];
+
+        return $device;
     }
 
     public function findByUser(string $userId): array
@@ -44,14 +40,47 @@ final class DeviceRepository
             'ownerId' => new ObjectId($userId),
         ]);
 
-        return array_map(function ($doc) {
-            return [
-                'id' => (string) $doc->_id,
-                'name' => $doc->name,
-                'type' => $doc->type,
-                'ownerId' => (string) $doc->ownerId,
-                'createdAt' => $doc->createdAt->toDateTime()->format(DATE_ATOM),
-            ];
-        }, iterator_to_array($cursor));
+         return array_map(function ($doc) {
+        return [
+            'id' => (string) $doc->_id,
+            'name' => $doc->name,
+            'type' => $doc->type,
+            'ownerId' => (string) $doc->ownerId,
+            'createdAt' => $doc->createdAt ?? null,
+        ];
+    }, iterator_to_array($cursor));
+}
+
+ public function findOneByUserAndId(string $userId, string $deviceId): ?array
+{
+    $doc = $this->collection->findOne([
+        '_id' => new ObjectId($deviceId),
+        'ownerId' => new ObjectId($userId),
+    ]);
+
+    if (!$doc) {
+        return null;
     }
+
+    return [
+        'id' => (string) $doc->_id,
+        'name' => $doc->name,
+        'type' => $doc->type,
+        'ownerId' => (string) $doc->ownerId,
+        'createdAt' => $doc->createdAt ?? null,
+    ];
+}
+    public function deleteByUserAndId(string $userId, string $deviceId): bool
+{
+    try {
+        $result = $this->collection->deleteOne([
+            '_id' => new ObjectId($deviceId),
+            'ownerId' => new ObjectId($userId),
+        ]);
+    } catch (\Throwable) {
+        return false;
+    }
+
+    return $result->getDeletedCount() === 1;
+}
 }
