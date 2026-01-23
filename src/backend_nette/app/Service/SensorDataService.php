@@ -15,4 +15,8 @@ final class SensorDataService
     {
         return $this->sensorDataRepository->create($userId, $data);
     }
+    public function getByDevice(string $userId, string $deviceId): array
+{
+    return $this->sensorDataRepository->findByDevice($deviceId);
+}
 }

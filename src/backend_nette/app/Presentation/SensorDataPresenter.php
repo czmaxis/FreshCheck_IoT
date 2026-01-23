@@ -42,4 +42,16 @@ final class SensorDataPresenter extends BaseApiPresenter
 
     $this->sendJson($created);
 }
+
+public function actionDefault(string $deviceId): void
+{
+    $userId = $this->getUserIdFromJwt();
+
+    $items = $this->sensorData->getByDevice($userId, $deviceId);
+
+    $this->sendJson([
+        'count' => count($items),
+        'items' => $items,
+    ]);
+}
 }

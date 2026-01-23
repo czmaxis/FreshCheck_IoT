@@ -48,4 +48,27 @@ final class SensorDataRepository
 
     return $document;
 }
+
+public function findByDevice(string $deviceId): array
+{
+    $cursor = $this->collection->find(
+        [
+            'deviceId' => new ObjectId($deviceId),
+        ],
+        [
+            'sort' => ['timestamp' => -1], // nejnovější první
+        ]
+    );
+
+    $items = [];
+
+    foreach ($cursor as $doc) {
+        $doc['_id'] = (string) $doc['_id'];
+        $doc['deviceId'] = (string) $doc['deviceId'];
+        $items[] = $doc;
+    }
+
+    return $items;
+}
+
 }
