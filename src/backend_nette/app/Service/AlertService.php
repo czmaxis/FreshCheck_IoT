@@ -39,4 +39,13 @@ final class AlertService
 {
     return $this->alerts->resolve($userId, $alertId);
 }
+public function getAll(string $userId): array
+{
+    return $this->alerts->findAllByUser($userId);
+}
+
+public function getByActive(string $userId, bool $active): array
+{
+    return $this->alerts->findByActive($userId, $active);
+}
 }

@@ -87,4 +87,24 @@ final class AlertRepository
 
     return $result ? $result->getArrayCopy() : null;
 }
+
+public function findAllByUser(string $userId): array
+{
+    return $this->collection
+        ->find([
+            'userId' => new ObjectId($userId),
+        ])
+        ->toArray();
+}
+
+public function findByActive(string $userId, bool $active): array
+{
+    return $this->collection
+        ->find([
+            'userId' => new ObjectId($userId),
+            'active' => $active,
+        ])
+        ->toArray();
+}
+
 }
