@@ -7,13 +7,15 @@ use MongoDB\Database;
 use MongoDB\BSON\ObjectId;
 use MongoDB\Collection;
 
+use MongoDB\BSON\UTCDateTime;
+
 final class AlertRepository
 {
     private Collection $collection;
 
     public function __construct(Database $database)
     {
-        $this->collection = $database->selectCollection('alerts');
+        $this->collection = $database->selectCollection('alert');
     }
 
     public function create(
@@ -63,4 +65,26 @@ final class AlertRepository
 
         return $out;
     }
+
+    public function resolve(string $userId, string $alertId): ?array
+    {
+    $result = $this->collection->findOneAndUpdate(
+        [
+            '_id'    => new ObjectId($alertId),
+            'userId' => new ObjectId($userId),
+            'active' => true,
+        ],
+        [
+            '$set' => [
+                'active'     => false,
+                'resolvedAt' => new UTCDateTime(),
+            ],
+        ],
+        [
+            'returnDocument' => \MongoDB\Operation\FindOneAndUpdate::RETURN_DOCUMENT_AFTER,
+        ]
+    );
+
+    return $result ? $result->getArrayCopy() : null;
+}
 }

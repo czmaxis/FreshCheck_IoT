@@ -33,4 +33,18 @@ final class AlertPresenter extends BaseApiPresenter
 
         $this->sendJson($alert);
     }
+
+    public function actionResolve(string $id): void
+{
+    $userId = $this->getUserIdFromJwt();
+
+    $updated = $this->alerts->resolve($userId, $id);
+
+    if (!$updated) {
+        $this->error('Alert not found', 404);
+    }
+
+    $this->sendJson($updated);
+} 
+
 }

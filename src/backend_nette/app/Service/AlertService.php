@@ -35,4 +35,8 @@ final class AlertService
     {
         return $this->alerts->findActiveByDevice($deviceId);
     }
+    public function resolve(string $userId, string $alertId): ?array
+{
+    return $this->alerts->resolve($userId, $alertId);
+}
 }
