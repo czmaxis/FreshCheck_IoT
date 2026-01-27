@@ -9,38 +9,30 @@ use App\Service\AuthService;
 
 final class AuthPresenter extends Presenter
 {
-    public function __construct(
-        private AuthService $auth
+       public function __construct(
+        private AuthService $authService
     ) {
         parent::__construct();
     }
-
 public function actionLogin(): void
 {
     $request = $this->getHttpRequest();
+
     $data = json_decode($request->getRawBody(), true);
 
-    if (
-        !is_array($data) ||
-        empty($data['email']) ||
-        empty($data['password'])
-    ) {
-        $this->error('Missing credentials', 400);
+    if (!is_array($data) || !isset($data['email'], $data['password'])) {
+        $this->error('Invalid JSON payload', 400);
     }
 
-    $token = $this->auth->login(
+    $result = $this->authService->login(
         $data['email'],
         $data['password']
     );
 
-    if (!$token) {
-        $this->error('Invalid credentials', 401);
-    }
-
-    $this->sendJson([
-        'token' => $token,
-    ]);
+    
+    $this->sendJson($result);
 }
+
 
     public function actionRegister(): void
 {
@@ -60,7 +52,7 @@ public function actionLogin(): void
     }
 
     try {
-        $user = $this->auth->register(
+        $user = $this->authService->register(
             $data['email'],
             $data['password'],
             $data['name']

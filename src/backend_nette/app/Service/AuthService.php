@@ -11,34 +11,35 @@ use Firebase\JWT\Key;
 final class AuthService
 {
     public function __construct(
-        private UserRepository $users
+        private UserRepository $users,
+        private JwtService $jwtService
     ) {}
 
-    public function login(string $email, string $password): ?string
+    public function login(string $email, string $password): array
     {
         $user = $this->users->findByEmail($email);
 
         if (!$user) {
-            return null;
+            throw new AuthenticationException('User not found');
         }
 
         if (!password_verify($password, $user['passwordHash'])) {
-            return null;
+            throw new AuthenticationException('Invalid credentials');
         }
 
-        $payload = [
-            'sub' => (string) $user['_id'],
-            'email' => $user['email'],
-            'iat' => time(),
-            'exp' => time() + (int) ($_ENV['JWT_TTL'] ?? 3600),
-        ];
+        $token = $this->jwtService->createToken($user);
 
-        return JWT::encode(
-            $payload,
-            $_ENV['JWT_SECRET'],
-            'HS256'
-        );
+        return [
+            'token' => $token,
+            'user' => [
+                '_id' => (string) $user['_id'],
+                'email' => $user['email'],
+                'name' => $user['name'],
+            ],
+        ];
     }
+
+
 
     public function verify(string $token): array
     {

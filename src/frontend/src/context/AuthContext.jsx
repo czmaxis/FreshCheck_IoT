@@ -6,9 +6,16 @@ export function AuthProvider({ children }) {
   const [token, setToken] = useState(() => localStorage.getItem("token"));
   const [user, setUser] = useState(() => {
     const storedUser = localStorage.getItem("user");
-    return storedUser ? JSON.parse(storedUser) : null;
-  });
+    if (!storedUser) return null;
 
+    try {
+      return JSON.parse(storedUser);
+    } catch (e) {
+      console.error("Invalid user in localStorage:", storedUser);
+      localStorage.removeItem("user");
+      return null;
+    }
+  });
   const loginContext = (token, user) => {
     setToken(token);
     setUser(user);

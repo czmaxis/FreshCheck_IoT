@@ -6,17 +6,13 @@ use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 
 final class JwtService
-{
-    private string $secret;
 
-    public function __construct(string $jwtSecret)
-    {
-        if ($jwtSecret === '') {
-            throw new \RuntimeException('JWT secret is empty');
-        }
 
-        $this->secret = $jwtSecret;
-    }
+ {
+    public function __construct(
+        private string $secret,
+        private int $ttl
+    ) {}
 
     public function verify(string $token): object
     {
@@ -25,6 +21,21 @@ final class JwtService
 
     public function create(array $payload): string
     {
+        return JWT::encode($payload, $this->secret, 'HS256');
+    }
+
+
+    public function createToken(array $user): string
+    {
+        $now = time();
+
+        $payload = [
+            'iat' => $now,
+            'exp' => $now + $this->ttl,
+            'sub' => (string) $user['_id'],
+            'email' => $user['email'],
+        ];
+
         return JWT::encode($payload, $this->secret, 'HS256');
     }
 }

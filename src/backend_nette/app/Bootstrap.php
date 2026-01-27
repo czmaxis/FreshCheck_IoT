@@ -4,26 +4,16 @@ declare(strict_types=1);
 
 namespace App;
 
-// ===== CORS =====
-header('Access-Control-Allow-Origin: http://localhost:3000');
-header('Access-Control-Allow-Credentials: true');
-header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
-// Preflight request
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(204);
-    exit;
-}
 
 // =================
 
-require __DIR__ . '/../vendor/autoload.php';
+/*require __DIR__ . '/../vendor/autoload.php';
 
-$container = App\Bootstrap::boot();
+$container = Bootstrap::boot();
 $application = $container->getByType(Nette\Application\Application::class);
 $application->run();
-
+*/
 use Nette\Bootstrap\Configurator;
 use Dotenv\Dotenv;
 
@@ -45,6 +35,7 @@ final class Bootstrap
         
         $configurator->addDynamicParameters([
             'jwtSecret' => $_ENV['JWT_SECRET'] ?? null,
+            'jwtTtl'    => (int) ($_ENV['JWT_TTL'] ?? 3600),
             'mongoUri'  => $_ENV['MONGO_URI'] ?? null,
         ]);
 
@@ -53,4 +44,7 @@ final class Bootstrap
 
         return $configurator->createContainer();
     }
+
+
+    
 }

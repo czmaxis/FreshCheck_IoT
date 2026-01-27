@@ -1,3 +1,7 @@
+parameters:
+    jwtSecret: %jwtSecret%
+    jwtTtl: %jwtTtl%
+
 services:
     mongoConnection:
         factory: App\Database\MongoConnection(%mongoUri%)
@@ -6,7 +10,7 @@ services:
         factory: @mongoConnection::getDatabase
 
     jwtService:
-        factory: App\Service\JwtService(%jwtSecret%)
+        factory: App\Service\JwtService(%jwtSecret%, %jwtTtl%)
 
     router:
         factory: App\Router\RouterFactory::createRouter
