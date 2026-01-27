@@ -19,11 +19,11 @@ final class RouterFactory
         // USERS
         $router->addRoute('user/<action>', 'User:default');
 
-        // DEVICES (GET, POST, DELETE)
+        // DEVICES 
         $router->addRoute('devices', 'Device:default');
-        $router->addRoute('devices/<id>/delete', 'Device:delete'); // DELETE
-        $router->addRoute('devices/<id>', 'Device:detail');      // GET/by id
-        $router->addRoute('devices/<id>/update', 'Device:update'); // PUT
+        $router->addRoute('devices/<id>/delete', 'Device:delete'); 
+        $router->addRoute('devices/<id>', 'Device:detail');      
+        $router->addRoute('devices/<id>/update', 'Device:update'); 
         // SENSOR DATA
         $router->addRoute('sensordata', 'SensorData:create');
         $router->addRoute('sensordata/<deviceId>', 'SensorData:default');
@@ -31,8 +31,7 @@ final class RouterFactory
         $router->addRoute('alerts/<id>/resolve', [
         'presenter' => 'Alert',
         'action' => 'resolve',
-        ]); // POST
-        
+        ]); 
         $router->addRoute('alerts', 'Alert:create');
         $router->addRoute('alerts/<deviceId>', 'Alert:default');
 
