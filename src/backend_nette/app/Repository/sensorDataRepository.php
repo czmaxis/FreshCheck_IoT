@@ -19,9 +19,12 @@ final class SensorDataRepository
 
    public function create(string $userId, array $data): array
 {
+    $timestamp = (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))
+        ->format('Y-m-d\TH:i:s.v\Z');
+    
     $document = [
         'deviceId'  => new ObjectId($data['deviceId']),
-        'timestamp' => new \MongoDB\BSON\UTCDateTime(),
+        'timestamp' => $timestamp,
     ];
 
     // volitelná pole
@@ -40,6 +43,7 @@ final class SensorDataRepository
     if (array_key_exists('doors', $data)) {
         $document['doors'] = (bool) $data['doors'];
     }
+   
 
     $result = $this->collection->insertOne($document);
 
