@@ -7,6 +7,7 @@ namespace App\Repository;
 use MongoDB\Collection;
 use MongoDB\Database;
 use MongoDB\BSON\ObjectId;
+use MongoDB\Operation\FindOneAndUpdate; 
 
 final class DeviceRepository
 {
@@ -38,6 +39,21 @@ final class DeviceRepository
 
         return $device;
     }
+
+    public function insert(array $data): array
+{
+    $document = array_merge($data, [
+        'createdAt' => (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))
+            ->format(DATE_ATOM),
+        'permanentToken' => bin2hex(random_bytes(24)),
+    ]);
+
+    $result = $this->collection->insertOne($document);
+
+    $document['_id'] = (string) $result->getInsertedId();
+
+    return $document;
+}
 
     public function findByUser(string $userId): array
     {
@@ -93,18 +109,36 @@ public function update(
     string $deviceId,
     string $userId,
     array $data
-): ?array
-{
+): ?array {
+
+    $update = [];
+
+    foreach ([
+        'name',
+        'type',
+        'location',
+        'threshold',
+        'doorOpenMaxSeconds',
+    ] as $field) {
+        if (array_key_exists($field, $data)) {
+            $update[$field] = $data[$field];
+        }
+    }
+
+    if (!$update) {
+        return null;
+    }
+
     $result = $this->collection->findOneAndUpdate(
         [
-            '_id' => new ObjectId($deviceId),
-            'ownerId' => new ObjectId($userId),
+            '_id' => new \MongoDB\BSON\ObjectId($deviceId),
+            'ownerId' => new \MongoDB\BSON\ObjectId($userId),
         ],
         [
-            '$set' => $data,
+            '$set' => $update,
         ],
         [
-            'returnDocument' => \MongoDB\Operation\FindOneAndUpdate::RETURN_DOCUMENT_AFTER,
+            'returnDocument' => FindOneAndUpdate::RETURN_DOCUMENT_AFTER,
         ]
     );
 
@@ -112,13 +146,14 @@ public function update(
         return null;
     }
 
-    return [
-        '_id' => (string) $result->_id,
-        'name' => $result->name ?? null,
-        'type' => $result->type ?? null,
-        'location' => $result->location ?? null,
-        'ownerId' => (string) $result->ownerId,
-        'createdAt' => $result->createdAt ?? null,
-    ];
+    
+    $array = $result->getArrayCopy();
+
+    
+    $array['_id'] = (string) $array['_id'];
+    $array['ownerId'] = (string) $array['ownerId'];
+
+    return $array;
 }
+
 }

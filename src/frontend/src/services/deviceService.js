@@ -33,12 +33,16 @@ api.interceptors.request.use((config) => {
   return config;
 });
 export async function updateDevice(deviceId, payload, token) {
-  const res = await axios.put(`${API_BASE}/devices/${deviceId}`, payload, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
+  const res = await axios.put(
+    `${API_BASE}/devices/${deviceId}/update`,
+    payload,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
     },
-  });
+  );
   return res.data;
 }
 
