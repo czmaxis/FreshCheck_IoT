@@ -47,7 +47,7 @@ final class DeviceRepository
 
          return array_map(function ($doc) {
         return [
-            'id' => (string) $doc->_id,
+            '_id' => (string) $doc->_id,
             'name' => $doc->name,
             'type' => $doc->type,
             'ownerId' => (string) $doc->ownerId,
@@ -68,7 +68,7 @@ final class DeviceRepository
     }
 
     return [
-        'id' => (string) $doc->_id,
+        '_id' => (string) $doc->_id,
         'name' => $doc->name,
         'type' => $doc->type,
         'ownerId' => (string) $doc->ownerId,
@@ -113,7 +113,7 @@ public function update(
     }
 
     return [
-        'id' => (string) $result->_id,
+        '_id' => (string) $result->_id,
         'name' => $result->name ?? null,
         'type' => $result->type ?? null,
         'location' => $result->location ?? null,

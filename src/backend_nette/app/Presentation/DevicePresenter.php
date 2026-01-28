@@ -37,10 +37,9 @@ final class DevicePresenter extends Presenter
         if ($method === 'GET') {
             $devices = $this->devices->getDevicesForUser($userId);
 
-            $this->sendJson([
-                'count' => count($devices),
-                'devices' => $devices,
-            ]);
+            $this->sendJson(
+               $devices,
+            );
         }
 
         // -------------------------

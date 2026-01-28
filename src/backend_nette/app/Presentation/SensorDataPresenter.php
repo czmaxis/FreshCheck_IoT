@@ -48,9 +48,8 @@ public function actionDefault(string $deviceId): void
 
     $items = $this->sensorData->getByDevice($userId, $deviceId);
 
-    $this->sendJson([
-        'count' => count($items),
-        'items' => $items,
-    ]);
+    $this->sendJson(
+          $items,
+    );
 }
 }
