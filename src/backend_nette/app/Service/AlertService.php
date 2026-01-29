@@ -51,92 +51,84 @@ public function getByActive(string $userId, bool $active): array
     return $this->alerts->findByActive($userId, $active);
 }
 
-   public function evaluate(
-    
-    
-        array $device,
-        array $sensorData
-    ): void {
-
-    
-\Tracy\Debugger::log([
-    'device' => $device,
-    'sensorData' => $sensorData,
-], 'alert');
-        $now = (new DateTimeImmutable('now', new DateTimeZone('UTC')))
-            ->format(DATE_ATOM);
-
-        //  TEMPERATURE
-        if (isset($device['threshold']['temperature'])) {
-            $min = $device['threshold']['temperature']['min'];
-            $max = $device['threshold']['temperature']['max'];
-            $value = $sensorData['temperature'] ?? null;
-
-            if ($value !== null && ($value < $min || $value > $max)) {
-                $this->createAlert(
-                    
-                    $device['_id'],
-                    'temperature',
-                    "Temperature {$value}°C is out of range ({$min}–{$max})",
-                    compact('value', 'min', 'max'),
-                    $now
-                );
-            }
-        }
-
-        //  HUMIDITY
-        if (isset($device['threshold']['humidity'])) {
-            $min = $device['threshold']['humidity']['min'];
-            $max = $device['threshold']['humidity']['max'];
-            $value = $sensorData['humidity'] ?? null;
-
-            if ($value !== null && ($value < $min || $value > $max)) {
-                $this->createAlert(
-                    $device['_id'],
-                    'humidity',
-                    "Humidity {$value}% is out of range ({$min}–{$max})",
-                    compact('value', 'min', 'max'),
-                    $now
-                );
-            }
-        }
-
-        //  DOOR
-        if (
-            isset($device['doorOpenMaxSeconds']) &&
-            isset($sensorData['doorOpenSeconds']) &&
-            $sensorData['doorOpenSeconds'] > $device['doorOpenMaxSeconds']
-        ) {
-            $this->createAlert(
-                $device['_id'],
-                'door',
-                'Door open too long',
-                [
-                    'value' => $sensorData['doorOpenSeconds'],
-                    'max' => $device['doorOpenMaxSeconds'],
-                ],
-                $now
-            );
-        }
-        
+public function evaluate(array $device, array $sensorData): void
+{
+    if (!isset($device['threshold'])) {
+        return;
     }
 
-    private function createAlert(
-        string $deviceId,
-        string $type,
-        string $message,
-        array $data,
-        string $createdAt
-    ): void {
-        $this->alerts->insert([
-            'deviceId' => $deviceId,
-            'type' => $type,
-            'message' => $message,
-            'data' => $data,
-            'createdAt' => $createdAt,
-            'resolved' => false,
-        ]);
+    $threshold = $device['threshold'];
+    $now = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+    $timestamp = $now->format(\DATE_ATOM);
+
+    //  TEMPERATURE
+    if (
+        isset($threshold['temperature']['min'], $threshold['temperature']['max']) &&
+        isset($sensorData['temperature'])
+    ) {
+        $value = (float) $sensorData['temperature'];
+        $min   = (float) $threshold['temperature']['min'];
+        $max   = (float) $threshold['temperature']['max'];
+
+        if ($value < $min || $value > $max) {
+            $this->alerts->insert([
+                'deviceId'   => new \MongoDB\BSON\ObjectId($device['_id']),
+                'userId'     => new \MongoDB\BSON\ObjectId($device['ownerId']),
+                'type'       => 'temperature',
+                'value'      => $value,
+                'active'     => true,
+                'timestamp'  => $timestamp,
+                'resolvedAt' => null,
+            ]);
+        }
     }
+
+    //  HUMIDITY
+    if (
+        isset($threshold['humidity']['min'], $threshold['humidity']['max']) &&
+        isset($sensorData['humidity'])
+    ) {
+        $value = (float) $sensorData['humidity'];
+        $min   = (float) $threshold['humidity']['min'];
+        $max   = (float) $threshold['humidity']['max'];
+
+        if ($value < $min || $value > $max) {
+            $this->alerts->insert([
+                'deviceId'   => new \MongoDB\BSON\ObjectId($device['_id']),
+                'userId'     => new \MongoDB\BSON\ObjectId($device['ownerId']),
+                'type'       => 'humidity',
+                'value'      => $value,
+                'active'     => true,
+                'timestamp'  => $timestamp,
+                'resolvedAt' => null,
+            ]);
+        }
+    }
+}
+
+private function createAlert(
+    string $userId,
+    array $device,
+    string $type,
+    float|int $value,
+    array $threshold
+): void {
+    $now = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+
+    $this->alerts->insert([
+        'deviceId'   => new \MongoDB\BSON\ObjectId($device['_id']),
+        'userId'     => new \MongoDB\BSON\ObjectId($userId),
+        'type'       => $type,
+        'value'      => $value,
+        'threshold'  => $threshold,
+        'active'     => true,
+        'timestamp'  => $now->format(\DATE_ATOM),
+        'resolvedAt' => null,
+    ]);
+}
+
+
+
     public function ingest(array $sensorData): void
 {
     $device = $this->deviceRepository->findById($sensorData['deviceId']);
