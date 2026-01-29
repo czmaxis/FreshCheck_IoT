@@ -6,8 +6,9 @@ namespace App\Repository;
 use MongoDB\Database;
 use MongoDB\BSON\ObjectId;
 use MongoDB\Collection;
-
+use MongoDB\Model\BSONDocument;
 use MongoDB\BSON\UTCDateTime;
+
 
 final class AlertRepository
 {
@@ -66,18 +67,21 @@ final class AlertRepository
         return $out;
     }
 
-    public function resolve(string $userId, string $alertId): ?array
-    {
+public function resolve(string $userId, string $alertId): ?array
+{
     $result = $this->collection->findOneAndUpdate(
         [
-            '_id'    => new ObjectId($alertId),
+            '_id' => new ObjectId($alertId),
             'userId' => new ObjectId($userId),
             'active' => true,
         ],
         [
             '$set' => [
-                'active'     => false,
-                'resolvedAt' => new UTCDateTime(),
+                'active' => false,
+                'resolvedAt' => (new \DateTimeImmutable(
+                    'now',
+                    new \DateTimeZone('UTC')
+                ))->format(DATE_ATOM),
             ],
         ],
         [
@@ -85,29 +89,11 @@ final class AlertRepository
         ]
     );
 
-    return $result ? $result->getArrayCopy() : null;
+    return $result ? $this->normalize($result) : null;
 }
 
-public function findAllByUser(string $userId): array
-{
-    return $this->collection
-        ->find([
-            'userId' => new ObjectId($userId),
-        ])
-        ->toArray();
-}
 
-public function findByActive(string $userId, bool $active): array
-{
-    return $this->collection
-        ->find([
-            'userId' => new ObjectId($userId),
-            'active' => $active,
-        ])
-        ->toArray();
-}
-
-  public function insert(array $alert): void
+public function insert(array $alert): void
     {
         \Tracy\Debugger::log([
     'alertInsert' => $alert,
@@ -115,4 +101,47 @@ public function findByActive(string $userId, bool $active): array
         $this->collection->insertOne($alert);
     }
 
+// normalize document to array with string IDs
+ private function normalize(array|\MongoDB\Model\BSONDocument $doc): array
+{
+    $data = (array) $doc;
+
+    return [
+        '_id'        => (string) $data['_id'],
+        'deviceId'   => isset($data['deviceId']) ? (string) $data['deviceId'] : null,
+        'userId'     => isset($data['userId']) ? (string) $data['userId'] : null,
+        'type'       => $data['type'] ?? null,
+        'value'      => $data['value'] ?? null,
+        'active'     => (bool) ($data['active'] ?? false),
+        'timestamp'  => $data['timestamp'] ?? null,
+        'resolvedAt' => $data['resolvedAt'] ?? null,
+    ];
 }
+
+    //  TOHLE MUSÍŠ POUŽÍVAT PRO VÝPIS
+    public function findByDevice(string $deviceId, ?bool $active = null): array
+    {
+        $filter = [
+            'deviceId' => new ObjectId($deviceId),
+        ];
+
+        if ($active !== null) {
+            $filter['active'] = $active;
+        }
+
+        $cursor = $this->collection->find(
+            $filter,
+            ['sort' => ['timestamp' => -1]]
+        );
+
+        $out = [];
+
+        foreach ($cursor as $doc) {
+            $out[] = $this->normalize($doc);
+        }
+
+        return $out;
+    }
+}
+
+

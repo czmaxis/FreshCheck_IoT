@@ -16,58 +16,47 @@ final class AlertPresenter extends BaseApiPresenter
         parent::__construct($jwt);
     }
 
-    public function actionCreate(): void
+    public function actionDefault(string $deviceId): void
     {
-        $userId = $this->getUserIdFromJwt();
+        $activeParam = $this->getParameter('active');
 
-        $data = json_decode(
-            $this->getHttpRequest()->getRawBody(),
-            true
-        );
+        $active = null;
+        if ($activeParam !== null) {
+            $active = filter_var(
+                $activeParam,
+                FILTER_VALIDATE_BOOLEAN,
+                FILTER_NULL_ON_FAILURE
+            );
 
-        if (!is_array($data)) {
-            $this->error('Invalid JSON', 400);
+            if ($active === null) {
+                $this->error('Invalid active parameter', 400);
+            }
         }
 
-        $alert = $this->alerts->create($userId, $data);
+        $alerts = $this->alerts->getByDevice(
+            $deviceId,
+            $active
+        );
 
-        $this->sendJson($alert);
+        $this->sendJson($alerts);
     }
 
-    public function actionResolve(string $id): void
+public function actionResolve(string $id): void
 {
-    $userId = $this->getUserIdFromJwt();
+    $userId = $this->getUserIdFromJwt(); 
 
-    $updated = $this->alerts->resolve($userId, $id);
+    $alert = $this->alerts->resolve($userId, $id);
 
-    if (!$updated) {
+    if (!$alert) {
         $this->error('Alert not found', 404);
     }
 
-    $this->sendJson($updated);
-} 
-
-public function actionDefault(): void
-{
-    $userId = $this->getUserIdFromJwt();
-
-    $activeParam = $this->getParameter('active');
-
-    if ($activeParam === null) {
-       // /alerts all alerts
-        $alerts = $this->alerts->getAll($userId);
-    } else {
-        // /alerts?active=true|false
-        $active = filter_var($activeParam, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
-
-        if ($active === null) {
-            $this->error('Invalid active parameter', 400);
-        }
-
-        $alerts = $this->alerts->getByActive($userId, $active);
-    }
-
-    $this->sendJson($alerts);
+    $this->sendJson([
+        'status' => 'resolved',
+        'alert' => $alert,
+    ]);
+}
 }
 
-}
+
+

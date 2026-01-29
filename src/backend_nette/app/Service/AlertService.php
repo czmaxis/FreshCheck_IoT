@@ -32,24 +32,24 @@ final class AlertService
             $data['value']
         );
     }
-
+/*
     public function getActiveByDevice(string $deviceId): array
     {
         return $this->alerts->findActiveByDevice($deviceId);
-    }
+    }*/
     public function resolve(string $userId, string $alertId): ?array
 {
     return $this->alerts->resolve($userId, $alertId);
 }
-public function getAll(string $userId): array
-{
-    return $this->alerts->findAllByUser($userId);
-}
 
-public function getByActive(string $userId, bool $active): array
-{
-    return $this->alerts->findByActive($userId, $active);
-}
+
+public function getByDevice(
+        string $deviceId,
+        ?bool $active = null
+    ): array {
+        return $this->alerts->findByDevice($deviceId, $active);
+    }
+
 
 public function evaluate(array $device, array $sensorData): void
 {
