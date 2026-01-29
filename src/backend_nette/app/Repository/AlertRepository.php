@@ -107,4 +107,12 @@ public function findByActive(string $userId, bool $active): array
         ->toArray();
 }
 
+  public function insert(array $alert): void
+    {
+        \Tracy\Debugger::log([
+    'alertInsert' => $alert,
+], 'alert');
+        $this->collection->insertOne($alert);
+    }
+
 }

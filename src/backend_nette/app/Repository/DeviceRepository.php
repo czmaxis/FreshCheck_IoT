@@ -18,27 +18,31 @@ final class DeviceRepository
         $this->collection = $database->selectCollection('device');
     }
 
-    public function create(string $userId, array $data): array
-    {
-        $device = [
-            'name' => $data['name'],
-            'type' => $data['type'],
-            'location' => $data['location'] ?? null,
-            'ownerId' => new ObjectId($userId),
-            'createdAt' => new \MongoDB\BSON\UTCDateTime(),
-        ];
+public function create(string $userId, array $data): array
+{
+    \Tracy\Debugger::log('SensorDataService::create called', 'sensor');
 
-        $result = $this->collection->insertOne($device);
+    // 1️⃣ uložit sensor data
+    $this->sensorDataRepository->create($userId, $data);
 
-        $device['_id'] = (string) $result->getInsertedId();
-        $device['ownerId'] = (string) $device['ownerId'];
-        $device['createdAt'] = $device['createdAt']->toDateTime();
-        $device['location'] = $device['location'];
-        $device['name'] = $device['name'];
-        $device['type'] = $device['type'];
+    // 2️⃣ najít zařízení (SPRÁVNÁ METODA)
+    $device = $this->deviceRepository->findByUserAndId(
+        $userId,
+        $data['deviceId']
+    );
 
-        return $device;
+    \Tracy\Debugger::log([
+        'deviceFound' => (bool) $device,
+        'deviceId' => $data['deviceId'],
+    ], 'sensor');
+
+    // 3️⃣ 🚨 vyhodnotit alerty
+    if ($device) {
+        $this->alertService->evaluate($device, $data);
     }
+
+    return $data;
+}
 
     public function insert(array $data): array
 {
@@ -74,22 +78,26 @@ final class DeviceRepository
 
  public function findOneByUserAndId(string $userId, string $deviceId): ?array
 {
-    $doc = $this->collection->findOne([
+$doc = $this->collection->findOne(
+    [
         '_id' => new ObjectId($deviceId),
         'ownerId' => new ObjectId($userId),
-    ]);
+    ]
+);
 
-    if (!$doc) {
-        return null;
-    }
+if (!$doc) {
+    return null;
+}
 
-    return [
-        '_id' => (string) $doc->_id,
-        'name' => $doc->name,
-        'type' => $doc->type,
-        'ownerId' => (string) $doc->ownerId,
-        'createdAt' => $doc->createdAt ?? null,
-    ];
+// BSONDocument → array
+$device = $doc->getArrayCopy();
+
+// normalizace ID
+$device['_id'] = (string) $device['_id'];
+$device['ownerId'] = (string) $device['ownerId'];
+
+return $device;
+
 }
     public function deleteByUserAndId(string $userId, string $deviceId): bool
 {
