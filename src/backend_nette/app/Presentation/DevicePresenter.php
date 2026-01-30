@@ -158,16 +158,22 @@ public function actionCreate(): void
     $this->sendJson($device);
 }
   /**
-         * UP /devices/{id}
+         *PUT /devices/{id}
          */
 public function actionUpdate(string $id): void
 {
     $raw = $this->getHttpRequest()->getRawBody();
+ $raw = trim($this->getHttpRequest()->getRawBody());
+
+if ($raw === '') {
+    $data = []; 
+} else {
     $data = json_decode($raw, true);
 
-    if (!is_array($data)) {
+    if (json_last_error() !== JSON_ERROR_NONE) {
         $this->error('Invalid JSON', 400);
     }
+}
 
     
     $userId = $this->getUserIdFromJwt();

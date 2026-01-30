@@ -149,8 +149,8 @@ public function update(
 
     $result = $this->collection->findOneAndUpdate(
         [
-            '_id' => new \MongoDB\BSON\ObjectId($deviceId),
-            'ownerId' => new \MongoDB\BSON\ObjectId($userId),
+            '_id' => new ObjectId($deviceId),
+            'ownerId' => new ObjectId($userId),
         ],
         [
             '$set' => $update,
@@ -165,10 +165,7 @@ public function update(
     }
 
     
-    $array = $result->getArrayCopy();
-
-    
-   return $doc ? $this->normalize($doc) : null;
+    return $this->normalize($result);
 }
 
 private function normalize(array|\MongoDB\Model\BSONDocument $doc): array
