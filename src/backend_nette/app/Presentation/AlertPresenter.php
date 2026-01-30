@@ -51,10 +51,10 @@ public function actionResolve(string $id): void
         $this->error('Alert not found', 404);
     }
 
-    $this->sendJson([
-        'status' => 'resolved',
-        'alert' => $alert,
-    ]);
+    $this->sendJson(
+        
+         $alert,
+    );
 }
 }
 

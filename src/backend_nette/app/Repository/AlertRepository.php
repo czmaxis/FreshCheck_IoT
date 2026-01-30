@@ -102,7 +102,7 @@ public function insert(array $alert): void
     }
 
 // normalize document to array with string IDs
- private function normalize(array|\MongoDB\Model\BSONDocument $doc): array
+private function normalize(array|\MongoDB\Model\BSONDocument $doc): array
 {
     $data = (array) $doc;
 
