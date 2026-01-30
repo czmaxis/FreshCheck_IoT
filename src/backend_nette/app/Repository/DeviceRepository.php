@@ -44,6 +44,8 @@ public function create(string $userId, array $data): array
     return $data;
 }
 
+
+
     public function insert(array $data): array
 {
     $document = array_merge($data, [
@@ -59,22 +61,24 @@ public function create(string $userId, array $data): array
     return $document;
 }
 
-    public function findByUser(string $userId): array
-    {
-        $cursor = $this->collection->find([
-            'ownerId' => new ObjectId($userId),
-        ]);
 
-         return array_map(function ($doc) {
-        return [
-            '_id' => (string) $doc->_id,
-            'name' => $doc->name,
-            'type' => $doc->type,
-            'ownerId' => (string) $doc->ownerId,
-            'createdAt' => $doc->createdAt ?? null,
-        ];
-    }, iterator_to_array($cursor));
+public function findByUser(string $userId): array
+{
+    $cursor = $this->collection->find([
+        'ownerId' => new ObjectId($userId),
+    ]);
+
+    $devices = [];
+    foreach ($cursor as $doc) {
+        $devices[] = $this->normalize($doc);
+    }
+
+    return $devices;
 }
+
+
+
+
 
  public function findOneByUserAndId(string $userId, string $deviceId): ?array
 {
@@ -92,14 +96,15 @@ if (!$doc) {
 // BSONDocument → array
 $device = $doc->getArrayCopy();
 
-// normalizace ID
-$device['_id'] = (string) $device['_id'];
-$device['ownerId'] = (string) $device['ownerId'];
-
-return $device;
-
+return $doc ? $this->normalize($doc) : null;
 }
-    public function deleteByUserAndId(string $userId, string $deviceId): bool
+
+
+
+
+
+
+public function deleteByUserAndId(string $userId, string $deviceId): bool
 {
     try {
         $result = $this->collection->deleteOne([
@@ -112,6 +117,11 @@ return $device;
 
     return $result->getDeletedCount() === 1;
 }
+
+
+
+
+
 
 public function update(
     string $deviceId,
@@ -158,10 +168,22 @@ public function update(
     $array = $result->getArrayCopy();
 
     
-    $array['_id'] = (string) $array['_id'];
-    $array['ownerId'] = (string) $array['ownerId'];
+   return $doc ? $this->normalize($doc) : null;
+}
 
-    return $array;
+private function normalize(array|\MongoDB\Model\BSONDocument $doc): array
+{
+    $data = (array) $doc;
+
+    return [
+        '_id' => (string) $data['_id'],
+        'ownerId' => isset($data['ownerId']) ? (string) $data['ownerId'] : null,
+        'name' => $data['name'] ?? null,
+        'type' => $data['type'] ?? null,
+        'location' => $data['location'] ?? null,
+        'createdAt' => $data['createdAt'] ?? null,
+        'threshold' => $data['threshold'] ?? null, 
+    ];
 }
 
 }
