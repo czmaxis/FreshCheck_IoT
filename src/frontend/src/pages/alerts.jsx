@@ -7,10 +7,19 @@ import {
   MenuItem,
   TextField,
   Pagination,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
-import { getAlerts, resolveAlert, deleteAlert } from "../services/alertService.js";
+import {
+  getAlerts,
+  resolveAlert,
+  deleteAlert,
+} from "../services/alertService.js";
+import { getDevice } from "../services/deviceService.js";
 import { useAuth } from "../context/AuthContext.jsx";
 
 export default function Alerts({ deviceId }) {
@@ -21,6 +30,8 @@ export default function Alerts({ deviceId }) {
   const [visible, setVisible] = useState(true);
   const [perPage, setPerPage] = useState(5);
   const [page, setPage] = useState(1);
+  const [deviceThreshold, setDeviceThreshold] = useState(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
   useEffect(() => {
     if (!deviceId) return;
@@ -30,12 +41,18 @@ export default function Alerts({ deviceId }) {
     async function load() {
       try {
         setError("");
-        const data = await getAlerts(deviceId, { active: true }, token);
-        if (!cancelled) setAlerts(data);
+        const [data, device] = await Promise.all([
+          getAlerts(deviceId, { active: true }, token),
+          getDevice(deviceId, token),
+        ]);
+        if (!cancelled) {
+          setAlerts(data);
+          setDeviceThreshold(device?.threshold ?? null);
+        }
       } catch (err) {
         if (!cancelled) {
           setError(
-            err.response?.data?.message || "Nepodařilo se načíst výstrahy."
+            err.response?.data?.message || "Nepodařilo se načíst výstrahy.",
           );
         }
       }
@@ -57,7 +74,7 @@ export default function Alerts({ deviceId }) {
       setAlerts((prev) => prev.filter((a) => a._id !== alertId));
     } catch (err) {
       setError(
-        err.response?.data?.message || "Nepodařilo se vyřešit výstrahu."
+        err.response?.data?.message || "Nepodařilo se vyřešit výstrahu.",
       );
     }
   };
@@ -66,9 +83,18 @@ export default function Alerts({ deviceId }) {
     try {
       await deleteAlert(alertId, token);
       setAlerts((prev) => prev.filter((a) => a._id !== alertId));
+      setConfirmDeleteId(null);
     } catch (err) {
       setError(err.response?.data?.message || "Nepodařilo se smazat výstrahu.");
     }
+  };
+
+  const openDeleteConfirm = (alertId) => {
+    setConfirmDeleteId(alertId);
+  };
+
+  const closeDeleteConfirm = () => {
+    setConfirmDeleteId(null);
   };
 
   const getTypeLabel = (alert) => {
@@ -85,32 +111,85 @@ export default function Alerts({ deviceId }) {
   };
 
   const getTitle = (alert) => {
-    switch (alert.type) {
-      case "humidity":
-        return "Vysoká vlhkost";
-      case "temperature":
-        return "Vysoká teplota";
-      case "door":
-        return "Dveře otevřeny";
-      default:
-        return "Výstraha";
+    const value = alert.value;
+    const min =
+      alert.threshold?.[alert.type]?.min ??
+      alert.threshold?.min ??
+      deviceThreshold?.[alert.type]?.min ??
+      deviceThreshold?.min ??
+      null;
+    const max =
+      alert.threshold?.[alert.type]?.max ??
+      alert.threshold?.max ??
+      deviceThreshold?.[alert.type]?.max ??
+      deviceThreshold?.max ??
+      null;
+
+    if (alert.type === "humidity") {
+      if (min != null && value < min) return "Nízká vlhkost";
+      if (max != null && value > max) return "Vysoká vlhkost";
+      return "Výstraha vlhkosti";
     }
+
+    if (alert.type === "temperature") {
+      if (min != null && value < min) return "Nízká teplota";
+      if (max != null && value > max) return "Vysoká teplota";
+      return "Výstraha teploty";
+    }
+
+    if (alert.type === "door") {
+      return "Dveře otevřeny";
+    }
+
+    return "Výstraha";
   };
 
   const formatValue = (alert) => {
     if (alert.type === "humidity") {
-      const limit =
-        alert.threshold?.humidity?.max ?? alert.threshold?.max ?? null;
-      return `💧 ${alert.value ?? "-"} %${
-        limit !== null ? ` (limit ${limit} %)` : ""
-      }`;
+      const min =
+        alert.threshold?.humidity?.min ??
+        alert.threshold?.min ??
+        deviceThreshold?.humidity?.min ??
+        deviceThreshold?.min ??
+        null;
+      const max =
+        alert.threshold?.humidity?.max ??
+        alert.threshold?.max ??
+        deviceThreshold?.humidity?.max ??
+        deviceThreshold?.max ??
+        null;
+      const limitText =
+        min != null && max != null
+          ? ` (limit ${min}–${max} %)`
+          : min != null
+            ? ` (limit ${min} %)`
+            : max != null
+              ? ` (limit ${max} %)`
+              : "";
+      return `💧 ${alert.value ?? "-"} %${limitText}`;
     }
     if (alert.type === "temperature") {
-      const limit =
-        alert.threshold?.temperature?.max ?? alert.threshold?.max ?? null;
-      return `🌡 ${alert.value ?? "-"} °C${
-        limit !== null ? ` (limit ${limit} °C)` : ""
-      }`;
+      const min =
+        alert.threshold?.temperature?.min ??
+        alert.threshold?.min ??
+        deviceThreshold?.temperature?.min ??
+        deviceThreshold?.min ??
+        null;
+      const max =
+        alert.threshold?.temperature?.max ??
+        alert.threshold?.max ??
+        deviceThreshold?.temperature?.max ??
+        deviceThreshold?.max ??
+        null;
+      const limitText =
+        min != null && max != null
+          ? ` (limit ${min}–${max} °C)`
+          : min != null
+            ? ` (limit ${min} °C)`
+            : max != null
+              ? ` (limit ${max} °C)`
+              : "";
+      return `🌡 ${alert.value ?? "-"} °C${limitText}`;
     }
     if (alert.type === "door") {
       return `🚪 ${alert.value ?? "-"} s`;
@@ -221,7 +300,7 @@ export default function Alerts({ deviceId }) {
                   variant="outlined"
                   size="small"
                   color="error"
-                  onClick={() => handleDelete(alert._id)}
+                  onClick={() => openDeleteConfirm(alert._id)}
                 >
                   smazat
                 </Button>
@@ -281,6 +360,31 @@ export default function Alerts({ deviceId }) {
           Výstrahy jsou skryté.
         </Typography>
       )}
+
+      <Dialog
+        open={Boolean(confirmDeleteId)}
+        onClose={closeDeleteConfirm}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>Smazat výstrahu?</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2">
+            Po smazání se výstraha nezobrazí v historii výstrah. Opravdu chcete
+            výstrahu smazat?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeDeleteConfirm}>Zrušit</Button>
+          <Button
+            color="error"
+            variant="contained"
+            onClick={() => handleDelete(confirmDeleteId)}
+          >
+            Smazat
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
