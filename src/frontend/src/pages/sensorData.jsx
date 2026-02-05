@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+﻿import React, { useEffect, useState, useMemo } from "react";
 import {
   Box,
   Typography,
@@ -11,7 +11,13 @@ import {
   Pagination,
   Button,
   TextField,
+  ButtonGroup,
 } from "@mui/material";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import "dayjs/locale/cs";
+import dayjs from "dayjs";
+import DateRangeSingleCalendar from "../components/DateRangeSingleCalendar.jsx";
 import DeviceThermostatIcon from "@mui/icons-material/DeviceThermostat";
 import OpacityIcon from "@mui/icons-material/Opacity";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
@@ -20,6 +26,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { getSensorData } from "../services/sensorDataService.js";
 import DoorFrontIcon from "@mui/icons-material/DoorFront";
 import { useTheme, useMediaQuery } from "@mui/material";
+
 function formatTimestamp(ts) {
   if (!ts) return "-";
   const d = new Date(ts);
@@ -31,6 +38,7 @@ function formatTimestamp(ts) {
   const seconds = String(d.getSeconds()).padStart(2, "0");
   return `${day}.${month}.${year} ${hours}:${minutes}:${seconds}`;
 }
+
 function getDoorState(illuminance) {
   if (illuminance === undefined || illuminance === null) {
     return { label: "—", color: "default" };
@@ -57,6 +65,20 @@ export default function SensorData({ deviceId }) {
   // pagination
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+
+  // date filter
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [dateRange, setDateRange] = useState([null, null]);
+  const QUICK_RANGES = [
+    { label: "1h", value: "1h" },
+    { label: "6h", value: "6h" },
+    { label: "24h", value: "24h" },
+    { label: "Včera", value: "yesterday" },
+    { label: "Tento týden", value: "thisWeek" },
+    { label: "7d", value: "7d" },
+    { label: "Vše", value: "all" },
+  ];
 
   useEffect(() => {
     // reset paging and expanded state when device changes
@@ -95,8 +117,86 @@ export default function SensorData({ deviceId }) {
     };
   }, [deviceId, token]);
 
+  useEffect(() => {
+    const [start, end] = dateRange;
+    setFromDate(start ? dayjs(start).format("YYYY-MM-DD") : "");
+    setToDate(end ? dayjs(end).format("YYYY-MM-DD") : "");
+  }, [dateRange]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [fromDate, toDate]);
+
+  const applyQuickRange = (value) => {
+    const now = new Date();
+    let from = null;
+    let to = null;
+
+    if (value === "all") {
+      setFromDate("");
+      setToDate("");
+      return;
+    }
+
+    if (value === "1h") {
+      from = new Date(now.getTime() - 60 * 60 * 1000);
+      to = now;
+    } else if (value === "6h") {
+      from = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+      to = now;
+    } else if (value === "24h") {
+      from = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      to = now;
+    } else if (value === "7d") {
+      from = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      to = now;
+    } else if (value === "yesterday") {
+      const y = new Date(now);
+      y.setDate(y.getDate() - 1);
+      from = new Date(y.getFullYear(), y.getMonth(), y.getDate(), 0, 0, 0, 0);
+      to = new Date(y.getFullYear(), y.getMonth(), y.getDate(), 23, 59, 59, 999);
+    } else if (value === "thisWeek") {
+      const day = now.getDay() === 0 ? 7 : now.getDay();
+      const start = new Date(now);
+      start.setDate(now.getDate() - (day - 1));
+      from = new Date(
+        start.getFullYear(),
+        start.getMonth(),
+        start.getDate(),
+        0,
+        0,
+        0,
+        0,
+      );
+      to = now;
+    }
+
+    const toDateValue = to ? to.toISOString().slice(0, 10) : "";
+    const fromDateValue = from ? from.toISOString().slice(0, 10) : "";
+    setFromDate(fromDateValue);
+    setToDate(toDateValue);
+    setDateRange([
+      fromDateValue ? dayjs(fromDateValue) : null,
+      toDateValue ? dayjs(toDateValue) : null,
+    ]);
+  };
+
+  const filteredData = data.filter((d) => {
+    const ts = d.timestamp ? new Date(d.timestamp).getTime() : null;
+    if (!ts) return false;
+    if (fromDate) {
+      const fromTs = new Date(fromDate).setHours(0, 0, 0, 0);
+      if (ts < fromTs) return false;
+    }
+    if (toDate) {
+      const toTs = new Date(toDate).setHours(23, 59, 59, 999);
+      if (ts > toTs) return false;
+    }
+    return true;
+  });
+
   // pagination calculations
-  const totalItems = data.length;
+  const totalItems = filteredData.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const startIndex = totalItems === 0 ? 0 : (page - 1) * pageSize + 1;
   const endIndex = Math.min(page * pageSize, totalItems);
@@ -107,8 +207,8 @@ export default function SensorData({ deviceId }) {
 
   const pagedData = useMemo(() => {
     const start = (page - 1) * pageSize;
-    return data.slice(start, start + pageSize);
-  }, [data, page, pageSize]);
+    return filteredData.slice(start, start + pageSize);
+  }, [filteredData, page, pageSize]);
 
   const toggleExpandAll = () => {
     setExpanded((v) => !v);
@@ -119,7 +219,7 @@ export default function SensorData({ deviceId }) {
       <Box display="flex" justifyContent="space-between" alignItems="center">
         <Typography variant="h5">Naměřená data</Typography>
 
-        <Box display="flex" alignItems="center" gap={2}>
+        <Box display="flex" alignItems="center" gap={2} flexWrap="wrap">
           <Box display="flex" alignItems="center" gap={1}>
             <Typography variant="body2">Na stránce</Typography>
             <TextField
@@ -141,6 +241,23 @@ export default function SensorData({ deviceId }) {
               ))}
             </TextField>
           </Box>
+
+          <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="cs">
+            <DateRangeSingleCalendar
+              value={dateRange}
+              onChange={setDateRange}
+              label="Od–do"
+              size="small"
+            />
+          </LocalizationProvider>
+
+          <ButtonGroup size="small" variant="outlined">
+            {QUICK_RANGES.map((r) => (
+              <Button key={r.value} onClick={() => applyQuickRange(r.value)}>
+                {r.label}
+              </Button>
+            ))}
+          </ButtonGroup>
 
           <Button
             onClick={toggleExpandAll}

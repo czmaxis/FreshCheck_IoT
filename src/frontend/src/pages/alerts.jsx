@@ -11,7 +11,13 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  ButtonGroup,
 } from "@mui/material";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import "dayjs/locale/cs";
+import dayjs from "dayjs";
+import DateRangeSingleCalendar from "../components/DateRangeSingleCalendar.jsx";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import {
@@ -34,6 +40,17 @@ export default function Alerts({ deviceId }) {
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  const [dateRange, setDateRange] = useState([null, null]);
+
+  const QUICK_RANGES = [
+    { label: "1h", value: "1h" },
+    { label: "6h", value: "6h" },
+    { label: "24h", value: "24h" },
+    { label: "Včera", value: "yesterday" },
+    { label: "Tento týden", value: "thisWeek" },
+    { label: "7d", value: "7d" },
+    { label: "Vše", value: "all" },
+  ];
 
   useEffect(() => {
     if (!deviceId) return;
@@ -69,6 +86,70 @@ export default function Alerts({ deviceId }) {
   useEffect(() => {
     setPage(1);
   }, [deviceId, perPage]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [fromDate, toDate]);
+
+  useEffect(() => {
+    const [start, end] = dateRange;
+    setFromDate(start ? dayjs(start).format("YYYY-MM-DD") : "");
+    setToDate(end ? dayjs(end).format("YYYY-MM-DD") : "");
+  }, [dateRange]);
+
+  const applyQuickRange = (value) => {
+    const now = new Date();
+    let from = null;
+    let to = null;
+
+    if (value === "all") {
+      setFromDate("");
+      setToDate("");
+      return;
+    }
+
+    if (value === "1h") {
+      from = new Date(now.getTime() - 60 * 60 * 1000);
+      to = now;
+    } else if (value === "6h") {
+      from = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+      to = now;
+    } else if (value === "24h") {
+      from = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      to = now;
+    } else if (value === "7d") {
+      from = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      to = now;
+    } else if (value === "yesterday") {
+      const y = new Date(now);
+      y.setDate(y.getDate() - 1);
+      from = new Date(y.getFullYear(), y.getMonth(), y.getDate(), 0, 0, 0, 0);
+      to = new Date(y.getFullYear(), y.getMonth(), y.getDate(), 23, 59, 59, 999);
+    } else if (value === "thisWeek") {
+      const day = now.getDay() === 0 ? 7 : now.getDay();
+      const start = new Date(now);
+      start.setDate(now.getDate() - (day - 1));
+      from = new Date(
+        start.getFullYear(),
+        start.getMonth(),
+        start.getDate(),
+        0,
+        0,
+        0,
+        0,
+      );
+      to = now;
+    }
+
+    const toDateValue = to ? to.toISOString().slice(0, 10) : "";
+    const fromDateValue = from ? from.toISOString().slice(0, 10) : "";
+    setFromDate(fromDateValue);
+    setToDate(toDateValue);
+    setDateRange([
+      fromDateValue ? dayjs(fromDateValue) : null,
+      toDateValue ? dayjs(toDateValue) : null,
+    ]);
+  };
 
   const handleResolve = async (alertId) => {
     try {
@@ -257,24 +338,22 @@ export default function Alerts({ deviceId }) {
             </TextField>
             </Box>
 
-            <Box display="flex" alignItems="center" gap={1}>
-              <Typography variant="body2">Od</Typography>
-              <TextField
-                type="date"
+            <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="cs">
+              <DateRangeSingleCalendar
+                value={dateRange}
+                onChange={setDateRange}
+                label="Od–do"
                 size="small"
-                value={fromDate}
-                onChange={(e) => setFromDate(e.target.value)}
-                sx={{ minWidth: 140 }}
               />
-              <Typography variant="body2">Do</Typography>
-              <TextField
-                type="date"
-                size="small"
-                value={toDate}
-                onChange={(e) => setToDate(e.target.value)}
-                sx={{ minWidth: 140 }}
-              />
-            </Box>
+            </LocalizationProvider>
+
+            <ButtonGroup size="small" variant="outlined">
+              {QUICK_RANGES.map((r) => (
+                <Button key={r.value} onClick={() => applyQuickRange(r.value)}>
+                  {r.label}
+                </Button>
+              ))}
+            </ButtonGroup>
 
             <Button
             size="small"

@@ -7,6 +7,11 @@ import {
   Collapse,
   ButtonGroup,
 } from "@mui/material";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import "dayjs/locale/cs";
+import dayjs from "dayjs";
+import DateRangeSingleCalendar from "../components/DateRangeSingleCalendar.jsx";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import {
@@ -53,6 +58,9 @@ export default function DeviceCharts({ deviceId }) {
   const [threshold, setThreshold] = useState(null);
   const [alertTimes, setAlertTimes] = useState([]);
   const [range, setRange] = useState("24h");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [dateRange, setDateRange] = useState([null, null]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [expanded, setExpanded] = useState(true);
@@ -107,6 +115,12 @@ export default function DeviceCharts({ deviceId }) {
     };
   }, [deviceId, token]);
 
+  useEffect(() => {
+    const [start, end] = dateRange;
+    setFromDate(start ? dayjs(start).format("YYYY-MM-DD") : "");
+    setToDate(end ? dayjs(end).format("YYYY-MM-DD") : "");
+  }, [dateRange]);
+
   const filteredData = useMemo(() => {
     if (range === "all") {
       return sorted.map((d) => ({
@@ -125,13 +139,29 @@ export default function DeviceCharts({ deviceId }) {
 
     const from = now - diffMap[range];
 
-    return sorted
+    const byRange = sorted
       .filter((d) => d.ts >= from)
       .map((d) => ({
         ...d,
         time: formatTime(new Date(d.ts)),
       }));
+    return byRange;
   }, [sorted, range]);
+
+  const dateFilteredData = useMemo(() => {
+    if (!fromDate && !toDate) return filteredData;
+    const fromTs = fromDate
+      ? new Date(fromDate).setHours(0, 0, 0, 0)
+      : null;
+    const toTs = toDate
+      ? new Date(toDate).setHours(23, 59, 59, 999)
+      : null;
+    return filteredData.filter((d) => {
+      if (fromTs != null && d.ts < fromTs) return false;
+      if (toTs != null && d.ts > toTs) return false;
+      return true;
+    });
+  }, [filteredData, fromDate, toDate]);
 
   const filteredAlertTimes = useMemo(() => {
     if (alertTimes.length === 0) return [];
@@ -145,14 +175,26 @@ export default function DeviceCharts({ deviceId }) {
       "7d": 7 * 24 * 60 * 60 * 1000,
     };
     const from = now - diffMap[range];
-    return alertTimes.filter((t) => t >= from);
-  }, [alertTimes, range]);
+    const byRange = alertTimes.filter((t) => t >= from);
+    if (!fromDate && !toDate) return byRange;
+    const fromTs = fromDate
+      ? new Date(fromDate).setHours(0, 0, 0, 0)
+      : null;
+    const toTs = toDate
+      ? new Date(toDate).setHours(23, 59, 59, 999)
+      : null;
+    return byRange.filter((t) => {
+      if (fromTs != null && t < fromTs) return false;
+      if (toTs != null && t > toTs) return false;
+      return true;
+    });
+  }, [alertTimes, range, fromDate, toDate]);
 
   const toggle = () => setExpanded((v) => !v);
 
   // dynamic label interval based on density
   const tickInterval =
-    filteredData.length > 30 ? Math.ceil(filteredData.length / 10) : 0;
+    dateFilteredData.length > 30 ? Math.ceil(dateFilteredData.length / 10) : 0;
 
   return (
     <Box p={3} mt={4}>
@@ -169,17 +211,28 @@ export default function DeviceCharts({ deviceId }) {
       </Box>
 
       {/* výběr rozsahu */}
-      <ButtonGroup size="small" sx={{ mt: 1 }}>
-        {RANGES.map((r) => (
-          <Button
-            key={r.value}
-            variant={range === r.value ? "contained" : "outlined"}
-            onClick={() => setRange(r.value)}
-          >
-            {r.label}
-          </Button>
-        ))}
-      </ButtonGroup>
+      <Box display="flex" alignItems="center" gap={2} flexWrap="wrap" sx={{ mt: 1 }}>
+        <ButtonGroup size="small">
+          {RANGES.map((r) => (
+            <Button
+              key={r.value}
+              variant={range === r.value ? "contained" : "outlined"}
+              onClick={() => setRange(r.value)}
+            >
+              {r.label}
+            </Button>
+          ))}
+        </ButtonGroup>
+
+        <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="cs">
+          <DateRangeSingleCalendar
+            value={dateRange}
+            onChange={setDateRange}
+            label="Od–do"
+            size="small"
+          />
+        </LocalizationProvider>
+      </Box>
 
       {loading && <CircularProgress sx={{ mt: 2 }} />}
 
@@ -190,7 +243,7 @@ export default function DeviceCharts({ deviceId }) {
       )}
 
       <Collapse in={expanded}>
-        {filteredData.length > 0 ? (
+        {dateFilteredData.length > 0 ? (
           <>
             {(threshold?.temperature?.min != null ||
               threshold?.temperature?.max != null ||
@@ -242,7 +295,7 @@ export default function DeviceCharts({ deviceId }) {
 
             <Box sx={{ width: "100%", height: 300, mt: 1 }}>
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={filteredData}>
+                <LineChart data={dateFilteredData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis
                   dataKey="ts"
