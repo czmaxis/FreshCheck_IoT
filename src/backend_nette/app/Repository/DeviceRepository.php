@@ -76,6 +76,20 @@ public function findByUser(string $userId): array
     return $devices;
 }
 
+public function findIdsByUser(string $userId): array
+{
+    $cursor = $this->collection->find(
+        ['ownerId' => new ObjectId($userId)],
+        ['projection' => ['_id' => 1]]
+    );
+
+    $ids = [];
+    foreach ($cursor as $doc) {
+        $ids[] = (string) $doc['_id'];
+    }
+
+    return $ids;
+}
 
 
 
@@ -116,6 +130,19 @@ public function deleteByUserAndId(string $userId, string $deviceId): bool
     }
 
     return $result->getDeletedCount() === 1;
+}
+//delete all devices of user (for user deletion)
+public function deleteByUserId(string $userId): int
+{
+    try {
+        $result = $this->collection->deleteMany([
+            'ownerId' => new ObjectId($userId),
+        ]);
+    } catch (\Throwable) {
+        return 0;
+    }
+
+    return $result->getDeletedCount();
 }
 
 

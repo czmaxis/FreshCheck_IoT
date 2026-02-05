@@ -85,5 +85,18 @@ public function findByEmail(string $email): ?array
 
         return $updated->getArrayCopy();
     }
+//delete user and all his related data
+    public function deleteById(string $id): bool
+    {
+        try {
+            $result = $this->collection()->deleteOne([
+                '_id' => new ObjectId($id),
+            ]);
+        } catch (\Throwable) {
+            return false;
+        }
+
+        return $result->getDeletedCount() === 1;
+    }
 
 }

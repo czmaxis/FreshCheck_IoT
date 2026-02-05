@@ -4,12 +4,18 @@ declare(strict_types=1);
 namespace App\Presentation;
 
 use App\Repository\UserRepository;
+use App\Repository\DeviceRepository;
+use App\Repository\SensorDataRepository;
+use App\Repository\AlertRepository;
 use MongoDB\BSON\UTCDateTime;
 
 final class UserPresenter extends SecuredPresenter
 {
     public function __construct(
         private UserRepository $users,
+        private DeviceRepository $devices,
+        private SensorDataRepository $sensorData,
+        private AlertRepository $alerts,
         \App\Service\AuthService $auth
     ) {
         parent::__construct($auth);
@@ -130,7 +136,31 @@ final class UserPresenter extends SecuredPresenter
             'name' => $updated['name'],
         ]);
     }
-}
 
+    public function actionDelete(): void
+    {
+        $userId = (string) ($this->identity['sub'] ?? '');
+        if ($userId === '') {
+            $this->error('Unauthorized', 401);
+        }
+
+        $user = $this->users->findById($userId);
+        if (!$user) {
+            $this->error('User not found', 404);
+        }
+
+        $deviceIds = $this->devices->findIdsByUser($userId);
+        $this->sensorData->deleteByDeviceIds($deviceIds);
+        $this->alerts->deleteByUserId($userId);
+        $this->devices->deleteByUserId($userId);
+
+        $deleted = $this->users->deleteById($userId);
+        if (!$deleted) {
+            $this->error('User not found', 404);
+        }
+
+        $this->sendJson(['deleted' => true]);
+    }
+}
 
 

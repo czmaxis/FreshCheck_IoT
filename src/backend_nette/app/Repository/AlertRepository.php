@@ -105,6 +105,19 @@ public function deleteById(string $userId, string $alertId): bool
 
     return $result->getDeletedCount() === 1;
 }
+//delete all alerts of user (for user deletion)
+public function deleteByUserId(string $userId): int
+{
+    try {
+        $result = $this->collection->deleteMany([
+            'userId' => new ObjectId($userId),
+        ]);
+    } catch (\Throwable) {
+        return 0;
+    }
+
+    return $result->getDeletedCount();
+}
 
 
 public function insert(array $alert): void

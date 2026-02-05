@@ -127,5 +127,27 @@ public function deleteById(string $id): bool
 
     return $result->getDeletedCount() === 1;
 }
+//delete all sensor data of devices (for user deletion)
+public function deleteByDeviceIds(array $deviceIds): int
+{
+    if ($deviceIds === []) {
+        return 0;
+    }
+
+    $objectIds = [];
+    foreach ($deviceIds as $id) {
+        $objectIds[] = new ObjectId((string) $id);
+    }
+
+    try {
+        $result = $this->collection->deleteMany([
+            'deviceId' => ['$in' => $objectIds],
+        ]);
+    } catch (\Throwable) {
+        return 0;
+    }
+
+    return $result->getDeletedCount();
+}
 
 }
