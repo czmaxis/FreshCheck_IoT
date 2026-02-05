@@ -28,7 +28,7 @@ public function findByEmail(string $email): ?array
         return null;
     }
 
-    return $user->getArrayCopy();
+    return $this->normalize($user);
 }
     public function findById(string $id): ?array
     {
@@ -38,12 +38,19 @@ public function findByEmail(string $email): ?array
             return null;
         }
 
-        return $user->getArrayCopy();
+        return $this->normalize($user);
     }
 
     public function findAll(): array
     {
-        return $this->collection()->find()->toArray();
+        $cursor = $this->collection()->find();
+
+        $users = [];
+        foreach ($cursor as $doc) {
+            $users[] = $this->normalize($doc);
+        }
+
+        return $users;
     }
 //registration
     public function existsByEmail(string $email): bool
@@ -83,7 +90,20 @@ public function findByEmail(string $email): ?array
             return null;
         }
 
-        return $updated->getArrayCopy();
+        return $this->normalize($updated);
+    }
+    private function normalize(array|\MongoDB\Model\BSONDocument $doc): array
+    {
+        $data = (array) $doc;
+
+        return [
+            '_id' => (string) $data['_id'],
+            'email' => $data['email'] ?? null,
+            'name' => $data['name'] ?? null,
+            'passwordHash' => $data['passwordHash'] ?? null,
+            'createdAt' => $data['createdAt'] ?? null,
+            'updatedAt' => $data['updatedAt'] ?? null,
+        ];
     }
 //delete user and all his related data
     public function deleteById(string $id): bool
@@ -100,3 +120,4 @@ public function findByEmail(string $email): ?array
     }
 
 }
+

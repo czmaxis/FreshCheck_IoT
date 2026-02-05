@@ -18,34 +18,6 @@ final class DeviceRepository
         $this->collection = $database->selectCollection('device');
     }
 
-public function create(string $userId, array $data): array
-{
-    \Tracy\Debugger::log('SensorDataService::create called', 'sensor');
-
-    // 1️⃣ uložit sensor data
-    $this->sensorDataRepository->create($userId, $data);
-
-    // 2️⃣ najít zařízení (SPRÁVNÁ METODA)
-    $device = $this->deviceRepository->findByUserAndId(
-        $userId,
-        $data['deviceId']
-    );
-
-    \Tracy\Debugger::log([
-        'deviceFound' => (bool) $device,
-        'deviceId' => $data['deviceId'],
-    ], 'sensor');
-
-    // 3️⃣ 🚨 vyhodnotit alerty
-    if ($device) {
-        $this->alertService->evaluate($device, $data);
-    }
-
-    return $data;
-}
-
-
-
     public function insert(array $data): array
 {
     $document = array_merge($data, [
@@ -107,7 +79,7 @@ if (!$doc) {
     return null;
 }
 
-// BSONDocument → array
+// BSONDocument to array
 $device = $doc->getArrayCopy();
 
 return $doc ? $this->normalize($doc) : null;
@@ -211,3 +183,5 @@ private function normalize(array|\MongoDB\Model\BSONDocument $doc): array
 }
 
 }
+
+

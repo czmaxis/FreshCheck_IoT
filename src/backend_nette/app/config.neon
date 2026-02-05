@@ -18,6 +18,7 @@ services:
     - App\Repository\UserRepository
     - App\Repository\DeviceRepository
     - App\Service\AuthService
+    - App\Service\UserService
     - App\Service\DeviceService
     - App\Repository\SensorDataRepository
     - App\Service\SensorDataService
