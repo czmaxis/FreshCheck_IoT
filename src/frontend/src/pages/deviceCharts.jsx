@@ -198,40 +198,46 @@ export default function DeviceCharts({ deviceId }) {
 
   return (
     <Box p={3} mt={4}>
-      <Box display="flex" alignItems="center" justifyContent="space-between">
+      <Box
+        display="flex"
+        alignItems="center"
+        justifyContent="space-between"
+        flexWrap="wrap"
+        gap={2}
+      >
         <Typography variant="h6">Grafy (teplota / vlhkost)</Typography>
-        <Button
-          size="small"
-          variant="outlined"
-          onClick={toggle}
-          startIcon={expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-        >
-          {expanded ? "Skrýt" : "Zobrazit"}
-        </Button>
-      </Box>
 
-      {/* výběr rozsahu */}
-      <Box display="flex" alignItems="center" gap={2} flexWrap="wrap" sx={{ mt: 1 }}>
-        <ButtonGroup size="small">
-          {RANGES.map((r) => (
-            <Button
-              key={r.value}
-              variant={range === r.value ? "contained" : "outlined"}
-              onClick={() => setRange(r.value)}
-            >
-              {r.label}
-            </Button>
-          ))}
-        </ButtonGroup>
+        <Box display="flex" alignItems="center" gap={2} flexWrap="wrap">
+          <ButtonGroup size="small">
+            {RANGES.map((r) => (
+              <Button
+                key={r.value}
+                variant={range === r.value ? "contained" : "outlined"}
+                onClick={() => setRange(r.value)}
+              >
+                {r.label}
+              </Button>
+            ))}
+          </ButtonGroup>
 
-        <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="cs">
-          <DateRangeSingleCalendar
-            value={dateRange}
-            onChange={setDateRange}
-            label="Od–do"
+          <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="cs">
+            <DateRangeSingleCalendar
+              value={dateRange}
+              onChange={setDateRange}
+              label="Od–do"
+              size="small"
+            />
+          </LocalizationProvider>
+
+          <Button
             size="small"
-          />
-        </LocalizationProvider>
+            variant="outlined"
+            onClick={toggle}
+            startIcon={expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+          >
+            {expanded ? "Skrýt" : "Zobrazit"}
+          </Button>
+        </Box>
       </Box>
 
       {loading && <CircularProgress sx={{ mt: 2 }} />}

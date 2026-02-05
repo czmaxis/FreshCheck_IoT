@@ -318,10 +318,27 @@ export default function Alerts({ deviceId }) {
           Výstrahy
         </Typography>
 
-          <Box display="flex" alignItems="center" gap={2} flexWrap="wrap">
-            <Box display="flex" alignItems="center" gap={1}>
-              <Typography variant="body2">Na stránce</Typography>
-              <TextField
+        <Box display="flex" alignItems="center" gap={2} flexWrap="wrap">
+          <ButtonGroup size="small" variant="outlined">
+            {QUICK_RANGES.map((r) => (
+              <Button key={r.value} onClick={() => applyQuickRange(r.value)}>
+                {r.label}
+              </Button>
+            ))}
+          </ButtonGroup>
+
+          <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="cs">
+            <DateRangeSingleCalendar
+              value={dateRange}
+              onChange={setDateRange}
+              label="Od–do"
+              size="small"
+            />
+          </LocalizationProvider>
+
+          <Box display="flex" alignItems="center" gap={1}>
+            <Typography variant="body2">Na stránce</Typography>
+            <TextField
               select
               size="small"
               value={perPage}
@@ -336,26 +353,9 @@ export default function Alerts({ deviceId }) {
                 </MenuItem>
               ))}
             </TextField>
-            </Box>
+          </Box>
 
-            <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="cs">
-              <DateRangeSingleCalendar
-                value={dateRange}
-                onChange={setDateRange}
-                label="Od–do"
-                size="small"
-              />
-            </LocalizationProvider>
-
-            <ButtonGroup size="small" variant="outlined">
-              {QUICK_RANGES.map((r) => (
-                <Button key={r.value} onClick={() => applyQuickRange(r.value)}>
-                  {r.label}
-                </Button>
-              ))}
-            </ButtonGroup>
-
-            <Button
+          <Button
             size="small"
             variant="outlined"
             onClick={() => setVisible((v) => !v)}

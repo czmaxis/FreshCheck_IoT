@@ -73,7 +73,7 @@ export default function Dashboard() {
       } catch (err) {
         console.error("Chyba při načítání zařízení:", err);
         setError(
-          err.response?.data?.message || "Nepodařilo se načíst zařízení."
+          err.response?.data?.message || "Nepodařilo se načíst zařízení.",
         );
       }
     }
@@ -165,7 +165,7 @@ export default function Dashboard() {
       const res = await updateDevice(selectedDeviceId, payload, token);
 
       setDevices((prev) =>
-        prev.map((d) => (d._id === selectedDeviceId ? res.device : d))
+        prev.map((d) => (d._id === selectedDeviceId ? res.device : d)),
       );
 
       // reset formuláře
@@ -179,7 +179,7 @@ export default function Dashboard() {
     } catch (err) {
       console.error("Chyba při ukládání limitů:", err);
       setError(
-        err.response?.data?.message || "Nepodařilo se uložit limity zařízení."
+        err.response?.data?.message || "Nepodařilo se uložit limity zařízení.",
       );
     }
   };
@@ -210,7 +210,7 @@ export default function Dashboard() {
     } catch (err) {
       console.error("Chyba při vytváření zařízení:", err);
       setError(
-        err.response?.data?.message || "Nepodařilo se vytvořit nové zařízení."
+        err.response?.data?.message || "Nepodařilo se vytvořit nové zařízení.",
       );
     }
   };
@@ -361,7 +361,12 @@ export default function Dashboard() {
             </Button>
           </DialogActions>
         </Dialog>
-        <Dialog open={addOpen} onClose={handleAddCancel} maxWidth="xs" fullWidth>
+        <Dialog
+          open={addOpen}
+          onClose={handleAddCancel}
+          maxWidth="xs"
+          fullWidth
+        >
           <DialogTitle>Přidat nové zařízení</DialogTitle>
           <DialogContent>
             <Stack spacing={2} sx={{ mt: 1 }}>

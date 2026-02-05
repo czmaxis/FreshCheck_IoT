@@ -220,6 +220,23 @@ export default function SensorData({ deviceId }) {
         <Typography variant="h5">Naměřená data</Typography>
 
         <Box display="flex" alignItems="center" gap={2} flexWrap="wrap">
+          <ButtonGroup size="small" variant="outlined">
+            {QUICK_RANGES.map((r) => (
+              <Button key={r.value} onClick={() => applyQuickRange(r.value)}>
+                {r.label}
+              </Button>
+            ))}
+          </ButtonGroup>
+
+          <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="cs">
+            <DateRangeSingleCalendar
+              value={dateRange}
+              onChange={setDateRange}
+              label="Od–do"
+              size="small"
+            />
+          </LocalizationProvider>
+
           <Box display="flex" alignItems="center" gap={1}>
             <Typography variant="body2">Na stránce</Typography>
             <TextField
@@ -241,23 +258,6 @@ export default function SensorData({ deviceId }) {
               ))}
             </TextField>
           </Box>
-
-          <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="cs">
-            <DateRangeSingleCalendar
-              value={dateRange}
-              onChange={setDateRange}
-              label="Od–do"
-              size="small"
-            />
-          </LocalizationProvider>
-
-          <ButtonGroup size="small" variant="outlined">
-            {QUICK_RANGES.map((r) => (
-              <Button key={r.value} onClick={() => applyQuickRange(r.value)}>
-                {r.label}
-              </Button>
-            ))}
-          </ButtonGroup>
 
           <Button
             onClick={toggleExpandAll}
