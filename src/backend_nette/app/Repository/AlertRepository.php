@@ -58,10 +58,7 @@ final class AlertRepository
 
         $out = [];
         foreach ($cursor as $doc) {
-            $doc['_id'] = (string) $doc['_id'];
-            $doc['deviceId'] = (string) $doc['deviceId'];
-            $doc['userId'] = (string) $doc['userId'];
-            $out[] = $doc;
+            $out[] = $this->normalize($doc);
         }
 
         return $out;

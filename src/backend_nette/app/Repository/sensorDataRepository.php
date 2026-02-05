@@ -67,9 +67,7 @@ public function findByDevice(string $deviceId): array
     $items = [];
 
     foreach ($cursor as $doc) {
-        $doc['_id'] = (string) $doc['_id'];
-        $doc['deviceId'] = (string) $doc['deviceId'];
-        $items[] = $doc;
+        $items[] = $this->normalize($doc);
     }
 
     return $items;
@@ -85,11 +83,7 @@ public function findById(string $id): ?array
         return null;
     }
 
-    $data = $doc->getArrayCopy();
-    $data['_id'] = (string) $data['_id'];
-    $data['deviceId'] = (string) $data['deviceId'];
-
-    return $data;
+    return $this->normalize($doc);
 }
 
 public function updateById(string $id, array $set): ?array
@@ -108,11 +102,7 @@ public function updateById(string $id, array $set): ?array
         return null;
     }
 
-    $data = $updated->getArrayCopy();
-    $data['_id'] = (string) $data['_id'];
-    $data['deviceId'] = (string) $data['deviceId'];
-
-    return $data;
+    return $this->normalize($updated);
 }
 
 public function deleteById(string $id): bool
@@ -148,6 +138,21 @@ public function deleteByDeviceIds(array $deviceIds): int
     }
 
     return $result->getDeletedCount();
+}
+
+private function normalize(array|\MongoDB\Model\BSONDocument $doc): array
+{
+    $data = (array) $doc;
+
+    return [
+        '_id' => (string) $data['_id'],
+        'deviceId' => isset($data['deviceId']) ? (string) $data['deviceId'] : null,
+        'timestamp' => $data['timestamp'] ?? null,
+        'temperature' => $data['temperature'] ?? null,
+        'humidity' => $data['humidity'] ?? null,
+        'illuminance' => $data['illuminance'] ?? null,
+        'doors' => $data['doors'] ?? null,
+    ];
 }
 
 }
