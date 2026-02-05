@@ -32,6 +32,8 @@ export default function Alerts({ deviceId }) {
   const [page, setPage] = useState(1);
   const [deviceThreshold, setDeviceThreshold] = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
 
   useEffect(() => {
     if (!deviceId) return;
@@ -199,9 +201,26 @@ export default function Alerts({ deviceId }) {
 
   if (alerts.length === 0) return null;
 
-  const totalItems = alerts.length;
+  const filteredAlerts = alerts.filter((a) => {
+    const ts = a.timestamp ? new Date(a.timestamp).getTime() : null;
+    if (!ts) return false;
+    if (fromDate) {
+      const fromTs = new Date(fromDate).setHours(0, 0, 0, 0);
+      if (ts < fromTs) return false;
+    }
+    if (toDate) {
+      const toTs = new Date(toDate).setHours(23, 59, 59, 999);
+      if (ts > toTs) return false;
+    }
+    return true;
+  });
+
+  const totalItems = filteredAlerts.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / perPage));
-  const pagedAlerts = alerts.slice((page - 1) * perPage, page * perPage);
+  const pagedAlerts = filteredAlerts.slice(
+    (page - 1) * perPage,
+    page * perPage
+  );
   const startIndex = totalItems === 0 ? 0 : (page - 1) * perPage + 1;
   const endIndex = Math.min(page * perPage, totalItems);
 
@@ -218,10 +237,10 @@ export default function Alerts({ deviceId }) {
           Výstrahy
         </Typography>
 
-        <Box display="flex" alignItems="center" gap={2}>
-          <Box display="flex" alignItems="center" gap={1}>
-            <Typography variant="body2">Na stránce</Typography>
-            <TextField
+          <Box display="flex" alignItems="center" gap={2} flexWrap="wrap">
+            <Box display="flex" alignItems="center" gap={1}>
+              <Typography variant="body2">Na stránce</Typography>
+              <TextField
               select
               size="small"
               value={perPage}
@@ -236,9 +255,28 @@ export default function Alerts({ deviceId }) {
                 </MenuItem>
               ))}
             </TextField>
-          </Box>
+            </Box>
 
-          <Button
+            <Box display="flex" alignItems="center" gap={1}>
+              <Typography variant="body2">Od</Typography>
+              <TextField
+                type="date"
+                size="small"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+                sx={{ minWidth: 140 }}
+              />
+              <Typography variant="body2">Do</Typography>
+              <TextField
+                type="date"
+                size="small"
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+                sx={{ minWidth: 140 }}
+              />
+            </Box>
+
+            <Button
             size="small"
             variant="outlined"
             onClick={() => setVisible((v) => !v)}
