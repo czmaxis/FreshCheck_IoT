@@ -7,6 +7,7 @@ namespace App\Repository;
 use MongoDB\Database;
 use MongoDB\BSON\ObjectId;
 use MongoDB\BSON\UTCDateTime;
+use MongoDB\Operation\FindOneAndUpdate;
 
 final class UserRepository
 {
@@ -31,7 +32,13 @@ public function findByEmail(string $email): ?array
 }
     public function findById(string $id): ?array
     {
-        return $this->collection()->findOne(['_id' => new ObjectId($id)]);
+        $user = $this->collection()->findOne(['_id' => new ObjectId($id)]);
+
+        if ($user === null) {
+            return null;
+        }
+
+        return $user->getArrayCopy();
     }
 
     public function findAll(): array
@@ -60,4 +67,23 @@ public function findByEmail(string $email): ?array
     ];
     }
 
-}  
+    public function updateById(string $id, array $set): ?array
+    {
+        if ($set === []) {
+            return $this->findById($id);
+        }
+
+        $updated = $this->collection()->findOneAndUpdate(
+            ['_id' => new ObjectId($id)],
+            ['$set' => $set],
+            ['returnDocument' => FindOneAndUpdate::RETURN_DOCUMENT_AFTER]
+        );
+
+        if ($updated === null) {
+            return null;
+        }
+
+        return $updated->getArrayCopy();
+    }
+
+}
