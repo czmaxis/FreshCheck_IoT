@@ -98,6 +98,8 @@ export default function SensorData({ deviceId }) {
   // pagination calculations
   const totalItems = data.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const startIndex = totalItems === 0 ? 0 : (page - 1) * pageSize + 1;
+  const endIndex = Math.min(page * pageSize, totalItems);
 
   useEffect(() => {
     if (page > totalPages) setPage(totalPages);
@@ -233,15 +235,47 @@ export default function SensorData({ deviceId }) {
               )}
         </Box>
 
-        {totalPages > 1 && (
-          <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-            <Pagination
-              count={totalPages}
-              page={page}
-              onChange={(_, v) => setPage(v)}
-              color="primary"
-              size="small"
-            />
+        {totalItems > 0 && (
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 1,
+              mt: 2,
+            }}
+          >
+            <Typography variant="body2" color="text.secondary">
+              Zobrazeno {startIndex}–{endIndex} z {totalItems} záznamů
+            </Typography>
+
+            {totalPages > 1 && (
+              <Box display="flex" alignItems="center" gap={1}>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  onClick={() => setPage(1)}
+                  disabled={page === 1}
+                >
+                  ⏮ První
+                </Button>
+                <Pagination
+                  count={totalPages}
+                  page={page}
+                  onChange={(_, v) => setPage(v)}
+                  color="primary"
+                  size="small"
+                />
+                <Button
+                  size="small"
+                  variant="outlined"
+                  onClick={() => setPage(totalPages)}
+                  disabled={page === totalPages}
+                >
+                  ⏭ Poslední
+                </Button>
+              </Box>
+            )}
           </Box>
         )}
       </Collapse>
