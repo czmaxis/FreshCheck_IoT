@@ -37,9 +37,14 @@ final class AlertService
     {
         return $this->alerts->findActiveByDevice($deviceId);
     }*/
-    public function resolve(string $userId, string $alertId): ?array
+public function resolve(string $userId, string $alertId): ?array
 {
     return $this->alerts->resolve($userId, $alertId);
+}
+
+public function delete(string $userId, string $alertId): bool
+{
+    return $this->alerts->deleteById($userId, $alertId);
 }
 
 

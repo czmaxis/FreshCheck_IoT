@@ -56,6 +56,21 @@ public function actionResolve(string $id): void
          $alert,
     );
 }
+
+/**
+ * POST /alerts/<id>/delete
+ */
+public function actionDelete(string $id): void
+{
+    $userId = $this->getUserIdFromJwt();
+
+    $deleted = $this->alerts->delete($userId, $id);
+    if (!$deleted) {
+        $this->error('Alert not found', 404);
+    }
+
+    $this->sendJson(['deleted' => true]);
+}
 }
 
 

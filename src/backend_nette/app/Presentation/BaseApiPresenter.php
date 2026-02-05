@@ -23,11 +23,31 @@ abstract class BaseApiPresenter extends Presenter
 
         $auth =
             $request->getHeader('Authorization')
-            ?? $_SERVER['HTTP_AUTHORIZATION']
-            ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION']
-            ?? null;
+            ?? $request->getHeader('authorization')
+            ?? ($_SERVER['HTTP_AUTHORIZATION'] ?? null)
+            ?? ($_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? null)
+            ?? ($_SERVER['Authorization'] ?? null);
 
-        if (!$auth || !preg_match('~^Bearer\s+(.+)$~', $auth, $m)) {
+        if (!$auth && function_exists('getallheaders')) {
+            $all = getallheaders();
+            foreach ($all as $key => $value) {
+                if (strtolower((string) $key) === 'authorization') {
+                    $auth = $value;
+                    break;
+                }
+            }
+        }
+
+        if (!$auth || !preg_match('~^Bearer\s+(.+)$~i', $auth, $m)) {
+            \Tracy\Debugger::log([
+                'authHeader' => $auth,
+                'serverAuth' => [
+                    'HTTP_AUTHORIZATION' => $_SERVER['HTTP_AUTHORIZATION'] ?? null,
+                    'REDIRECT_HTTP_AUTHORIZATION' => $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? null,
+                    'Authorization' => $_SERVER['Authorization'] ?? null,
+                ],
+                'headers' => function_exists('getallheaders') ? getallheaders() : null,
+            ], 'auth');
             $this->error('Unauthorized', 401);
         }
 

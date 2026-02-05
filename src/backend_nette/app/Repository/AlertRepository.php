@@ -92,6 +92,20 @@ public function resolve(string $userId, string $alertId): ?array
     return $result ? $this->normalize($result) : null;
 }
 
+public function deleteById(string $userId, string $alertId): bool
+{
+    try {
+        $result = $this->collection->deleteOne([
+            '_id' => new ObjectId($alertId),
+            'userId' => new ObjectId($userId),
+        ]);
+    } catch (\Throwable) {
+        return false;
+    }
+
+    return $result->getDeletedCount() === 1;
+}
+
 
 public function insert(array $alert): void
     {
