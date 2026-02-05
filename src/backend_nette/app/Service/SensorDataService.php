@@ -51,9 +51,63 @@ $device = $this->deviceRepository->findOneByUserAndId(
 
 
 
-    public function getByDevice(string $userId, string $deviceId): array
+public function getByDevice(string $userId, string $deviceId): array
 {
     return $this->sensorDataRepository->findByDevice($deviceId);
+}
+
+public function update(string $userId, string $sensorDataId, array $data): ?array
+{
+    $existing = $this->sensorDataRepository->findById($sensorDataId);
+    if (!$existing) {
+        return null;
+    }
+
+    $deviceId = (string) $existing['deviceId'];
+    $device = $this->deviceRepository->findOneByUserAndId($userId, $deviceId);
+    if (!$device) {
+        return null;
+    }
+
+    $set = [];
+
+    if (array_key_exists('temperature', $data)) {
+        $set['temperature'] = (float) $data['temperature'];
+    }
+    if (array_key_exists('humidity', $data)) {
+        $set['humidity'] = (int) $data['humidity'];
+    }
+    if (array_key_exists('illuminance', $data)) {
+        $set['illuminance'] = (int) $data['illuminance'];
+    }
+    if (array_key_exists('doors', $data)) {
+        $set['doors'] = (bool) $data['doors'];
+    }
+    if (array_key_exists('timestamp', $data)) {
+        $set['timestamp'] = (string) $data['timestamp'];
+    }
+
+    if ($set === []) {
+        return null;
+    }
+
+    return $this->sensorDataRepository->updateById($sensorDataId, $set);
+}
+
+public function delete(string $userId, string $sensorDataId): bool
+{
+    $existing = $this->sensorDataRepository->findById($sensorDataId);
+    if (!$existing) {
+        return false;
+    }
+
+    $deviceId = (string) $existing['deviceId'];
+    $device = $this->deviceRepository->findOneByUserAndId($userId, $deviceId);
+    if (!$device) {
+        return false;
+    }
+
+    return $this->sensorDataRepository->deleteById($sensorDataId);
 }
 
 public function ingest(array $sensorData): void

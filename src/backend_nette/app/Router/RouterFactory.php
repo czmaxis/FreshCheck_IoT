@@ -26,6 +26,8 @@ final class RouterFactory
         $router->addRoute('devices/<id>/update', 'Device:update'); 
         // SENSOR DATA
         $router->addRoute('sensordata', 'SensorData:create');
+        $router->addRoute('sensordata/<id>/update', 'SensorData:update');
+        $router->addRoute('sensordata/<id>/delete', 'SensorData:delete');
         $router->addRoute('sensordata/<deviceId>', 'SensorData:default');
         // ALERTS
         $router->addRoute('alerts/<id>/resolve', [

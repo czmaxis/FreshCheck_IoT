@@ -52,4 +52,43 @@ public function actionDefault(string $deviceId): void
           $items,
     );
 }
+
+/**
+ * POST /sensordata/<id>/update
+ */
+public function actionUpdate(string $id): void
+{
+    $userId = $this->getUserIdFromJwt();
+
+    $data = json_decode(
+        $this->getHttpRequest()->getRawBody(),
+        true
+    );
+
+    if (!is_array($data)) {
+        $this->error('Invalid JSON', 400);
+    }
+
+    $updated = $this->sensorData->update($userId, $id, $data);
+    if (!$updated) {
+        $this->error('Sensor data not found', 404);
+    }
+
+    $this->sendJson($updated);
+}
+
+/**
+ * POST /sensordata/<id>/delete
+ */
+public function actionDelete(string $id): void
+{
+    $userId = $this->getUserIdFromJwt();
+
+    $deleted = $this->sensorData->delete($userId, $id);
+    if (!$deleted) {
+        $this->error('Sensor data not found', 404);
+    }
+
+    $this->sendJson(['deleted' => true]);
+}
 }

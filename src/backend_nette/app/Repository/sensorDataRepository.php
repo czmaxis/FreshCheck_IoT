@@ -75,4 +75,57 @@ public function findByDevice(string $deviceId): array
     return $items;
 }
 
+public function findById(string $id): ?array
+{
+    $doc = $this->collection->findOne([
+        '_id' => new ObjectId($id),
+    ]);
+
+    if ($doc === null) {
+        return null;
+    }
+
+    $data = $doc->getArrayCopy();
+    $data['_id'] = (string) $data['_id'];
+    $data['deviceId'] = (string) $data['deviceId'];
+
+    return $data;
+}
+
+public function updateById(string $id, array $set): ?array
+{
+    if ($set === []) {
+        return $this->findById($id);
+    }
+
+    $updated = $this->collection->findOneAndUpdate(
+        ['_id' => new ObjectId($id)],
+        ['$set' => $set],
+        ['returnDocument' => \MongoDB\Operation\FindOneAndUpdate::RETURN_DOCUMENT_AFTER]
+    );
+
+    if ($updated === null) {
+        return null;
+    }
+
+    $data = $updated->getArrayCopy();
+    $data['_id'] = (string) $data['_id'];
+    $data['deviceId'] = (string) $data['deviceId'];
+
+    return $data;
+}
+
+public function deleteById(string $id): bool
+{
+    try {
+        $result = $this->collection->deleteOne([
+            '_id' => new ObjectId($id),
+        ]);
+    } catch (\Throwable) {
+        return false;
+    }
+
+    return $result->getDeletedCount() === 1;
+}
+
 }
