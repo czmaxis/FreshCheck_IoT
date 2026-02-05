@@ -81,7 +81,7 @@ export default function SensorData({ deviceId }) {
           setError(
             err.response?.data?.message ||
               err.message ||
-              "Chyba při načítání sensor dat."
+              "Chyba při načítání sensor dat.",
           );
       } finally {
         if (!cancelled) setLoading(false);
@@ -117,7 +117,7 @@ export default function SensorData({ deviceId }) {
   return (
     <Box p={3}>
       <Box display="flex" justifyContent="space-between" alignItems="center">
-        <Typography variant="h5">Sensor data</Typography>
+        <Typography variant="h5">Naměřená data</Typography>
 
         <Box display="flex" alignItems="center" gap={2}>
           <Box display="flex" alignItems="center" gap={1}>

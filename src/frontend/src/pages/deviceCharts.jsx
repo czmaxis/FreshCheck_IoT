@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+﻿import React, { useEffect, useMemo, useState } from "react";
 import {
   Box,
   Typography,
@@ -18,9 +18,12 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
+  ReferenceLine,
 } from "recharts";
 import { useAuth } from "../context/AuthContext.jsx";
 import { getSensorData } from "../services/sensorDataService.js";
+import { getAlerts } from "../services/alertService.js";
+import { getDevice } from "../services/deviceService.js";
 
 const RANGES = [
   { label: "1h", value: "1h" },
@@ -31,7 +34,7 @@ const RANGES = [
 ];
 function parseTimestamp(ts) {
   const d = new Date(ts);
-  d.setHours(d.getHours() + 1); //  +1 hour to temporarily fix timezone issue in CZ
+  d.setHours(d.getHours() + 1); // +1 hour to temporarily fix timezone issue in CZ
   return d;
 }
 
@@ -47,12 +50,14 @@ function formatTime(d) {
 export default function DeviceCharts({ deviceId }) {
   const { token } = useAuth();
   const [rawData, setRawData] = useState([]);
+  const [threshold, setThreshold] = useState(null);
+  const [alertTimes, setAlertTimes] = useState([]);
   const [range, setRange] = useState("24h");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [expanded, setExpanded] = useState(true);
 
-  const sorted = [...rawData].sort((a, b) => a.timestamp - b.timestamp);
+  const sorted = [...rawData].sort((a, b) => a.ts - b.ts);
   useEffect(() => {
     if (!deviceId) return;
     let cancelled = false;
@@ -62,16 +67,27 @@ export default function DeviceCharts({ deviceId }) {
       setError("");
 
       try {
-        const data = await getSensorData(deviceId, token);
+        const [data, alerts, device] = await Promise.all([
+          getSensorData(deviceId, token),
+          getAlerts(deviceId, {}, token),
+          getDevice(deviceId, token),
+        ]);
         if (cancelled) return;
 
         setRawData(
           data.map((it) => ({
-            timestamp: parseTimestamp(it.timestamp),
+            ts: parseTimestamp(it.timestamp).getTime(),
             temperature: it.temperature != null ? Number(it.temperature) : null,
             humidity: it.humidity != null ? Number(it.humidity) : null,
           }))
         );
+        setThreshold(device?.threshold ?? null);
+        const alertTs = Array.isArray(alerts)
+          ? alerts
+              .map((a) => parseTimestamp(a.timestamp).getTime())
+              .filter((t) => !Number.isNaN(t))
+          : [];
+        setAlertTimes(alertTs);
       } catch (err) {
         if (!cancelled) {
           setError(
@@ -95,7 +111,7 @@ export default function DeviceCharts({ deviceId }) {
     if (range === "all") {
       return sorted.map((d) => ({
         ...d,
-        time: formatTime(d.timestamp),
+        time: formatTime(new Date(d.ts)),
       }));
     }
 
@@ -110,16 +126,31 @@ export default function DeviceCharts({ deviceId }) {
     const from = now - diffMap[range];
 
     return sorted
-      .filter((d) => d.timestamp.getTime() >= from)
+      .filter((d) => d.ts >= from)
       .map((d) => ({
         ...d,
-        time: formatTime(d.timestamp),
+        time: formatTime(new Date(d.ts)),
       }));
   }, [sorted, range]);
 
+  const filteredAlertTimes = useMemo(() => {
+    if (alertTimes.length === 0) return [];
+    if (range === "all") return alertTimes;
+
+    const now = Date.now();
+    const diffMap = {
+      "1h": 60 * 60 * 1000,
+      "6h": 6 * 60 * 60 * 1000,
+      "24h": 24 * 60 * 60 * 1000,
+      "7d": 7 * 24 * 60 * 60 * 1000,
+    };
+    const from = now - diffMap[range];
+    return alertTimes.filter((t) => t >= from);
+  }, [alertTimes, range]);
+
   const toggle = () => setExpanded((v) => !v);
 
-  // dynamické nastavení intervalu popisků na ose X podle hustoty dat
+  // dynamic label interval based on density
   const tickInterval =
     filteredData.length > 30 ? Math.ceil(filteredData.length / 10) : 0;
 
@@ -137,7 +168,7 @@ export default function DeviceCharts({ deviceId }) {
         </Button>
       </Box>
 
-      {/* 🔹 výběr rozsahu */}
+      {/* výběr rozsahu */}
       <ButtonGroup size="small" sx={{ mt: 1 }}>
         {RANGES.map((r) => (
           <Button
@@ -160,12 +191,64 @@ export default function DeviceCharts({ deviceId }) {
 
       <Collapse in={expanded}>
         {filteredData.length > 0 ? (
-          <Box sx={{ width: "100%", height: 300, mt: 2 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={filteredData}>
+          <>
+            {(threshold?.temperature?.min != null ||
+              threshold?.temperature?.max != null ||
+              threshold?.humidity?.min != null ||
+              threshold?.humidity?.max != null) && (
+              <Box
+                sx={{
+                  mt: 2,
+                  mb: 1,
+                  p: 1.5,
+                  borderRadius: 1,
+                  border: "1px solid #e0e0e0",
+                  backgroundColor: "#fafafa",
+                }}
+              >
+                <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                  Limity
+                </Typography>
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: 2,
+                  }}
+                >
+                  {threshold?.temperature?.min != null && (
+                    <Typography variant="body2">
+                      🌡 Min teplota: {threshold.temperature.min} °C
+                    </Typography>
+                  )}
+                  {threshold?.temperature?.max != null && (
+                    <Typography variant="body2">
+                      🌡 Max teplota: {threshold.temperature.max} °C
+                    </Typography>
+                  )}
+                  {threshold?.humidity?.min != null && (
+                    <Typography variant="body2">
+                      💧 Min vlhkost: {threshold.humidity.min} %
+                    </Typography>
+                  )}
+                  {threshold?.humidity?.max != null && (
+                    <Typography variant="body2">
+                      💧 Max vlhkost: {threshold.humidity.max} %
+                    </Typography>
+                  )}
+                </Box>
+              </Box>
+            )}
+
+            <Box sx={{ width: "100%", height: 300, mt: 1 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={filteredData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis
-                  dataKey="time"
+                  dataKey="ts"
+                  type="number"
+                  domain={["dataMin", "dataMax"]}
+                  tickFormatter={(v) => formatTime(new Date(v))}
                   interval={tickInterval}
                   tick={{ fontSize: 12 }}
                   height={50}
@@ -174,6 +257,13 @@ export default function DeviceCharts({ deviceId }) {
                   yAxisId="left"
                   domain={["auto", "auto"]}
                   tickFormatter={(v) => `${v}°`}
+                  axisLine={{ stroke: "#ff5722" }}
+                  tickLine={{ stroke: "#ff5722" }}
+                  label={{
+                    value: "🌡 Teplota (°C)",
+                    angle: -90,
+                    position: "insideLeft",
+                  }}
                 />
 
                 <YAxis
@@ -181,9 +271,70 @@ export default function DeviceCharts({ deviceId }) {
                   orientation="right"
                   domain={[0, 100]}
                   tickFormatter={(v) => `${v}%`}
+                  axisLine={{ stroke: "#2196f3" }}
+                  tickLine={{ stroke: "#2196f3" }}
+                  label={{
+                    value: "💧 Vlhkost (%)",
+                    angle: 90,
+                    position: "insideRight",
+                  }}
                 />
-                <Tooltip />
+                <Tooltip
+                  labelFormatter={(v) => formatTime(new Date(v))}
+                  formatter={(value, name) => {
+                    if (name.includes("Teplota")) return [`${value} °C`, name];
+                    if (name.includes("Vlhkost")) return [`${value} %`, name];
+                    return [value, name];
+                  }}
+                />
                 <Legend />
+
+                {threshold?.temperature?.max != null && (
+                  <ReferenceLine
+                    yAxisId="left"
+                    y={threshold.temperature.max}
+                    stroke="#ff8a65"
+                    strokeDasharray="4 4"
+                  />
+                )}
+                {threshold?.temperature?.min != null && (
+                  <ReferenceLine
+                    yAxisId="left"
+                    y={threshold.temperature.min}
+                    stroke="#ff8a65"
+                    strokeDasharray="4 4"
+                  />
+                )}
+                {threshold?.humidity?.max != null && (
+                  <ReferenceLine
+                    yAxisId="right"
+                    y={threshold.humidity.max}
+                    stroke="#64b5f6"
+                    strokeDasharray="4 4"
+                  />
+                )}
+                {threshold?.humidity?.min != null && (
+                  <ReferenceLine
+                    yAxisId="right"
+                    y={threshold.humidity.min}
+                    stroke="#64b5f6"
+                    strokeDasharray="4 4"
+                  />
+                )}
+
+                {filteredAlertTimes.map((t) => (
+                  <ReferenceLine
+                    key={`alert-${t}`}
+                    x={t}
+                    stroke="#ffb300"
+                    strokeDasharray="2 6"
+                    label={{
+                      value: "⚠️",
+                      position: "top",
+                    }}
+                  />
+                ))}
+
                 <Line
                   yAxisId="left"
                   type="linear"
@@ -202,9 +353,10 @@ export default function DeviceCharts({ deviceId }) {
                   dot={true}
                   connectNulls={true}
                 />
-              </LineChart>
-            </ResponsiveContainer>
-          </Box>
+                </LineChart>
+              </ResponsiveContainer>
+            </Box>
+          </>
         ) : (
           !loading && (
             <Typography sx={{ mt: 2 }}>

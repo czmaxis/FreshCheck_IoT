@@ -60,3 +60,14 @@ export async function getDevicesWithApi() {
   const resp = await api.get("/devices/");
   return resp.data;
 }
+
+export async function getDevice(deviceId, token) {
+  const res = await axios.get(`${API_BASE}/devices/${deviceId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  });
+
+  return res.data;
+}
