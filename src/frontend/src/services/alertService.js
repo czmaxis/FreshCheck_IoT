@@ -53,3 +53,27 @@ export async function resolveAlert(alertId, token) {
 
   return res.data;
 }
+
+/**
+ * 🗑 Smaže alert
+ * @param {string} alertId
+ * @param {string} token
+ */
+export async function deleteAlert(alertId, token) {
+  if (!alertId) {
+    throw new Error("alertId je povinný");
+  }
+
+  const res = await axios.post(
+    `${API_URL}/alerts/${encodeURIComponent(alertId)}/delete`,
+    {},
+    {
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    },
+  );
+
+  return res.data;
+}

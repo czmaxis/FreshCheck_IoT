@@ -1,19 +1,16 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import {
   Box,
   Typography,
-  Alert,
-  AlertTitle,
-  IconButton,
+  Chip,
   Button,
   MenuItem,
   TextField,
   Pagination,
 } from "@mui/material";
-import CloseIcon from "@mui/icons-material/Close";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
-import { getAlerts, resolveAlert } from "../services/alertService.js";
+import { getAlerts, resolveAlert, deleteAlert } from "../services/alertService.js";
 import { useAuth } from "../context/AuthContext.jsx";
 
 export default function Alerts({ deviceId }) {
@@ -49,14 +46,15 @@ export default function Alerts({ deviceId }) {
       cancelled = true;
     };
   }, [deviceId, token]);
+
   useEffect(() => {
     setPage(1);
   }, [deviceId, perPage]);
 
   const handleResolve = async (alertId) => {
     try {
-      setAlerts((prev) => prev.filter((a) => a._id !== alertId));
       await resolveAlert(alertId, token);
+      setAlerts((prev) => prev.filter((a) => a._id !== alertId));
     } catch (err) {
       setError(
         err.response?.data?.message || "Nepodařilo se vyřešit výstrahu."
@@ -64,30 +62,70 @@ export default function Alerts({ deviceId }) {
     }
   };
 
-  function getMessage(alert) {
+  const handleDelete = async (alertId) => {
+    try {
+      await deleteAlert(alertId, token);
+      setAlerts((prev) => prev.filter((a) => a._id !== alertId));
+    } catch (err) {
+      setError(err.response?.data?.message || "Nepodařilo se smazat výstrahu.");
+    }
+  };
+
+  const getTypeLabel = (alert) => {
     switch (alert.type) {
       case "humidity":
-        return `Byla překročena hranice vlhkosti ${alert.value} %`;
+        return "Vlhkost";
       case "temperature":
-        return `Byla překročena hranice teploty ${alert.value} °C`;
+        return "Teplota";
       case "door":
-        return `Dveře byly otevřené déle než ${alert.value} sekund`;
+        return "Dveře";
       default:
-        return `Došlo k překročení limitu (${alert.type})`;
+        return alert.type || "Výstraha";
     }
-  }
+  };
+
+  const getTitle = (alert) => {
+    switch (alert.type) {
+      case "humidity":
+        return "Vysoká vlhkost";
+      case "temperature":
+        return "Vysoká teplota";
+      case "door":
+        return "Dveře otevřeny";
+      default:
+        return "Výstraha";
+    }
+  };
+
+  const formatValue = (alert) => {
+    if (alert.type === "humidity") {
+      const limit =
+        alert.threshold?.humidity?.max ?? alert.threshold?.max ?? null;
+      return `💧 ${alert.value ?? "-"} %${
+        limit !== null ? ` (limit ${limit} %)` : ""
+      }`;
+    }
+    if (alert.type === "temperature") {
+      const limit =
+        alert.threshold?.temperature?.max ?? alert.threshold?.max ?? null;
+      return `🌡 ${alert.value ?? "-"} °C${
+        limit !== null ? ` (limit ${limit} °C)` : ""
+      }`;
+    }
+    if (alert.type === "door") {
+      return `🚪 ${alert.value ?? "-"} s`;
+    }
+    return `${alert.value ?? "-"}`;
+  };
 
   if (alerts.length === 0) return null;
 
-  // pagination calculations
   const totalItems = alerts.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / perPage));
-
   const pagedAlerts = alerts.slice((page - 1) * perPage, page * perPage);
 
   return (
     <Box width="100%" mb={3}>
-      {/* HLAVIČKA */}
       <Box
         p={3}
         display="flex"
@@ -131,38 +169,66 @@ export default function Alerts({ deviceId }) {
       </Box>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 1 }}>
+        <Typography color="error" sx={{ mb: 1 }}>
           {error}
-        </Alert>
+        </Typography>
       )}
 
       {visible && (
         <Box px={3}>
           {pagedAlerts.map((alert) => (
-            <Alert
+            <Box
               key={alert._id}
-              severity="warning"
-              sx={{ mb: 2 }}
-              action={
-                <IconButton
+              sx={{
+                mb: 2,
+                p: 2,
+                borderRadius: 2,
+                border: "1px solid #f2c2a2",
+                backgroundColor: "#fff7f0",
+              }}
+            >
+              <Box display="flex" alignItems="center" gap={1} mb={1}>
+                <Typography variant="subtitle1" fontWeight={600}>
+                  ⚠️ {getTitle(alert)}
+                </Typography>
+                <Chip
                   size="small"
-                  color="inherit"
+                  label={getTypeLabel(alert)}
+                  sx={{
+                    backgroundColor: "#ffe2cc",
+                    color: "#7a3b00",
+                    fontWeight: 600,
+                  }}
+                />
+              </Box>
+
+              <Typography sx={{ mb: 0.5 }}>{formatValue(alert)}</Typography>
+              <Typography variant="body2" color="text.secondary">
+                🕒 {new Date(alert.timestamp).toLocaleString("cs-CZ")}
+              </Typography>
+
+              <Box display="flex" gap={1.5} mt={1.5}>
+                <Button
+                  variant="contained"
+                  size="small"
                   onClick={() => handleResolve(alert._id)}
                 >
-                  <CloseIcon fontSize="inherit" />
-                </IconButton>
-              }
-            >
-              <AlertTitle>Výstraha</AlertTitle>
-              {getMessage(alert)}
-              <br />
-              <small>
-                Čas: {new Date(alert.timestamp).toLocaleString("cs-CZ")}
-              </small>
-            </Alert>
+                  Potvrdit
+                </Button>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  color="error"
+                  onClick={() => handleDelete(alert._id)}
+                >
+                  smazat
+                </Button>
+              </Box>
+            </Box>
           ))}
         </Box>
       )}
+
       {visible && totalPages > 1 && (
         <Box
           sx={{
@@ -181,6 +247,7 @@ export default function Alerts({ deviceId }) {
           />
         </Box>
       )}
+
       {!visible && (
         <Typography variant="body2" color="text.secondary">
           Výstrahy jsou skryté.

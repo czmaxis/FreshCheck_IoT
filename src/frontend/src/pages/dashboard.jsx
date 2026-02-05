@@ -21,6 +21,8 @@ import {
   updateDevice,
   createDevice,
 } from "../services/deviceService.js";
+import { getSensorData } from "../services/sensorDataService.js";
+import { getAlerts } from "../services/alertService.js";
 
 import SensorData from "./sensorData.jsx";
 import DeviceCharts from "./deviceCharts.jsx";
@@ -31,6 +33,11 @@ export default function Dashboard() {
   const { user, token } = useAuth();
   const [devices, setDevices] = useState([]);
   const [error, setError] = useState("");
+  const [summary, setSummary] = useState({
+    latest: null,
+    activeAlerts: 0,
+    loading: false,
+  });
 
   // devices menu state
   const [anchorEl, setAnchorEl] = useState(null);
@@ -59,6 +66,21 @@ export default function Dashboard() {
 
   const selectedDevice = devices.find((d) => d._id === selectedDeviceId);
 
+  const formatRelativeTime = (iso) => {
+    if (!iso) return "-";
+    const ts = new Date(iso);
+    if (Number.isNaN(ts.getTime())) return "-";
+    const diffMs = Date.now() - ts.getTime();
+    const diffSec = Math.max(0, Math.floor(diffMs / 1000));
+    if (diffSec < 60) return "před chvílí";
+    const diffMin = Math.floor(diffSec / 60);
+    if (diffMin < 60) return `před ${diffMin} minutami`;
+    const diffHours = Math.floor(diffMin / 60);
+    if (diffHours < 24) return `před ${diffHours} hodinami`;
+    const diffDays = Math.floor(diffHours / 24);
+    return `před ${diffDays} dny`;
+  };
+
   useEffect(() => {
     async function load() {
       try {
@@ -72,13 +94,46 @@ export default function Dashboard() {
       } catch (err) {
         console.error("Chyba při načítání zařízení:", err);
         setError(
-          err.response?.data?.message || "Nepodařilo se načíst zařízení."
+          err.response?.data?.message || "Nepodařilo se načíst zařízení.",
         );
       }
     }
 
     load();
   }, [token]);
+
+  useEffect(() => {
+    async function loadSummary() {
+      if (!selectedDeviceId) {
+        setSummary({ latest: null, activeAlerts: 0, loading: false });
+        return;
+      }
+
+      try {
+        setSummary((s) => ({ ...s, loading: true }));
+        const [dataItems, activeAlerts] = await Promise.all([
+          getSensorData(selectedDeviceId, token),
+          getAlerts(selectedDeviceId, { active: true }, token),
+        ]);
+
+        const latest =
+          Array.isArray(dataItems) && dataItems.length > 0
+            ? dataItems[0]
+            : null;
+
+        setSummary({
+          latest,
+          activeAlerts: Array.isArray(activeAlerts) ? activeAlerts.length : 0,
+          loading: false,
+        });
+      } catch (err) {
+        console.error("Chyba při načítání přehledu:", err);
+        setSummary({ latest: null, activeAlerts: 0, loading: false });
+      }
+    }
+
+    loadSummary();
+  }, [selectedDeviceId, token]);
 
   const handleOpenMenu = (event) => {
     setAnchorEl(event.currentTarget);
@@ -164,7 +219,7 @@ export default function Dashboard() {
       const res = await updateDevice(selectedDeviceId, payload, token);
 
       setDevices((prev) =>
-        prev.map((d) => (d._id === selectedDeviceId ? res.device : d))
+        prev.map((d) => (d._id === selectedDeviceId ? res.device : d)),
       );
 
       // reset formuláře
@@ -178,7 +233,7 @@ export default function Dashboard() {
     } catch (err) {
       console.error("Chyba při ukládání limitů:", err);
       setError(
-        err.response?.data?.message || "Nepodařilo se uložit limity zařízení."
+        err.response?.data?.message || "Nepodařilo se uložit limity zařízení.",
       );
     }
   };
@@ -209,7 +264,7 @@ export default function Dashboard() {
     } catch (err) {
       console.error("Chyba při vytváření zařízení:", err);
       setError(
-        err.response?.data?.message || "Nepodařilo se vytvořit nové zařízení."
+        err.response?.data?.message || "Nepodařilo se vytvořit nové zařízení.",
       );
     }
   };
@@ -229,6 +284,38 @@ export default function Dashboard() {
         minHeight="100vh"
         p={2}
       >
+        <Box
+          width="100%"
+          maxWidth="900px"
+          mt={2}
+          mb={2}
+          p={2}
+          borderRadius={2}
+          sx={{ backgroundColor: "#f7f7f7", border: "1px solid #e0e0e0" }}
+        >
+          <Typography variant="subtitle1" sx={{ mb: 1 }}>
+            Přehled posledních dat
+          </Typography>
+          <Stack spacing={0.5}>
+            <Typography>
+              {summary.activeAlerts > 0 ? "🔴" : "🟢"} Stav zařízení:{" "}
+              {summary.activeAlerts > 0 ? "Pozor" : "OK"}
+            </Typography>
+            <Typography>🔴 Aktivní výstrahy: {summary.activeAlerts}</Typography>
+            <Typography>
+              🌡 Poslední teplota: {summary.latest?.temperature ?? "-"} °C
+            </Typography>
+            <Typography>
+              💧 Poslední vlhkost: {summary.latest?.humidity ?? "-"} %
+            </Typography>
+            <Typography>
+              🕒 Poslední data:{" "}
+              {summary.latest?.timestamp
+                ? formatRelativeTime(summary.latest.timestamp)
+                : "-"}
+            </Typography>
+          </Stack>
+        </Box>
         <Box mt={3} display="flex" alignItems="center" gap={1}>
           <Typography variant="h6">Zařízení:</Typography>
 
