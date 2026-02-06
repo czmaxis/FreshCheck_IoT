@@ -2,6 +2,7 @@
 import { Box, Typography, Stack, TextField, MenuItem } from "@mui/material";
 import { getSensorData } from "../services/sensorDataService.js";
 import { getAlerts } from "../services/alertService.js";
+import { getDevice } from "../services/deviceService.js";
 
 const RANGES = [
   { label: "1h", value: "1h" },
@@ -18,6 +19,7 @@ export default function DashboardSummary({ deviceId, token }) {
     activeAlerts: 0,
     loading: false,
   });
+  const [deviceThreshold, setDeviceThreshold] = useState(null);
   const [dataItems, setDataItems] = useState([]);
   const [range, setRange] = useState("24h");
 
@@ -31,15 +33,17 @@ export default function DashboardSummary({ deviceId, token }) {
 
       try {
         setSummary((s) => ({ ...s, loading: true }));
-        const [data, activeAlerts] = await Promise.all([
+        const [data, activeAlerts, device] = await Promise.all([
           getSensorData(deviceId, token),
           getAlerts(deviceId, { active: true }, token),
+          getDevice(deviceId, token),
         ]);
 
         const items = Array.isArray(data) ? data : [data];
         const latest = items.length > 0 ? items[0] : null;
 
         setDataItems(items);
+        setDeviceThreshold(device?.threshold ?? null);
         setSummary({
           latest,
           activeAlerts: Array.isArray(activeAlerts) ? activeAlerts.length : 0,
@@ -49,11 +53,48 @@ export default function DashboardSummary({ deviceId, token }) {
         console.error("Chyba při načítání přehledu:", err);
         setSummary({ latest: null, activeAlerts: 0, loading: false });
         setDataItems([]);
+        setDeviceThreshold(null);
       }
     }
 
     loadSummary();
   }, [deviceId, token]);
+
+  const limitsText = useMemo(() => {
+    if (!deviceThreshold) return "-";
+
+    const parts = [];
+    const tMin = deviceThreshold?.temperature?.min;
+    const tMax = deviceThreshold?.temperature?.max;
+    if (tMin != null || tMax != null) {
+      const tText =
+        tMin != null && tMax != null
+          ? `${tMin}–${tMax} °C`
+          : tMin != null
+            ? `≥ ${tMin} °C`
+            : `≤ ${tMax} °C`;
+      parts.push(`Teplota ${tText}`);
+    }
+
+    const hMin = deviceThreshold?.humidity?.min;
+    const hMax = deviceThreshold?.humidity?.max;
+    if (hMin != null || hMax != null) {
+      const hText =
+        hMin != null && hMax != null
+          ? `${hMin}–${hMax} %`
+          : hMin != null
+            ? `≥ ${hMin} %`
+            : `≤ ${hMax} %`;
+      parts.push(`Vlhkost ${hText}`);
+    }
+
+    const doorLimit = deviceThreshold?.doorOpenMaxSeconds;
+    if (doorLimit != null) {
+      parts.push(`Dveře max ${doorLimit} s`);
+    }
+
+    return parts.length > 0 ? parts.join(" • ") : "-";
+  }, [deviceThreshold]);
 
   const filteredData = useMemo(() => {
     if (!dataItems || dataItems.length === 0) return [];
@@ -255,6 +296,18 @@ export default function DashboardSummary({ deviceId, token }) {
           Načítám přehled…
         </Typography>
       )}
+
+      <Box
+        sx={{
+          mt: 1.5,
+          pt: 1,
+          borderTop: "1px dashed #ddd",
+        }}
+      >
+        <Typography variant="body2" color="text.secondary">
+          Limity: {limitsText}
+        </Typography>
+      </Box>
     </Box>
   );
 }
