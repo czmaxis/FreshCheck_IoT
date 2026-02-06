@@ -44,6 +44,7 @@ export default function Dashboard() {
 
   // dialog state for limits
   const [limitsOpen, setLimitsOpen] = useState(false);
+  const [limitsError, setLimitsError] = useState("");
   const [maxTemp, setMaxTemp] = useState("");
   const [minTemp, setMinTemp] = useState("");
   const [maxHumidity, setMaxHumidity] = useState("");
@@ -169,6 +170,7 @@ export default function Dashboard() {
       setMinHumidity("");
     }
 
+    setLimitsError("");
     setLimitsOpen(true);
   };
 
@@ -202,6 +204,7 @@ export default function Dashboard() {
 
     try {
       setLimitsSaving(true);
+      setLimitsError("");
       const payload = { threshold };
 
       const res = await updateDevice(selectedDeviceId, payload, token);
@@ -221,7 +224,7 @@ export default function Dashboard() {
       setLimitsOpen(false);
     } catch (err) {
       console.error("Chyba při ukládání limitů:", err);
-      setError(
+      setLimitsError(
         err.response?.data?.message || "Nepodařilo se uložit limity zařízení.",
       );
     } finally {
@@ -418,6 +421,11 @@ export default function Dashboard() {
         >
           <DialogTitle>Nastavit limity pro zařízení</DialogTitle>
           <DialogContent>
+            {limitsError && (
+              <Typography color="error" sx={{ mb: 1 }}>
+                {limitsError}
+              </Typography>
+            )}
             {limitsSaving ? (
               <Stack spacing={2} sx={{ mt: 1 }}>
                 <LimitsSkeleton lines={5} />
