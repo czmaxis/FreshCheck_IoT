@@ -10,14 +10,10 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  ButtonGroup,
 } from "@mui/material";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import "dayjs/locale/cs";
 import dayjs from "dayjs";
-import DateRangeSingleCalendar from "../components/DateRangeSingleCalendar.jsx";
 import AlertCard from "../components/AlertCard.jsx";
+import AlertFilters from "../components/AlertFilters.jsx";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import {
@@ -41,16 +37,6 @@ export default function Alerts({ deviceId }) {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [dateRange, setDateRange] = useState([null, null]);
-
-  const QUICK_RANGES = [
-    { label: "1h", value: "1h" },
-    { label: "6h", value: "6h" },
-    { label: "24h", value: "24h" },
-    { label: "Včera", value: "yesterday" },
-    { label: "Tento týden", value: "thisWeek" },
-    { label: "7d", value: "7d" },
-    { label: "Vše", value: "all" },
-  ];
 
   useEffect(() => {
     if (!deviceId) return;
@@ -219,22 +205,11 @@ export default function Alerts({ deviceId }) {
         </Typography>
 
         <Box display="flex" alignItems="center" gap={2} flexWrap="wrap">
-          <ButtonGroup size="small" variant="outlined">
-            {QUICK_RANGES.map((r) => (
-              <Button key={r.value} onClick={() => applyQuickRange(r.value)}>
-                {r.label}
-              </Button>
-            ))}
-          </ButtonGroup>
-
-          <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="cs">
-            <DateRangeSingleCalendar
-              value={dateRange}
-              onChange={setDateRange}
-              label="Od–do"
-              size="small"
-            />
-          </LocalizationProvider>
+          <AlertFilters
+            dateRange={dateRange}
+            onDateRangeChange={setDateRange}
+            onQuickRange={applyQuickRange}
+          />
 
           <Box display="flex" alignItems="center" gap={1}>
             <Typography variant="body2">Na stránce</Typography>

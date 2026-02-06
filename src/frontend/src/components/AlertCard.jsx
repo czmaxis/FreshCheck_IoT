@@ -127,15 +127,7 @@ export default function AlertCard({ alert, deviceThreshold = null, actions }) {
         <Typography variant="subtitle1" fontWeight={600}>
           ⚠️ {getTitle(alert, deviceThreshold)}
         </Typography>
-        <Chip
-          size="small"
-          label={getTypeLabel(alert)}
-          sx={{
-            backgroundColor: isActive ? "#ffe2cc" : "#e0e0e0",
-            color: isActive ? "#7a3b00" : "#424242",
-            fontWeight: 600,
-          }}
-        />
+
         {!isActive && (
           <Chip
             size="small"
@@ -156,7 +148,11 @@ export default function AlertCard({ alert, deviceThreshold = null, actions }) {
         🕒 {new Date(alert.timestamp).toLocaleString("cs-CZ")}
       </Typography>
 
-      {actions ? <Box display="flex" gap={1.5} mt={1.5}>{actions}</Box> : null}
+      {actions ? (
+        <Box display="flex" gap={1.5} mt={1.5}>
+          {actions}
+        </Box>
+      ) : null}
     </Box>
   );
 }
