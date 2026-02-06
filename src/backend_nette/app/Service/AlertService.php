@@ -29,7 +29,8 @@ final class AlertService
             $userId,
             $data['deviceId'],
             $data['type'],
-            $data['value']
+            $data['value'],
+            $data['alertTreshold'] ?? null
         );
     }
 /*
@@ -76,11 +77,19 @@ public function evaluate(array $device, array $sensorData): void
         $max   = (float) $threshold['temperature']['max'];
 
         if ($value < $min || $value > $max) {
+            $alertTreshold = [
+                'temperature' => [
+                    'min' => $threshold['temperature']['min'],
+                    'max' => $threshold['temperature']['max'],
+                ],
+                'humidity' => $threshold['humidity'] ?? null,
+            ];
             $this->alerts->insert([
                 'deviceId'   => new \MongoDB\BSON\ObjectId($device['_id']),
                 'userId'     => new \MongoDB\BSON\ObjectId($device['ownerId']),
                 'type'       => 'temperature',
                 'value'      => $value,
+                'alertTreshold' => $alertTreshold,
                 'active'     => true,
                 'timestamp'  => $timestamp,
                 'resolvedAt' => null,
@@ -98,11 +107,19 @@ public function evaluate(array $device, array $sensorData): void
         $max   = (float) $threshold['humidity']['max'];
 
         if ($value < $min || $value > $max) {
+            $alertTreshold = [
+                'temperature' => $threshold['temperature'] ?? null,
+                'humidity' => [
+                    'min' => $threshold['humidity']['min'],
+                    'max' => $threshold['humidity']['max'],
+                ],
+            ];
             $this->alerts->insert([
                 'deviceId'   => new \MongoDB\BSON\ObjectId($device['_id']),
                 'userId'     => new \MongoDB\BSON\ObjectId($device['ownerId']),
                 'type'       => 'humidity',
                 'value'      => $value,
+                'alertTreshold' => $alertTreshold,
                 'active'     => true,
                 'timestamp'  => $timestamp,
                 'resolvedAt' => null,
@@ -125,7 +142,7 @@ private function createAlert(
         'userId'     => new \MongoDB\BSON\ObjectId($userId),
         'type'       => $type,
         'value'      => $value,
-        'threshold'  => $threshold,
+        'alertTreshold' => $threshold,
         'active'     => true,
         'timestamp'  => $now->format(\DATE_ATOM),
         'resolvedAt' => null,

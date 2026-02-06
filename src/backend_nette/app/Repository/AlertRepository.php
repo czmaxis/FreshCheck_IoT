@@ -23,7 +23,8 @@ final class AlertRepository
         string $userId,
         string $deviceId,
         string $type,
-        $value
+        $value,
+        ?array $alertTreshold = null
     ): array {
         $doc = [
             'userId'     => new ObjectId($userId),
@@ -34,6 +35,9 @@ final class AlertRepository
             'timestamp'  => new \DateTimeImmutable(),
             'resolvedAt' => null,
         ];
+        if ($alertTreshold !== null) {
+            $doc['alertTreshold'] = $alertTreshold;
+        }
 
         $result = $this->collection->insertOne($doc);
 
@@ -136,6 +140,7 @@ private function normalize(array|\MongoDB\Model\BSONDocument $doc): array
         'userId'     => isset($data['userId']) ? (string) $data['userId'] : null,
         'type'       => $data['type'] ?? null,
         'value'      => $data['value'] ?? null,
+        'alertTreshold' => $data['alertTreshold'] ?? null,
         'active'     => (bool) ($data['active'] ?? false),
         'timestamp'  => $data['timestamp'] ?? null,
         'resolvedAt' => $data['resolvedAt'] ?? null,
