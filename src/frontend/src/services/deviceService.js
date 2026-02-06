@@ -56,6 +56,17 @@ export async function createDevice(payload, token) {
 
   return res.data;
 }
+
+export async function deleteDevice(deviceId, token) {
+  const res = await axios.delete(`${API_BASE}/devices/${deviceId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  });
+
+  return res.data;
+}
 export async function getDevicesWithApi() {
   const resp = await api.get("/devices/");
   return resp.data;

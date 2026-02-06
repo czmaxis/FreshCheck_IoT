@@ -20,6 +20,7 @@ import {
   getDevices,
   updateDevice,
   createDevice,
+  deleteDevice,
 } from "../services/deviceService.js";
 
 import SensorData from "./sensorData.jsx";
@@ -54,6 +55,11 @@ export default function Dashboard() {
   const [newName, setNewName] = useState("");
   const [newLocation, setNewLocation] = useState("");
   const [newType, setNewType] = useState("");
+  const [editOpen, setEditOpen] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editLocation, setEditLocation] = useState("");
+  const [removeOpen, setRemoveOpen] = useState(false);
+  const [removeBusy, setRemoveBusy] = useState(false);
 
   // selected device id
   const [selectedDeviceId, setSelectedDeviceId] = useState(null);
@@ -124,6 +130,25 @@ export default function Dashboard() {
     }
     if (action === "add") {
       setAddOpen(true);
+    }
+    if (action === "edit") {
+      if (!selectedDeviceId) {
+        setError("Nejprve vyberte zařízení k úpravě.");
+        return;
+      }
+
+      const current =
+        devices.find((d) => d._id === selectedDeviceId) || null;
+      setEditName(current?.name || "");
+      setEditLocation(current?.location || "");
+      setEditOpen(true);
+    }
+    if (action === "remove") {
+      if (!selectedDeviceId) {
+        setError("Nejprve vyberte zařízení k odebrání.");
+        return;
+      }
+      setRemoveOpen(true);
     }
   };
 
@@ -219,6 +244,60 @@ export default function Dashboard() {
     setAddOpen(false);
   };
 
+  const handleEditCancel = () => {
+    setEditOpen(false);
+  };
+
+  const handleEditConfirm = async () => {
+    if (!selectedDeviceId) return;
+    if (!editName.trim()) {
+      setError("Vyplňte název zařízení.");
+      return;
+    }
+
+    try {
+      const payload = {
+        name: editName.trim(),
+        location: editLocation.trim(),
+      };
+      const res = await updateDevice(selectedDeviceId, payload, token);
+      setDevices((prev) =>
+        prev.map((d) => (d._id === selectedDeviceId ? res.device : d)),
+      );
+      setEditOpen(false);
+    } catch (err) {
+      console.error("Chyba při úpravě zařízení:", err);
+      setError(
+        err.response?.data?.message || "Nepodařilo se upravit zařízení.",
+      );
+    }
+  };
+
+  const handleRemoveCancel = () => {
+    if (!removeBusy) setRemoveOpen(false);
+  };
+
+  const handleRemoveConfirm = async () => {
+    if (!selectedDeviceId || removeBusy) return;
+    setRemoveBusy(true);
+    try {
+      await deleteDevice(selectedDeviceId, token);
+      setDevices((prev) => {
+        const next = prev.filter((d) => d._id !== selectedDeviceId);
+        setSelectedDeviceId(next.length > 0 ? next[0]._id : null);
+        return next;
+      });
+      setRemoveOpen(false);
+    } catch (err) {
+      console.error("Chyba při odebrání zařízení:", err);
+      setError(
+        err.response?.data?.message || "Nepodařilo se odebrat zařízení.",
+      );
+    } finally {
+      setRemoveBusy(false);
+    }
+  };
+
   return (
     <>
       <NavBar />
@@ -230,8 +309,6 @@ export default function Dashboard() {
         minHeight="100vh"
         p={2}
       >
-        <DashboardSummary deviceId={selectedDeviceId} token={token} />
-
         <Box mt={3} display="flex" alignItems="center" gap={1}>
           <Typography variant="h6">Zařízení:</Typography>
 
@@ -280,8 +357,15 @@ export default function Dashboard() {
             <MenuItem onClick={() => handleSettingsSelect("add")}>
               Přidat zařízení
             </MenuItem>
+            <MenuItem onClick={() => handleSettingsSelect("edit")}>
+              Upravit zařízení
+            </MenuItem>
+            <MenuItem onClick={() => handleSettingsSelect("remove")}>
+              Odebrat zařízení
+            </MenuItem>
           </Menu>
         </Box>
+        <DashboardSummary deviceId={selectedDeviceId} token={token} />
         <p />
         {selectedDeviceId && (
           <Alerts deviceId={selectedDeviceId} sx={{ mb: 2, mt: 2 }} />
@@ -394,6 +478,66 @@ export default function Dashboard() {
             <Button onClick={handleAddCancel}>Zrušit</Button>
             <Button variant="contained" onClick={handleAddConfirm}>
               Přidat
+            </Button>
+          </DialogActions>
+        </Dialog>
+        <Dialog
+          open={editOpen}
+          onClose={handleEditCancel}
+          maxWidth="xs"
+          fullWidth
+        >
+          <DialogTitle>Upravit zařízení</DialogTitle>
+          <DialogContent>
+            <Stack spacing={2} sx={{ mt: 1 }}>
+              <TextField
+                label="Název zařízení"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                fullWidth
+              />
+              <TextField
+                label="Lokace"
+                value={editLocation}
+                onChange={(e) => setEditLocation(e.target.value)}
+                fullWidth
+              />
+            </Stack>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleEditCancel}>Zrušit</Button>
+            <Button variant="contained" onClick={handleEditConfirm}>
+              Uložit
+            </Button>
+          </DialogActions>
+        </Dialog>
+        <Dialog
+          open={removeOpen}
+          onClose={handleRemoveCancel}
+          maxWidth="xs"
+          fullWidth
+        >
+          <DialogTitle>Odebrat zařízení</DialogTitle>
+          <DialogContent>
+            <Typography variant="body2" sx={{ mt: 1 }}>
+              Opravdu chcete odebrat zařízení{" "}
+              <strong>
+                {devices.find((d) => d._id === selectedDeviceId)?.name || "-"}
+              </strong>
+              ?
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleRemoveCancel} disabled={removeBusy}>
+              Zrušit
+            </Button>
+            <Button
+              variant="contained"
+              color="error"
+              onClick={handleRemoveConfirm}
+              disabled={removeBusy}
+            >
+              Odebrat
             </Button>
           </DialogActions>
         </Dialog>

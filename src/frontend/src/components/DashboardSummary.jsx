@@ -212,7 +212,10 @@ export default function DashboardSummary({ deviceId, token }) {
             {summary.activeAlerts > 0 ? "🔴" : "🟢"} Stav zařízení:{" "}
             {summary.activeAlerts > 0 ? "Pozor" : "OK"}
           </Typography>
-          <Typography>🔴 Aktivní výstrahy: {summary.activeAlerts}</Typography>
+          <Typography>
+            {summary.activeAlerts > 0 ? "🔴" : "🟢"} Aktivní výstrahy:{" "}
+            {summary.activeAlerts}
+          </Typography>
           <Typography>
             🌡 Poslední teplota: {summary.latest?.temperature ?? "-"} °C
           </Typography>
