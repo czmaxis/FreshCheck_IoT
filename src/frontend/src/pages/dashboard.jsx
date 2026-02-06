@@ -24,6 +24,7 @@ import {
   updateDevice,
   createDevice,
   deleteDevice,
+  getDevice,
 } from "../services/deviceService.js";
 
 import SensorData from "./sensorData.jsx";
@@ -31,7 +32,6 @@ import DeviceCharts from "./deviceCharts.jsx";
 import NavBar from "./navBar.jsx";
 import Alerts from "./alerts.jsx";
 import DashboardSummary from "../components/DashboardSummary.jsx";
-
 export default function Dashboard() {
   const { user, token } = useAuth();
   const [devices, setDevices] = useState([]);
@@ -64,6 +64,7 @@ export default function Dashboard() {
   const [selectedDeviceId, setSelectedDeviceId] = useState(null);
 
   const selectedDevice = devices.find((d) => d._id === selectedDeviceId);
+  const [summaryDeviceThreshold, setSummaryDeviceThreshold] = useState(null);
 
   useEffect(() => {
     async function load() {
@@ -86,6 +87,33 @@ export default function Dashboard() {
     load();
   }, [token]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadThreshold() {
+      if (!selectedDeviceId) {
+        setSummaryDeviceThreshold(null);
+        return;
+      }
+
+      try {
+        const device = await getDevice(selectedDeviceId, token);
+        if (!cancelled) {
+          setSummaryDeviceThreshold(device?.threshold ?? null);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setSummaryDeviceThreshold(null);
+        }
+      }
+    }
+
+    loadThreshold();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedDeviceId, token]);
+
   const handleSelectDevice = (deviceId) => {
     setSelectedDeviceId(deviceId);
   };
@@ -98,26 +126,6 @@ export default function Dashboard() {
 
   const handleSettingsSelect = (action) => {
     handleCloseSettings();
-    if (action === "limits") {
-      if (selectedDevice?.threshold) {
-        const t = selectedDevice?.threshold;
-
-        setMaxTemp(t?.temperature?.max ?? "");
-        setMinTemp(t?.temperature?.min ?? "");
-        setMaxHumidity(t?.humidity?.max ?? "");
-        setMinHumidity(t?.humidity?.min ?? "");
-        setOpenTime(t?.doorOpenMaxSeconds ?? "");
-        setOpenTime(selectedDevice.threshold.doorOpenMaxSeconds ?? "");
-      } else {
-        setMaxTemp("");
-        setMinTemp("");
-        setMaxHumidity("");
-        setMinHumidity("");
-        setOpenTime("");
-      }
-
-      setLimitsOpen(true);
-    }
     if (action === "add") {
       setAddOpen(true);
     }
@@ -139,6 +147,30 @@ export default function Dashboard() {
       }
       setRemoveOpen(true);
     }
+  };
+
+  const openLimitsDialog = () => {
+    if (!selectedDeviceId) {
+      setError("Nejprve vyberte zařízení pro nastavení limitů.");
+      return;
+    }
+
+    const t = summaryDeviceThreshold ?? selectedDevice?.threshold ?? null;
+    if (t) {
+      setMaxTemp(t?.temperature?.max ?? "");
+      setMinTemp(t?.temperature?.min ?? "");
+      setMaxHumidity(t?.humidity?.max ?? "");
+      setMinHumidity(t?.humidity?.min ?? "");
+      setOpenTime(t?.doorOpenMaxSeconds ?? "");
+    } else {
+      setMaxTemp("");
+      setMinTemp("");
+      setMaxHumidity("");
+      setMinHumidity("");
+      setOpenTime("");
+    }
+
+    setLimitsOpen(true);
   };
 
   const handleLimitsConfirm = async () => {
@@ -337,12 +369,9 @@ export default function Dashboard() {
             anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
             transformOrigin={{ vertical: "top", horizontal: "right" }}
           >
-            <MenuItem onClick={() => handleSettingsSelect("limits")}>
-              Nastavit limity
-            </MenuItem>
-            <MenuItem onClick={() => handleSettingsSelect("edit")}>
-              Upravit zařízení
-            </MenuItem>
+          <MenuItem onClick={() => handleSettingsSelect("edit")}>
+            Upravit zařízení
+          </MenuItem>
             <MenuItem onClick={() => handleSettingsSelect("add")}>
               Přidat zařízení
             </MenuItem>
@@ -351,7 +380,11 @@ export default function Dashboard() {
             </MenuItem>
           </Menu>
         </Box>
-        <DashboardSummary deviceId={selectedDeviceId} token={token} />
+        <DashboardSummary
+          deviceId={selectedDeviceId}
+          token={token}
+          onOpenLimits={openLimitsDialog}
+        />
         <p />
         {selectedDeviceId && (
           <Alerts deviceId={selectedDeviceId} sx={{ mb: 2, mt: 2 }} />

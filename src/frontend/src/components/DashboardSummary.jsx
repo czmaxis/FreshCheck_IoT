@@ -1,5 +1,5 @@
 ﻿import React, { useEffect, useMemo, useState } from "react";
-import { Box, Typography, Stack, TextField, MenuItem } from "@mui/material";
+import { Box, Typography, Stack, TextField, MenuItem, Button } from "@mui/material";
 import { getSensorData } from "../services/sensorDataService.js";
 import { getAlerts } from "../services/alertService.js";
 import { getDevice } from "../services/deviceService.js";
@@ -13,7 +13,7 @@ const RANGES = [
   { label: "Vše", value: "all" },
 ];
 
-export default function DashboardSummary({ deviceId, token }) {
+export default function DashboardSummary({ deviceId, token, onOpenLimits }) {
   const [summary, setSummary] = useState({
     latest: null,
     activeAlerts: 0,
@@ -302,11 +302,23 @@ export default function DashboardSummary({ deviceId, token }) {
           mt: 1.5,
           pt: 1,
           borderTop: "1px dashed #ddd",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 2,
         }}
       >
         <Typography variant="body2" color="text.secondary">
           Limity: {limitsText}
         </Typography>
+        <Button
+          size="small"
+          variant="outlined"
+          onClick={onOpenLimits}
+          disabled={!deviceId}
+        >
+          Nastavit limity
+        </Button>
       </Box>
     </Box>
   );

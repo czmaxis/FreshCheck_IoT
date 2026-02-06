@@ -205,7 +205,7 @@ export default function DeviceCharts({ deviceId }) {
         flexWrap="wrap"
         gap={2}
       >
-        <Typography variant="h6">Grafy (teplota / vlhkost)</Typography>
+        <Typography variant="h5">Grafy (teplota / vlhkost)</Typography>
 
         <Box display="flex" alignItems="center" gap={2} flexWrap="wrap">
           <ButtonGroup size="small">
