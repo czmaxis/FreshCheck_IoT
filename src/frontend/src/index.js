@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext.jsx";
+import "./services/axiosSetup.js";
 import Login from "./pages/login.jsx";
 import Register from "./pages/register.jsx";
 import Dashboard from "./pages/dashboard.jsx";

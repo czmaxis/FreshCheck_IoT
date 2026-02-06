@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { onLogout } from "../services/authEvents.js";
 
 const AuthContext = createContext(null);
 
@@ -23,11 +24,20 @@ export function AuthProvider({ children }) {
     localStorage.setItem("user", JSON.stringify(user));
   };
 
-  const logoutContext = () => {
+  const logoutContext = (redirect = true) => {
     setToken(null);
     setUser(null);
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    if (redirect) {
+      try {
+        if (window.location.pathname !== "/login") {
+          window.location.assign("/login");
+        }
+      } catch (e) {
+        // no-op
+      }
+    }
   };
 
   const updateUserContext = (updatedUser) => {
@@ -44,6 +54,11 @@ export function AuthProvider({ children }) {
 
     setUser: updateUserContext,
   };
+
+  useEffect(() => {
+    const unsubscribe = onLogout(() => logoutContext(true));
+    return () => unsubscribe();
+  }, []);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

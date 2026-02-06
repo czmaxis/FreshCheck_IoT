@@ -1,4 +1,5 @@
 import axios from "axios";
+import { setupAxiosAuth } from "./axiosSetup.js";
 
 const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:8000";
 
@@ -18,6 +19,7 @@ export const api = axios.create({
   baseURL: API_BASE,
   headers: { "Content-Type": "application/json" },
 });
+setupAxiosAuth(api);
 
 // Volitelně: interceptor, který přidá Authorization header z localStorage
 api.interceptors.request.use((config) => {
