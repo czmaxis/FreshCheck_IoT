@@ -8,10 +8,14 @@ import {
   Button,
   Stack,
   Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import { useAuth } from "../context/AuthContext.jsx";
 import NavBar from "./navBar.jsx";
-import { updateUser } from "../services/authService.js";
+import { updateUser, changePassword } from "../services/authService.js";
 
 export default function Profile() {
   const { user, token, setUser } = useAuth();
@@ -21,6 +25,12 @@ export default function Profile() {
   const [email, setEmail] = useState(user?.email || "");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [pwdOpen, setPwdOpen] = useState(false);
+  const [pwdOld, setPwdOld] = useState("");
+  const [pwdNew, setPwdNew] = useState("");
+  const [pwdNewConfirm, setPwdNewConfirm] = useState("");
+  const [pwdError, setPwdError] = useState("");
+  const [pwdLoading, setPwdLoading] = useState(false);
 
   if (!user) {
     return (
@@ -77,6 +87,46 @@ export default function Profile() {
     }
   };
 
+  const openPasswordDialog = () => {
+    setPwdOld("");
+    setPwdNew("");
+    setPwdNewConfirm("");
+    setPwdError("");
+    setPwdOpen(true);
+  };
+
+  const closePasswordDialog = () => {
+    if (!pwdLoading) setPwdOpen(false);
+  };
+
+  const handleChangePassword = async () => {
+    if (!pwdOld || !pwdNew || !pwdNewConfirm) {
+      setPwdError("Vyplňte všechna pole.");
+      return;
+    }
+    if (pwdNew !== pwdNewConfirm) {
+      setPwdError("Nová hesla se neshodují.");
+      return;
+    }
+
+    try {
+      setPwdLoading(true);
+      setPwdError("");
+      await changePassword(
+        { oldPassword: pwdOld, password: pwdNew },
+        token,
+      );
+      setPwdOpen(false);
+    } catch (err) {
+      console.error("Password change error:", err);
+      setPwdError(
+        err.response?.data?.message || "Nepodařilo se změnit heslo.",
+      );
+    } finally {
+      setPwdLoading(false);
+    }
+  };
+
   return (
     <>
       <NavBar />
@@ -115,9 +165,14 @@ export default function Profile() {
                   </Typography>
                 )}
 
-                <Button variant="outlined" onClick={handleEdit}>
-                  Editovat
-                </Button>
+                <Stack direction="row" spacing={2}>
+                  <Button variant="outlined" onClick={handleEdit}>
+                    Editovat
+                  </Button>
+                  <Button variant="outlined" onClick={openPasswordDialog}>
+                    Změnit heslo
+                  </Button>
+                </Stack>
               </>
             ) : (
               <>
@@ -163,6 +218,51 @@ export default function Profile() {
           </Box>
         </Paper>
       </Box>
+      <Dialog open={pwdOpen} onClose={closePasswordDialog} maxWidth="xs" fullWidth>
+        <DialogTitle>Změnit heslo</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            <TextField
+              label="Staré heslo"
+              type="password"
+              value={pwdOld}
+              onChange={(e) => setPwdOld(e.target.value)}
+              fullWidth
+            />
+            <TextField
+              label="Nové heslo"
+              type="password"
+              value={pwdNew}
+              onChange={(e) => setPwdNew(e.target.value)}
+              fullWidth
+            />
+            <TextField
+              label="Nové heslo znovu"
+              type="password"
+              value={pwdNewConfirm}
+              onChange={(e) => setPwdNewConfirm(e.target.value)}
+              fullWidth
+            />
+            {pwdError && (
+              <Alert severity="error" sx={{ width: "100%" }}>
+                {pwdError}
+              </Alert>
+            )}
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closePasswordDialog} disabled={pwdLoading}>
+            Zrušit
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleChangePassword}
+            disabled={pwdLoading}
+          >
+            Uložit
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }

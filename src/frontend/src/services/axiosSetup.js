@@ -5,7 +5,7 @@ const attachedClients = new WeakSet();
 
 function shouldLogout(error) {
   const status = error?.response?.status;
-  return status === 401 || status === 403;
+  return status === 401;
 }
 
 export function setupAxiosAuth(client) {
