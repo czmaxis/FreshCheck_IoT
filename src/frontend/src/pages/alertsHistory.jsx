@@ -15,6 +15,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { getDevices } from "../services/deviceService.js";
 import { getAlerts } from "../services/alertService.js";
 import AlertCard from "../components/AlertCard.jsx";
+import AlertCardSkeleton from "../components/AlertCardSkeleton.jsx";
 import AlertFilters from "../components/AlertFilters.jsx";
 import AlertPagination from "../components/AlertPagination.jsx";
 
@@ -31,6 +32,7 @@ export default function AlertsHistory() {
      ALERTS
   ====================== */
   const [alerts, setAlerts] = useState([]);
+  const [alertsLoading, setAlertsLoading] = useState(false);
   const [error, setError] = useState("");
 
   /* =====================
@@ -77,6 +79,7 @@ export default function AlertsHistory() {
 
     async function loadAlerts() {
       try {
+        setAlertsLoading(true);
         setError("");
         const data = await getAlerts(selectedDeviceId, {}, token);
         if (!cancelled) {
@@ -86,6 +89,8 @@ export default function AlertsHistory() {
         if (!cancelled) {
           setError("Nepodařilo se načíst historii výstrah.");
         }
+      } finally {
+        if (!cancelled) setAlertsLoading(false);
       }
     }
 
@@ -323,7 +328,11 @@ export default function AlertsHistory() {
         )}
 
         {/* ALERTS LIST */}
-        {pagedAlerts.length === 0 ? (
+        {alertsLoading ? (
+          <Box px={3}>
+            <AlertCardSkeleton count={Math.min(3, perPage)} />
+          </Box>
+        ) : pagedAlerts.length === 0 ? (
           <Typography>Žádné výstrahy pro zvolené filtry.</Typography>
         ) : (
           <Box px={3}>
