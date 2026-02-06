@@ -1,19 +1,20 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import {
   Box,
   Typography,
   Button,
-  Menu,
   MenuItem,
-  Alert,
-  AlertTitle,
   TextField,
   Pagination,
+  FormControl,
+  InputLabel,
+  Select,
 } from "@mui/material";
 import NavBar from "./navBar.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
-import { getDevices } from "../services/deviceService.js";
+import { getDevices, getDevice } from "../services/deviceService.js";
 import { getAlerts } from "../services/alertService.js";
+import AlertCard from "../components/AlertCard.jsx";
 
 export default function AlertsHistory() {
   const { token } = useAuth();
@@ -23,12 +24,12 @@ export default function AlertsHistory() {
   ====================== */
   const [devices, setDevices] = useState([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState(null);
-  const [anchorEl, setAnchorEl] = useState(null);
 
   /* =====================
      ALERTS
   ====================== */
   const [alerts, setAlerts] = useState([]);
+  const [deviceThreshold, setDeviceThreshold] = useState(null);
   const [error, setError] = useState("");
 
   /* =====================
@@ -75,8 +76,14 @@ export default function AlertsHistory() {
     async function loadAlerts() {
       try {
         setError("");
-        const data = await getAlerts(selectedDeviceId, {}, token);
-        if (!cancelled) setAlerts(data || []);
+        const [data, device] = await Promise.all([
+          getAlerts(selectedDeviceId, {}, token),
+          getDevice(selectedDeviceId, token),
+        ]);
+        if (!cancelled) {
+          setAlerts(data || []);
+          setDeviceThreshold(device?.threshold ?? null);
+        }
       } catch (err) {
         if (!cancelled) {
           setError("Nepodařilo se načíst historii výstrah.");
@@ -98,22 +105,6 @@ export default function AlertsHistory() {
   useEffect(() => {
     setPage(1);
   }, [statusFilter, typeFilter, perPage, selectedDeviceId, dateFrom, dateTo]);
-  /* =====================
-     HELPERS
-  ====================== */
-  function getMessage(alert) {
-    switch (alert.type) {
-      case "humidity":
-        return `Byla překročena hranice vlhkosti ${alert.value} %`;
-      case "temperature":
-        return `Byla překročena hranice teploty ${alert.value} °C`;
-      case "door":
-        return `Dveře byly otevřené déle než ${alert.value} sekund`;
-      default:
-        return `Došlo k překročení limitu (${alert.type})`;
-    }
-  }
-
   /* =====================
      FILTERING
   ====================== */
@@ -171,32 +162,27 @@ export default function AlertsHistory() {
 
           <Box display="flex" alignItems="center" gap={2} flexWrap="wrap">
             {/* DEVICE SELECTOR */}
-            <Button
-              variant="outlined"
-              onClick={(e) => setAnchorEl(e.currentTarget)}
-            >
-              {selectedDeviceId
-                ? devices.find((d) => d._id === selectedDeviceId)?.name
-                : "Vyber zařízení"}
-            </Button>
-
-            <Menu
-              anchorEl={anchorEl}
-              open={Boolean(anchorEl)}
-              onClose={() => setAnchorEl(null)}
-            >
-              {devices.map((d) => (
-                <MenuItem
-                  key={d._id}
-                  onClick={() => {
-                    setSelectedDeviceId(d._id);
-                    setAnchorEl(null);
-                  }}
-                >
-                  {d.name} — {d.location}
-                </MenuItem>
-              ))}
-            </Menu>
+            <FormControl variant="standard" sx={{ minWidth: 220 }}>
+              <InputLabel id="device-select-label">Vyber zařízení</InputLabel>
+              <Select
+                labelId="device-select-label"
+                value={selectedDeviceId ?? ""}
+                label="Vyber zařízení"
+                onChange={(e) => setSelectedDeviceId(e.target.value)}
+              >
+                {devices && devices.length > 0 ? (
+                  devices.map((d) => (
+                    <MenuItem key={d._id} value={d._id}>
+                      {d.name} — {d.location}
+                    </MenuItem>
+                  ))
+                ) : (
+                  <MenuItem disabled value="">
+                    Žádná zařízení
+                  </MenuItem>
+                )}
+              </Select>
+            </FormControl>
             <TextField
               label="Od"
               type="date"
@@ -277,9 +263,9 @@ export default function AlertsHistory() {
 
         {/* ERROR */}
         {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
+          <Typography color="error" sx={{ mb: 2 }}>
             {error}
-          </Alert>
+          </Typography>
         )}
 
         {/* ALERTS LIST */}
@@ -288,20 +274,11 @@ export default function AlertsHistory() {
         ) : (
           <Box px={3}>
             {pagedAlerts.map((alert) => (
-              <Alert
+              <AlertCard
                 key={alert._id}
-                severity={alert.active ? "warning" : "info"}
-                sx={{ mb: 2 }}
-              >
-                <AlertTitle>
-                  {alert.active ? "Výstraha" : "Vyřešená výstraha"}
-                </AlertTitle>
-                {getMessage(alert)}
-                <br />
-                <small>
-                  Čas: {new Date(alert.timestamp).toLocaleString("cs-CZ")}
-                </small>
-              </Alert>
+                alert={alert}
+                deviceThreshold={deviceThreshold}
+              />
             ))}
           </Box>
         )}

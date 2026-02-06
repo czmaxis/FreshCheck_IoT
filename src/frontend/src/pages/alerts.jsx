@@ -2,7 +2,6 @@
 import {
   Box,
   Typography,
-  Chip,
   Button,
   MenuItem,
   TextField,
@@ -18,6 +17,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import "dayjs/locale/cs";
 import dayjs from "dayjs";
 import DateRangeSingleCalendar from "../components/DateRangeSingleCalendar.jsx";
+import AlertCard from "../components/AlertCard.jsx";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import {
@@ -180,106 +180,6 @@ export default function Alerts({ deviceId }) {
     setConfirmDeleteId(null);
   };
 
-  const getTypeLabel = (alert) => {
-    switch (alert.type) {
-      case "humidity":
-        return "Vlhkost";
-      case "temperature":
-        return "Teplota";
-      case "door":
-        return "Dveře";
-      default:
-        return alert.type || "Výstraha";
-    }
-  };
-
-  const getTitle = (alert) => {
-    const value = alert.value;
-    const min =
-      alert.threshold?.[alert.type]?.min ??
-      alert.threshold?.min ??
-      deviceThreshold?.[alert.type]?.min ??
-      deviceThreshold?.min ??
-      null;
-    const max =
-      alert.threshold?.[alert.type]?.max ??
-      alert.threshold?.max ??
-      deviceThreshold?.[alert.type]?.max ??
-      deviceThreshold?.max ??
-      null;
-
-    if (alert.type === "humidity") {
-      if (min != null && value < min) return "Nízká vlhkost";
-      if (max != null && value > max) return "Vysoká vlhkost";
-      return "Výstraha vlhkosti";
-    }
-
-    if (alert.type === "temperature") {
-      if (min != null && value < min) return "Nízká teplota";
-      if (max != null && value > max) return "Vysoká teplota";
-      return "Výstraha teploty";
-    }
-
-    if (alert.type === "door") {
-      return "Dveře otevřeny";
-    }
-
-    return "Výstraha";
-  };
-
-  const formatValue = (alert) => {
-    if (alert.type === "humidity") {
-      const min =
-        alert.threshold?.humidity?.min ??
-        alert.threshold?.min ??
-        deviceThreshold?.humidity?.min ??
-        deviceThreshold?.min ??
-        null;
-      const max =
-        alert.threshold?.humidity?.max ??
-        alert.threshold?.max ??
-        deviceThreshold?.humidity?.max ??
-        deviceThreshold?.max ??
-        null;
-      const limitText =
-        min != null && max != null
-          ? ` (limit ${min}–${max} %)`
-          : min != null
-            ? ` (limit ${min} %)`
-            : max != null
-              ? ` (limit ${max} %)`
-              : "";
-      return `💧 ${alert.value ?? "-"} %${limitText}`;
-    }
-    if (alert.type === "temperature") {
-      const min =
-        alert.threshold?.temperature?.min ??
-        alert.threshold?.min ??
-        deviceThreshold?.temperature?.min ??
-        deviceThreshold?.min ??
-        null;
-      const max =
-        alert.threshold?.temperature?.max ??
-        alert.threshold?.max ??
-        deviceThreshold?.temperature?.max ??
-        deviceThreshold?.max ??
-        null;
-      const limitText =
-        min != null && max != null
-          ? ` (limit ${min}–${max} °C)`
-          : min != null
-            ? ` (limit ${min} °C)`
-            : max != null
-              ? ` (limit ${max} °C)`
-              : "";
-      return `🌡 ${alert.value ?? "-"} °C${limitText}`;
-    }
-    if (alert.type === "door") {
-      return `🚪 ${alert.value ?? "-"} s`;
-    }
-    return `${alert.value ?? "-"}`;
-  };
-
   if (alerts.length === 0) return null;
 
   const filteredAlerts = alerts.filter((a) => {
@@ -375,54 +275,30 @@ export default function Alerts({ deviceId }) {
       {visible && (
         <Box px={3}>
           {pagedAlerts.map((alert) => (
-            <Box
+            <AlertCard
               key={alert._id}
-              sx={{
-                mb: 2,
-                p: 2,
-                borderRadius: 2,
-                border: "1px solid #f2c2a2",
-                backgroundColor: "#fff7f0",
-              }}
-            >
-              <Box display="flex" alignItems="center" gap={1} mb={1}>
-                <Typography variant="subtitle1" fontWeight={600}>
-                  ⚠️ {getTitle(alert)}
-                </Typography>
-                <Chip
-                  size="small"
-                  label={getTypeLabel(alert)}
-                  sx={{
-                    backgroundColor: "#ffe2cc",
-                    color: "#7a3b00",
-                    fontWeight: 600,
-                  }}
-                />
-              </Box>
-
-              <Typography sx={{ mb: 0.5 }}>{formatValue(alert)}</Typography>
-              <Typography variant="body2" color="text.secondary">
-                🕒 {new Date(alert.timestamp).toLocaleString("cs-CZ")}
-              </Typography>
-
-              <Box display="flex" gap={1.5} mt={1.5}>
-                <Button
-                  variant="contained"
-                  size="small"
-                  onClick={() => handleResolve(alert._id)}
-                >
-                  Potvrdit
-                </Button>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  color="error"
-                  onClick={() => openDeleteConfirm(alert._id)}
-                >
-                  smazat
-                </Button>
-              </Box>
-            </Box>
+              alert={alert}
+              deviceThreshold={deviceThreshold}
+              actions={
+                <>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    onClick={() => handleResolve(alert._id)}
+                  >
+                    Potvrdit
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    color="error"
+                    onClick={() => openDeleteConfirm(alert._id)}
+                  >
+                    smazat
+                  </Button>
+                </>
+              }
+            />
           ))}
         </Box>
       )}

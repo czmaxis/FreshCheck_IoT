@@ -12,6 +12,9 @@ import {
   DialogActions,
   TextField,
   Stack,
+  FormControl,
+  InputLabel,
+  Select,
 } from "@mui/material";
 import SettingsIcon from "@mui/icons-material/Settings";
 
@@ -33,10 +36,6 @@ export default function Dashboard() {
   const { user, token } = useAuth();
   const [devices, setDevices] = useState([]);
   const [error, setError] = useState("");
-
-  // devices menu state
-  const [anchorEl, setAnchorEl] = useState(null);
-  const menuOpen = Boolean(anchorEl);
 
   // settings menu state (gear icon)
   const [anchorSettings, setAnchorSettings] = useState(null);
@@ -87,17 +86,8 @@ export default function Dashboard() {
     load();
   }, [token]);
 
-  const handleOpenMenu = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleCloseMenu = () => {
-    setAnchorEl(null);
-  };
-
   const handleSelectDevice = (deviceId) => {
     setSelectedDeviceId(deviceId);
-    handleCloseMenu();
   };
 
   // settings menu handlers
@@ -137,8 +127,7 @@ export default function Dashboard() {
         return;
       }
 
-      const current =
-        devices.find((d) => d._id === selectedDeviceId) || null;
+      const current = devices.find((d) => d._id === selectedDeviceId) || null;
       setEditName(current?.name || "");
       setEditLocation(current?.location || "");
       setEditOpen(true);
@@ -310,18 +299,27 @@ export default function Dashboard() {
         p={2}
       >
         <Box mt={3} display="flex" alignItems="center" gap={1}>
-          <Typography variant="h6">Zařízení:</Typography>
-
-          <Button
-            variant="outlined"
-            onClick={handleOpenMenu}
-            data-testid="devices-menu-button"
-          >
-            {selectedDeviceId
-              ? devices.find((d) => d._id === selectedDeviceId)?.name ||
-                "Vyber zařízení"
-              : "Vyber zařízení"}
-          </Button>
+          <FormControl variant="standard" sx={{ minWidth: 220 }}>
+            <InputLabel id="device-select-label">Vyber zařízení</InputLabel>
+            <Select
+              labelId="device-select-label"
+              value={selectedDeviceId ?? ""}
+              label="Vyber zařízení"
+              onChange={(e) => handleSelectDevice(e.target.value)}
+            >
+              {devices && devices.length > 0 ? (
+                devices.map((d) => (
+                  <MenuItem key={d._id} value={d._id}>
+                    {d.name} — {d.location}
+                  </MenuItem>
+                ))
+              ) : (
+                <MenuItem disabled value="">
+                  Žádná zařízení
+                </MenuItem>
+              )}
+            </Select>
+          </FormControl>
 
           {/* gear icon next to device selector */}
           <IconButton
@@ -331,18 +329,6 @@ export default function Dashboard() {
           >
             <SettingsIcon />
           </IconButton>
-
-          <Menu anchorEl={anchorEl} open={menuOpen} onClose={handleCloseMenu}>
-            {devices && devices.length > 0 ? (
-              devices.map((d) => (
-                <MenuItem key={d._id} onClick={() => handleSelectDevice(d._id)}>
-                  {d.name} — {d.location}
-                </MenuItem>
-              ))
-            ) : (
-              <MenuItem disabled>Žádná zařízení</MenuItem>
-            )}
-          </Menu>
 
           <Menu
             anchorEl={anchorSettings}
@@ -354,11 +340,11 @@ export default function Dashboard() {
             <MenuItem onClick={() => handleSettingsSelect("limits")}>
               Nastavit limity
             </MenuItem>
-            <MenuItem onClick={() => handleSettingsSelect("add")}>
-              Přidat zařízení
-            </MenuItem>
             <MenuItem onClick={() => handleSettingsSelect("edit")}>
               Upravit zařízení
+            </MenuItem>
+            <MenuItem onClick={() => handleSettingsSelect("add")}>
+              Přidat zařízení
             </MenuItem>
             <MenuItem onClick={() => handleSettingsSelect("remove")}>
               Odebrat zařízení
