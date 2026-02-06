@@ -17,6 +17,7 @@ import {
   Select,
 } from "@mui/material";
 import SettingsIcon from "@mui/icons-material/Settings";
+import LimitsSkeleton from "../components/LimitsSkeleton.jsx";
 
 import { useAuth } from "../context/AuthContext.jsx";
 import {
@@ -64,6 +65,7 @@ export default function Dashboard() {
   const selectedDevice = devices.find((d) => d._id === selectedDeviceId);
   const [summaryDeviceThreshold, setSummaryDeviceThreshold] = useState(null);
   const [limitsVersion, setLimitsVersion] = useState(0);
+  const [limitsSaving, setLimitsSaving] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -199,6 +201,7 @@ export default function Dashboard() {
     }
 
     try {
+      setLimitsSaving(true);
       const payload = { threshold };
 
       const res = await updateDevice(selectedDeviceId, payload, token);
@@ -221,6 +224,8 @@ export default function Dashboard() {
       setError(
         err.response?.data?.message || "Nepodařilo se uložit limity zařízení.",
       );
+    } finally {
+      setLimitsSaving(false);
     }
   };
 
@@ -377,6 +382,7 @@ export default function Dashboard() {
           token={token}
           onOpenLimits={openLimitsDialog}
           refreshKey={limitsVersion}
+          limitsLoading={limitsSaving}
         />
         <p />
         {selectedDeviceId && (
@@ -394,6 +400,7 @@ export default function Dashboard() {
               <DeviceCharts
                 deviceId={selectedDeviceId}
                 refreshKey={limitsVersion}
+                limitsLoading={limitsSaving}
               />
             </>
           ) : (
@@ -411,44 +418,56 @@ export default function Dashboard() {
         >
           <DialogTitle>Nastavit limity pro zařízení</DialogTitle>
           <DialogContent>
-            <Stack spacing={2} sx={{ mt: 1 }}>
-              <TextField
-                label="Minimální teplota (°C)"
-                type="number"
-                value={minTemp}
-                onChange={(e) => setMinTemp(e.target.value)}
-              />
+            {limitsSaving ? (
+              <Stack spacing={2} sx={{ mt: 1 }}>
+                <LimitsSkeleton lines={5} />
+              </Stack>
+            ) : (
+              <Stack spacing={2} sx={{ mt: 1 }}>
+                <TextField
+                  label="Minimální teplota (°C)"
+                  type="number"
+                  value={minTemp}
+                  onChange={(e) => setMinTemp(e.target.value)}
+                />
 
-              <TextField
-                label="Maximální teplota (°C)"
-                type="number"
-                value={maxTemp}
-                onChange={(e) => setMaxTemp(e.target.value)}
-              />
+                <TextField
+                  label="Maximální teplota (°C)"
+                  type="number"
+                  value={maxTemp}
+                  onChange={(e) => setMaxTemp(e.target.value)}
+                />
 
-              <TextField
-                label="Minimální vlhkost (%)"
-                type="number"
-                value={minHumidity}
-                onChange={(e) => setMinHumidity(e.target.value)}
-              />
+                <TextField
+                  label="Minimální vlhkost (%)"
+                  type="number"
+                  value={minHumidity}
+                  onChange={(e) => setMinHumidity(e.target.value)}
+                />
 
-              <TextField
-                label="Maximální vlhkost (%)"
-                type="number"
-                value={maxHumidity}
-                onChange={(e) => setMaxHumidity(e.target.value)}
-              />
+                <TextField
+                  label="Maximální vlhkost (%)"
+                  type="number"
+                  value={maxHumidity}
+                  onChange={(e) => setMaxHumidity(e.target.value)}
+                />
 
-              <Typography variant="body2" color="text.secondary">
-                Aplikují se limity pro zařízení:{" "}
-                {devices.find((d) => d._id === selectedDeviceId)?.name || "-"}
-              </Typography>
-            </Stack>
+                <Typography variant="body2" color="text.secondary">
+                  Aplikují se limity pro zařízení:{" "}
+                  {devices.find((d) => d._id === selectedDeviceId)?.name || "-"}
+                </Typography>
+              </Stack>
+            )}
           </DialogContent>
           <DialogActions>
-            <Button onClick={handleLimitsCancel}>Zrušit</Button>
-            <Button variant="contained" onClick={handleLimitsConfirm}>
+            <Button onClick={handleLimitsCancel} disabled={limitsSaving}>
+              Zrušit
+            </Button>
+            <Button
+              variant="contained"
+              onClick={handleLimitsConfirm}
+              disabled={limitsSaving}
+            >
               Potvrdit
             </Button>
           </DialogActions>

@@ -1,5 +1,6 @@
 ﻿import React, { useEffect, useMemo, useState } from "react";
 import { Box, Typography, Stack, TextField, MenuItem, Button } from "@mui/material";
+import LimitsSkeleton from "./LimitsSkeleton.jsx";
 import { getSensorData } from "../services/sensorDataService.js";
 import { getAlerts } from "../services/alertService.js";
 import { getDevice } from "../services/deviceService.js";
@@ -18,6 +19,7 @@ export default function DashboardSummary({
   token,
   onOpenLimits,
   refreshKey,
+  limitsLoading,
 }) {
   const [summary, setSummary] = useState({
     latest: null,
@@ -308,9 +310,13 @@ export default function DashboardSummary({
           gap: 2,
         }}
       >
-        <Typography variant="body2" color="text.secondary">
-          Limity: {limitsText}
-        </Typography>
+        {limitsLoading ? (
+          <LimitsSkeleton lines={1} />
+        ) : (
+          <Typography variant="body2" color="text.secondary">
+            Limity: {limitsText}
+          </Typography>
+        )}
         <Button
           size="small"
           variant="outlined"

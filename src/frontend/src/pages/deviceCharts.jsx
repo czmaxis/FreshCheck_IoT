@@ -12,6 +12,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import "dayjs/locale/cs";
 import dayjs from "dayjs";
 import DateRangeSingleCalendar from "../components/DateRangeSingleCalendar.jsx";
+import LimitsSkeleton from "../components/LimitsSkeleton.jsx";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import {
@@ -52,7 +53,7 @@ function formatTime(d) {
   return `${day}.${month}\n${hours}:${minutes}`;
 }
 
-export default function DeviceCharts({ deviceId, refreshKey }) {
+export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
   const { token } = useAuth();
   const [rawData, setRawData] = useState([]);
   const [threshold, setThreshold] = useState(null);
@@ -251,7 +252,8 @@ export default function DeviceCharts({ deviceId, refreshKey }) {
       <Collapse in={expanded}>
         {dateFilteredData.length > 0 ? (
           <>
-            {(threshold?.temperature?.min != null ||
+            {(limitsLoading ||
+              threshold?.temperature?.min != null ||
               threshold?.temperature?.max != null ||
               threshold?.humidity?.min != null ||
               threshold?.humidity?.max != null) && (
@@ -268,34 +270,38 @@ export default function DeviceCharts({ deviceId, refreshKey }) {
                 <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
                   Limity
                 </Typography>
-                <Box
-                  sx={{
-                    display: "flex",
-                    flexWrap: "wrap",
-                    gap: 2,
-                  }}
-                >
-                  {threshold?.temperature?.min != null && (
-                    <Typography variant="body2">
-                      🌡 Min teplota: {threshold.temperature.min} °C
-                    </Typography>
-                  )}
-                  {threshold?.temperature?.max != null && (
-                    <Typography variant="body2">
-                      🌡 Max teplota: {threshold.temperature.max} °C
-                    </Typography>
-                  )}
-                  {threshold?.humidity?.min != null && (
-                    <Typography variant="body2">
-                      💧 Min vlhkost: {threshold.humidity.min} %
-                    </Typography>
-                  )}
-                  {threshold?.humidity?.max != null && (
-                    <Typography variant="body2">
-                      💧 Max vlhkost: {threshold.humidity.max} %
-                    </Typography>
-                  )}
-                </Box>
+                {limitsLoading ? (
+                  <LimitsSkeleton lines={2} />
+                ) : (
+                  <Box
+                    sx={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: 2,
+                    }}
+                  >
+                    {threshold?.temperature?.min != null && (
+                      <Typography variant="body2">
+                        🌡 Min teplota: {threshold.temperature.min} °C
+                      </Typography>
+                    )}
+                    {threshold?.temperature?.max != null && (
+                      <Typography variant="body2">
+                        🌡 Max teplota: {threshold.temperature.max} °C
+                      </Typography>
+                    )}
+                    {threshold?.humidity?.min != null && (
+                      <Typography variant="body2">
+                        💧 Min vlhkost: {threshold.humidity.min} %
+                      </Typography>
+                    )}
+                    {threshold?.humidity?.max != null && (
+                      <Typography variant="body2">
+                        💧 Max vlhkost: {threshold.humidity.max} %
+                      </Typography>
+                    )}
+                  </Box>
+                )}
               </Box>
             )}
 
