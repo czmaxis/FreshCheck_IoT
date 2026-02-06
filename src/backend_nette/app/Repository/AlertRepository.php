@@ -147,6 +147,28 @@ private function normalize(array|\MongoDB\Model\BSONDocument $doc): array
     ];
 }
 
+public function restore(string $userId, string $alertId): ?array
+{
+    $result = $this->collection->findOneAndUpdate(
+        [
+            '_id' => new ObjectId($alertId),
+            'userId' => new ObjectId($userId),
+            'active' => false,
+        ],
+        [
+            '$set' => [
+                'active' => true,
+                'resolvedAt' => null,
+            ],
+        ],
+        [
+            'returnDocument' => \MongoDB\Operation\FindOneAndUpdate::RETURN_DOCUMENT_AFTER,
+        ]
+    );
+
+    return $result ? $this->normalize($result) : null;
+}
+
     //  TOHLE MUSÍŠ POUŽÍVAT PRO VÝPIS
     public function findByDevice(string $deviceId, ?bool $active = null): array
     {

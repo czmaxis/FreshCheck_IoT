@@ -34,6 +34,10 @@ final class RouterFactory
         'presenter' => 'Alert',
         'action' => 'resolve',
         ]); 
+        $router->addRoute('alerts/<id>/restore', [
+        'presenter' => 'Alert',
+        'action' => 'restore',
+        ]); 
         $router->addRoute('alerts/<id>/delete', 'Alert:delete');
         $router->addRoute('alerts', 'Alert:create');
         $router->addRoute('alerts/<deviceId>', 'Alert:default');

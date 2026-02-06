@@ -13,11 +13,18 @@ import dayjs from "dayjs";
 import NavBar from "./navBar.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { getDevices } from "../services/deviceService.js";
-import { getAlerts } from "../services/alertService.js";
+import {
+  getAlerts,
+  resolveAlert,
+  deleteAlert,
+  restoreAlert,
+} from "../services/alertService.js";
 import AlertCard from "../components/AlertCard.jsx";
 import AlertCardSkeleton from "../components/AlertCardSkeleton.jsx";
 import AlertFilters from "../components/AlertFilters.jsx";
 import AlertPagination from "../components/AlertPagination.jsx";
+import AlertActions from "../components/AlertActions.jsx";
+import ConfirmDeleteDialog from "../components/ConfirmDeleteDialog.jsx";
 
 export default function AlertsHistory() {
   const { token } = useAuth();
@@ -34,6 +41,7 @@ export default function AlertsHistory() {
   const [alerts, setAlerts] = useState([]);
   const [alertsLoading, setAlertsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
   /* =====================
      FILTERS
@@ -174,6 +182,46 @@ export default function AlertsHistory() {
       fromDateValue ? dayjs(fromDateValue) : null,
       toDateValue ? dayjs(toDateValue) : null,
     ]);
+  };
+
+  const handleResolve = async (alertId) => {
+    try {
+      await resolveAlert(alertId, token);
+      setAlerts((prev) => prev.filter((a) => a._id !== alertId));
+    } catch (err) {
+      setError(
+        err.response?.data?.message || "Nepodařilo se vyřešit výstrahu.",
+      );
+    }
+  };
+
+  const handleDelete = async (alertId) => {
+    try {
+      await deleteAlert(alertId, token);
+      setAlerts((prev) => prev.filter((a) => a._id !== alertId));
+      setConfirmDeleteId(null);
+    } catch (err) {
+      setError(err.response?.data?.message || "Nepodařilo se smazat výstrahu.");
+    }
+  };
+
+  const handleRestore = async (alertId) => {
+    try {
+      const restored = await restoreAlert(alertId, token);
+      setAlerts((prev) =>
+        prev.map((a) => (a._id === alertId ? restored : a)),
+      );
+    } catch (err) {
+      setError(err.response?.data?.message || "Nepodařilo se obnovit výstrahu.");
+    }
+  };
+
+  const openDeleteConfirm = (alertId) => {
+    setConfirmDeleteId(alertId);
+  };
+
+  const closeDeleteConfirm = () => {
+    setConfirmDeleteId(null);
   };
   /* =====================
      FILTERING
@@ -337,7 +385,18 @@ export default function AlertsHistory() {
         ) : (
           <Box px={3}>
             {pagedAlerts.map((alert) => (
-              <AlertCard key={alert._id} alert={alert} />
+              <AlertCard
+                key={alert._id}
+                alert={alert}
+                actions={
+                  <AlertActions
+                    isResolved={!alert.active}
+                    onResolve={() => handleResolve(alert._id)}
+                    onRestore={() => handleRestore(alert._id)}
+                    onDelete={() => openDeleteConfirm(alert._id)}
+                  />
+                }
+              />
             ))}
           </Box>
         )}
@@ -348,6 +407,12 @@ export default function AlertsHistory() {
           perPage={perPage}
           page={page}
           onPageChange={setPage}
+        />
+
+        <ConfirmDeleteDialog
+          open={Boolean(confirmDeleteId)}
+          onClose={closeDeleteConfirm}
+          onConfirm={() => handleDelete(confirmDeleteId)}
         />
       </Box>
     </>

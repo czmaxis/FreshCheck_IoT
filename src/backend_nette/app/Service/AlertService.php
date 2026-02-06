@@ -43,6 +43,11 @@ public function resolve(string $userId, string $alertId): ?array
     return $this->alerts->resolve($userId, $alertId);
 }
 
+public function restore(string $userId, string $alertId): ?array
+{
+    return $this->alerts->restore($userId, $alertId);
+}
+
 public function delete(string $userId, string $alertId): bool
 {
     return $this->alerts->deleteById($userId, $alertId);

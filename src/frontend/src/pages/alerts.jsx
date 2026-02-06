@@ -1,19 +1,11 @@
 ﻿import React, { useEffect, useState } from "react";
-import {
-  Box,
-  Typography,
-  Button,
-  MenuItem,
-  TextField,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-} from "@mui/material";
+import { Box, Typography, Button, MenuItem, TextField } from "@mui/material";
 import dayjs from "dayjs";
 import AlertCard from "../components/AlertCard.jsx";
 import AlertFilters from "../components/AlertFilters.jsx";
 import AlertPagination from "../components/AlertPagination.jsx";
+import AlertActions from "../components/AlertActions.jsx";
+import ConfirmDeleteDialog from "../components/ConfirmDeleteDialog.jsx";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import {
@@ -245,23 +237,12 @@ export default function Alerts({ deviceId }) {
               key={alert._id}
               alert={alert}
               actions={
-                <>
-                  <Button
-                    variant="contained"
-                    size="small"
-                    onClick={() => handleResolve(alert._id)}
-                  >
-                    Potvrdit
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    color="error"
-                    onClick={() => openDeleteConfirm(alert._id)}
-                  >
-                    smazat
-                  </Button>
-                </>
+                <AlertActions
+                  isResolved={false}
+                  onResolve={() => handleResolve(alert._id)}
+                  onRestore={() => {}}
+                  onDelete={() => openDeleteConfirm(alert._id)}
+                />
               }
             />
           ))}
@@ -283,30 +264,11 @@ export default function Alerts({ deviceId }) {
         </Typography>
       )}
 
-      <Dialog
+      <ConfirmDeleteDialog
         open={Boolean(confirmDeleteId)}
         onClose={closeDeleteConfirm}
-        maxWidth="xs"
-        fullWidth
-      >
-        <DialogTitle>Smazat výstrahu?</DialogTitle>
-        <DialogContent>
-          <Typography variant="body2">
-            Po smazání se výstraha nezobrazí v historii výstrah. Opravdu chcete
-            výstrahu smazat?
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeDeleteConfirm}>Zrušit</Button>
-          <Button
-            color="error"
-            variant="contained"
-            onClick={() => handleDelete(confirmDeleteId)}
-          >
-            Smazat
-          </Button>
-        </DialogActions>
-      </Dialog>
+        onConfirm={() => handleDelete(confirmDeleteId)}
+      />
     </Box>
   );
 }

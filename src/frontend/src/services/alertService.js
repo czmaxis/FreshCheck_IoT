@@ -55,6 +55,29 @@ export async function resolveAlert(alertId, token) {
 }
 
 /**
+ * ? Obnoví alert (nastaví active = true)
+ * @param {string} alertId
+ * @param {string} token
+ */
+export async function restoreAlert(alertId, token) {
+  if (!alertId) {
+    throw new Error("alertId je povinný");
+  }
+
+  const res = await axios.put(
+    `${API_URL}/alerts/${encodeURIComponent(alertId)}/restore`,
+    {},
+    {
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    },
+  );
+
+  return res.data;
+}
+/**
  * ðŸ—‘ SmaÅ¾e alert
  * @param {string} alertId
  * @param {string} token

@@ -57,6 +57,19 @@ public function actionResolve(string $id): void
     );
 }
 
+public function actionRestore(string $id): void
+{
+    $userId = $this->getUserIdFromJwt();
+
+    $alert = $this->alerts->restore($userId, $id);
+
+    if (!$alert) {
+        $this->error('Alert not found', 404);
+    }
+
+    $this->sendJson($alert);
+}
+
 /**
  * POST /alerts/<id>/delete
  */
