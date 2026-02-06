@@ -13,7 +13,12 @@ const RANGES = [
   { label: "Vše", value: "all" },
 ];
 
-export default function DashboardSummary({ deviceId, token, onOpenLimits }) {
+export default function DashboardSummary({
+  deviceId,
+  token,
+  onOpenLimits,
+  refreshKey,
+}) {
   const [summary, setSummary] = useState({
     latest: null,
     activeAlerts: 0,
@@ -58,7 +63,7 @@ export default function DashboardSummary({ deviceId, token, onOpenLimits }) {
     }
 
     loadSummary();
-  }, [deviceId, token]);
+  }, [deviceId, token, refreshKey]);
 
   const limitsText = useMemo(() => {
     if (!deviceThreshold) return "-";

@@ -52,7 +52,7 @@ function formatTime(d) {
   return `${day}.${month}\n${hours}:${minutes}`;
 }
 
-export default function DeviceCharts({ deviceId }) {
+export default function DeviceCharts({ deviceId, refreshKey }) {
   const { token } = useAuth();
   const [rawData, setRawData] = useState([]);
   const [threshold, setThreshold] = useState(null);
@@ -113,7 +113,7 @@ export default function DeviceCharts({ deviceId }) {
     return () => {
       cancelled = true;
     };
-  }, [deviceId, token]);
+  }, [deviceId, token, refreshKey]);
 
   useEffect(() => {
     const [start, end] = dateRange;

@@ -63,6 +63,7 @@ export default function Dashboard() {
 
   const selectedDevice = devices.find((d) => d._id === selectedDeviceId);
   const [summaryDeviceThreshold, setSummaryDeviceThreshold] = useState(null);
+  const [limitsVersion, setLimitsVersion] = useState(0);
 
   useEffect(() => {
     async function load() {
@@ -205,6 +206,8 @@ export default function Dashboard() {
       setDevices((prev) =>
         prev.map((d) => (d._id === selectedDeviceId ? res.device : d)),
       );
+      setSummaryDeviceThreshold(res.device?.threshold ?? null);
+      setLimitsVersion((v) => v + 1);
 
       // reset formuláře
       setMinTemp(null);
@@ -373,6 +376,7 @@ export default function Dashboard() {
           deviceId={selectedDeviceId}
           token={token}
           onOpenLimits={openLimitsDialog}
+          refreshKey={limitsVersion}
         />
         <p />
         {selectedDeviceId && (
@@ -387,7 +391,10 @@ export default function Dashboard() {
           {selectedDeviceId ? (
             <>
               <SensorData deviceId={selectedDeviceId} />
-              <DeviceCharts deviceId={selectedDeviceId} />
+              <DeviceCharts
+                deviceId={selectedDeviceId}
+                refreshKey={limitsVersion}
+              />
             </>
           ) : (
             <Typography sx={{ mt: 2 }}>
