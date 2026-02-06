@@ -333,11 +333,7 @@ export default function AlertsHistory() {
         ) : (
           <Box px={3}>
             {pagedAlerts.map((alert) => (
-              <AlertCard
-                key={alert._id}
-                alert={alert}
-                deviceThreshold={deviceThreshold}
-              />
+              <AlertCard key={alert._id} alert={alert} />
             ))}
           </Box>
         )}

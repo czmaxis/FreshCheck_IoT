@@ -16,19 +16,19 @@ function getTypeLabel(alert) {
   }
 }
 
-function getTitle(alert, deviceThreshold) {
+function getTitle(alert) {
   const value = alert.value;
   const min =
+    alert.alertTreshold?.[alert.type]?.min ??
+    alert.alertTreshold?.min ??
     alert.threshold?.[alert.type]?.min ??
     alert.threshold?.min ??
-    deviceThreshold?.[alert.type]?.min ??
-    deviceThreshold?.min ??
     null;
   const max =
+    alert.alertTreshold?.[alert.type]?.max ??
+    alert.alertTreshold?.max ??
     alert.threshold?.[alert.type]?.max ??
     alert.threshold?.max ??
-    deviceThreshold?.[alert.type]?.max ??
-    deviceThreshold?.max ??
     null;
 
   if (alert.type === "humidity") {
@@ -50,68 +50,53 @@ function getTitle(alert, deviceThreshold) {
   return "Výstraha";
 }
 
-function formatValue(alert, deviceThreshold) {
+function formatValue(alert) {
   if (alert.type === "humidity") {
-    const min =
-      alert.threshold?.humidity?.min ??
-      alert.threshold?.min ??
-      deviceThreshold?.humidity?.min ??
-      deviceThreshold?.min ??
-      null;
-    const max =
-      alert.threshold?.humidity?.max ??
-      alert.threshold?.max ??
-      deviceThreshold?.humidity?.max ??
-      deviceThreshold?.max ??
-      null;
-    const limitText =
-      min != null && max != null
-        ? ` (limit ${min}–${max} %)`
-        : min != null
-          ? ` (limit ${min} %)`
-          : max != null
-            ? ` (limit ${max} %)`
-            : "";
-    return `💧 ${alert.value ?? "-"} %${limitText}`;
+    return `💧 ${alert.value ?? "-"} %`;
   }
   if (alert.type === "temperature") {
-    const min =
-      alert.threshold?.temperature?.min ??
-      alert.threshold?.min ??
-      deviceThreshold?.temperature?.min ??
-      deviceThreshold?.min ??
-      null;
-    const max =
-      alert.threshold?.temperature?.max ??
-      alert.threshold?.max ??
-      deviceThreshold?.temperature?.max ??
-      deviceThreshold?.max ??
-      null;
-    const limitText =
-      min != null && max != null
-        ? ` (limit ${min}–${max} °C)`
-        : min != null
-          ? ` (limit ${min} °C)`
-          : max != null
-            ? ` (limit ${max} °C)`
-            : "";
-    return `🌡 ${alert.value ?? "-"} °C${limitText}`;
+    return `🌡 ${alert.value ?? "-"} °C`;
   }
   if (alert.type === "door" || alert.type === "doorOpen") {
-    const limit =
-      alert.threshold?.doorOpenMaxSeconds ??
-      alert.threshold?.doorOpen?.max ??
-      deviceThreshold?.doorOpenMaxSeconds ??
-      deviceThreshold?.doorOpen?.max ??
-      null;
-    const limitText = limit != null ? ` (limit ${limit} s)` : "";
-    return `🚪 ${alert.value ?? "-"} s${limitText}`;
+    return `🚪 ${alert.value ?? "-"} s`;
   }
   return `${alert.value ?? "-"}`;
 }
 
-export default function AlertCard({ alert, deviceThreshold = null, actions }) {
+function formatAlertTreshold(alert) {
+  const t = alert.alertTreshold ?? alert.threshold ?? null;
+  if (!t) return null;
+
+  if (alert.type === "temperature") {
+    const min = t?.temperature?.min;
+    const max = t?.temperature?.max;
+    if (min == null && max == null) return null;
+    if (min != null && max != null) return `Limit teploty ${min}–${max} °C`;
+    if (min != null) return `Limit teploty ≥ ${min} °C`;
+    return `Limit teploty ≤ ${max} °C`;
+  }
+
+  if (alert.type === "humidity") {
+    const min = t?.humidity?.min;
+    const max = t?.humidity?.max;
+    if (min == null && max == null) return null;
+    if (min != null && max != null) return `Limit vlhkosti ${min}–${max} %`;
+    if (min != null) return `Limit vlhkosti ≥ ${min} %`;
+    return `Limit vlhkosti ≤ ${max} %`;
+  }
+
+  if (alert.type === "door" || alert.type === "doorOpen") {
+    const doorLimit = t?.doorOpenMaxSeconds ?? t?.doorOpen?.max ?? null;
+    if (doorLimit == null) return null;
+    return `Limit dveří max ${doorLimit} s`;
+  }
+
+  return null;
+}
+
+export default function AlertCard({ alert, actions }) {
   const isActive = Boolean(alert.active);
+  const alertTresholdText = formatAlertTreshold(alert);
 
   return (
     <Box
@@ -125,7 +110,7 @@ export default function AlertCard({ alert, deviceThreshold = null, actions }) {
     >
       <Box display="flex" alignItems="center" gap={1} mb={1}>
         <Typography variant="subtitle1" fontWeight={600}>
-          ⚠️ {getTitle(alert, deviceThreshold)}
+          ⚠️ {getTitle(alert)}
         </Typography>
 
         {!isActive && (
@@ -142,11 +127,16 @@ export default function AlertCard({ alert, deviceThreshold = null, actions }) {
       </Box>
 
       <Typography sx={{ mb: 0.5 }}>
-        {formatValue(alert, deviceThreshold)}
+        {formatValue(alert)}
       </Typography>
       <Typography variant="body2" color="text.secondary">
         🕒 {new Date(alert.timestamp).toLocaleString("cs-CZ")}
       </Typography>
+      {alertTresholdText && (
+        <Typography variant="body2" color="text.secondary">
+          Limity: {alertTresholdText}
+        </Typography>
+      )}
 
       {actions ? (
         <Box display="flex" gap={1.5} mt={1.5}>

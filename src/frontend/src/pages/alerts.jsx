@@ -250,7 +250,6 @@ export default function Alerts({ deviceId }) {
             <AlertCard
               key={alert._id}
               alert={alert}
-              deviceThreshold={deviceThreshold}
               actions={
                 <>
                   <Button
