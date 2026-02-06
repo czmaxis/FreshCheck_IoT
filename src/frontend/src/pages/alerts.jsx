@@ -5,7 +5,6 @@ import {
   Button,
   MenuItem,
   TextField,
-  Pagination,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -14,6 +13,7 @@ import {
 import dayjs from "dayjs";
 import AlertCard from "../components/AlertCard.jsx";
 import AlertFilters from "../components/AlertFilters.jsx";
+import AlertPagination from "../components/AlertPagination.jsx";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import {
@@ -183,13 +183,10 @@ export default function Alerts({ deviceId }) {
   });
 
   const totalItems = filteredAlerts.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / perPage));
   const pagedAlerts = filteredAlerts.slice(
     (page - 1) * perPage,
     page * perPage
   );
-  const startIndex = totalItems === 0 ? 0 : (page - 1) * perPage + 1;
-  const endIndex = Math.min(page * perPage, totalItems);
 
   return (
     <Box width="100%" mb={3}>
@@ -278,49 +275,13 @@ export default function Alerts({ deviceId }) {
         </Box>
       )}
 
-      {visible && totalItems > 0 && (
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: 1,
-            mt: 2,
-            px: 3,
-          }}
-        >
-          <Typography variant="body2" color="text.secondary">
-            Zobrazeno {startIndex}–{endIndex} z {totalItems} záznamů
-          </Typography>
-
-          {totalPages > 1 && (
-            <Box display="flex" alignItems="center" gap={1}>
-              <Button
-                size="small"
-                variant="outlined"
-                onClick={() => setPage(1)}
-                disabled={page === 1}
-              >
-                ⏮ První
-              </Button>
-              <Pagination
-                count={totalPages}
-                page={page}
-                onChange={(_, value) => setPage(value)}
-                color="primary"
-                size="small"
-              />
-              <Button
-                size="small"
-                variant="outlined"
-                onClick={() => setPage(totalPages)}
-                disabled={page === totalPages}
-              >
-                ⏭ Poslední
-              </Button>
-            </Box>
-          )}
-        </Box>
+      {visible && (
+        <AlertPagination
+          totalItems={totalItems}
+          perPage={perPage}
+          page={page}
+          onPageChange={setPage}
+        />
       )}
 
       {!visible && (

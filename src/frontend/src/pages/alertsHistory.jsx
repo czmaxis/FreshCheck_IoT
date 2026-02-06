@@ -5,7 +5,6 @@ import {
   Button,
   MenuItem,
   TextField,
-  Pagination,
   FormControl,
   InputLabel,
   Select,
@@ -17,6 +16,7 @@ import { getDevices, getDevice } from "../services/deviceService.js";
 import { getAlerts } from "../services/alertService.js";
 import AlertCard from "../components/AlertCard.jsx";
 import AlertFilters from "../components/AlertFilters.jsx";
+import AlertPagination from "../components/AlertPagination.jsx";
 
 export default function AlertsHistory() {
   const { token } = useAuth();
@@ -208,7 +208,6 @@ export default function AlertsHistory() {
      PAGINATION
   ====================== */
   const totalItems = filteredAlerts.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / perPage));
   const pagedAlerts = filteredAlerts.slice(
     (page - 1) * perPage,
     page * perPage
@@ -344,17 +343,12 @@ export default function AlertsHistory() {
         )}
 
         {/* PAGINATION */}
-        {totalPages > 1 && (
-          <Box display="flex" justifyContent="center" mt={2}>
-            <Pagination
-              count={totalPages}
-              page={page}
-              onChange={(_, v) => setPage(v)}
-              color="primary"
-              size="small"
-            />
-          </Box>
-        )}
+        <AlertPagination
+          totalItems={totalItems}
+          perPage={perPage}
+          page={page}
+          onPageChange={setPage}
+        />
       </Box>
     </>
   );
