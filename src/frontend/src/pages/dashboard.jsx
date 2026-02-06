@@ -47,13 +47,11 @@ export default function Dashboard() {
   const [minTemp, setMinTemp] = useState("");
   const [maxHumidity, setMaxHumidity] = useState("");
   const [minHumidity, setMinHumidity] = useState("");
-  const [openTime, setOpenTime] = useState("");
 
   // dialog state for add device
   const [addOpen, setAddOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const [newLocation, setNewLocation] = useState("");
-  const [newType, setNewType] = useState("");
   const [editOpen, setEditOpen] = useState(false);
   const [editName, setEditName] = useState("");
   const [editLocation, setEditLocation] = useState("");
@@ -161,13 +159,11 @@ export default function Dashboard() {
       setMinTemp(t?.temperature?.min ?? "");
       setMaxHumidity(t?.humidity?.max ?? "");
       setMinHumidity(t?.humidity?.min ?? "");
-      setOpenTime(t?.doorOpenMaxSeconds ?? "");
     } else {
       setMaxTemp("");
       setMinTemp("");
       setMaxHumidity("");
       setMinHumidity("");
-      setOpenTime("");
     }
 
     setLimitsOpen(true);
@@ -189,10 +185,6 @@ export default function Dashboard() {
       threshold.humidity = {};
       if (minHumidity !== "") threshold.humidity.min = Number(minHumidity);
       if (maxHumidity !== "") threshold.humidity.max = Number(maxHumidity);
-    }
-
-    if (openTime !== "") {
-      threshold.doorOpenMaxSeconds = Number(openTime);
     }
 
     if (Object.keys(threshold).length === 0) {
@@ -219,7 +211,6 @@ export default function Dashboard() {
       setMaxTemp(null);
       setMinHumidity(null);
       setMaxHumidity(null);
-      setOpenTime(null);
 
       setLimitsOpen(false);
     } catch (err) {
@@ -238,7 +229,6 @@ export default function Dashboard() {
     try {
       const payload = {
         name: newName,
-        type: newType,
         location: newLocation,
       };
 
@@ -251,7 +241,6 @@ export default function Dashboard() {
       // reset formuláře
       setNewName("");
       setNewLocation("");
-      setNewType("");
       setAddOpen(false);
     } catch (err) {
       console.error("Chyba při vytváření zařízení:", err);
@@ -444,13 +433,6 @@ export default function Dashboard() {
                 onChange={(e) => setMaxHumidity(e.target.value)}
               />
 
-              <TextField
-                label="Limit pro otevření dveří (s)"
-                type="number"
-                value={openTime}
-                onChange={(e) => setOpenTime(e.target.value)}
-              />
-
               <Typography variant="body2" color="text.secondary">
                 Aplikují se limity pro zařízení:{" "}
                 {devices.find((d) => d._id === selectedDeviceId)?.name || "-"}
@@ -483,12 +465,6 @@ export default function Dashboard() {
                 label="Lokace"
                 value={newLocation}
                 onChange={(e) => setNewLocation(e.target.value)}
-                fullWidth
-              />
-              <TextField
-                label="Typ zařízení"
-                value={newType}
-                onChange={(e) => setNewType(e.target.value)}
                 fullWidth
               />
             </Stack>

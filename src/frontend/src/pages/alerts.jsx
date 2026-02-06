@@ -21,7 +21,6 @@ import {
   resolveAlert,
   deleteAlert,
 } from "../services/alertService.js";
-import { getDevice } from "../services/deviceService.js";
 import { useAuth } from "../context/AuthContext.jsx";
 
 export default function Alerts({ deviceId }) {
@@ -32,7 +31,6 @@ export default function Alerts({ deviceId }) {
   const [visible, setVisible] = useState(true);
   const [perPage, setPerPage] = useState(5);
   const [page, setPage] = useState(1);
-  const [deviceThreshold, setDeviceThreshold] = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
@@ -46,13 +44,9 @@ export default function Alerts({ deviceId }) {
     async function load() {
       try {
         setError("");
-        const [data, device] = await Promise.all([
-          getAlerts(deviceId, { active: true }, token),
-          getDevice(deviceId, token),
-        ]);
+        const data = await getAlerts(deviceId, { active: true }, token);
         if (!cancelled) {
           setAlerts(data);
-          setDeviceThreshold(device?.threshold ?? null);
         }
       } catch (err) {
         if (!cancelled) {

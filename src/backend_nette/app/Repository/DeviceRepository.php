@@ -132,10 +132,8 @@ public function update(
 
     foreach ([
         'name',
-        'type',
         'location',
         'threshold',
-        'doorOpenMaxSeconds',
     ] as $field) {
         if (array_key_exists($field, $data)) {
             $update[$field] = $data[$field];
@@ -175,7 +173,6 @@ private function normalize(array|\MongoDB\Model\BSONDocument $doc): array
         '_id' => (string) $data['_id'],
         'ownerId' => isset($data['ownerId']) ? (string) $data['ownerId'] : null,
         'name' => $data['name'] ?? null,
-        'type' => $data['type'] ?? null,
         'location' => $data['location'] ?? null,
         'createdAt' => $data['createdAt'] ?? null,
         'threshold' => $data['threshold'] ?? null, 

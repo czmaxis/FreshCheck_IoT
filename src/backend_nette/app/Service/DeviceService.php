@@ -21,7 +21,6 @@ final class DeviceService
  public function create(
     string $ownerId,
     string $name,
-    string $type,
     ?string $location,
     array $threshold,
    // ?int $doorOpenMaxSeconds
@@ -38,7 +37,6 @@ final class DeviceService
     return $this->deviceRepository->insert([
         'ownerId' => new ObjectId($ownerId),
         'name' => $name,
-        'type' => $type,
         'location' => $location,
         'threshold' => $threshold,
        // 'doorOpenMaxSeconds' => $doorOpenMaxSeconds,

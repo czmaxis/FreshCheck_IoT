@@ -53,17 +53,15 @@ final class DevicePresenter extends Presenter
                 $this->error('Invalid JSON', 400);
             }
 
-            if (empty($data['name']) || empty($data['type'])) {
+            if (empty($data['name'])) {
                 $this->error('Missing required fields', 400);
             }
 
            $device = $this->devices->create(
             $userId,
             $data['name'],
-            $data['type'],
             $data['location'] ?? null,
-            $data['threshold'] ?? [],
-            $data['doorOpenMaxSeconds'] ?? null
+            $data['threshold'] ?? []
             );
             $this->sendJson($device);
         }
@@ -139,7 +137,7 @@ public function actionCreate(): void
         $this->error('Invalid JSON', 400);
     }
 
-    if (!isset($data['name'], $data['type'])) {
+    if (!isset($data['name'])) {
         $this->error('Missing required fields', 400);
     }
 
@@ -149,10 +147,8 @@ public function actionCreate(): void
      $device = $this->deviceService->create(
         $this->userId, // from JWT
         $data['name'],
-        $data['type'],
         $data['location'] ?? null,
-        $data['threshold'] ?? [],
-        $data['doorOpenMaxSeconds'] ?? null
+        $data['threshold'] ?? []
     );
 
     $this->sendJson($device);

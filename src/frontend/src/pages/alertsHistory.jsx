@@ -12,7 +12,7 @@ import {
 import dayjs from "dayjs";
 import NavBar from "./navBar.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
-import { getDevices, getDevice } from "../services/deviceService.js";
+import { getDevices } from "../services/deviceService.js";
 import { getAlerts } from "../services/alertService.js";
 import AlertCard from "../components/AlertCard.jsx";
 import AlertFilters from "../components/AlertFilters.jsx";
@@ -31,7 +31,6 @@ export default function AlertsHistory() {
      ALERTS
   ====================== */
   const [alerts, setAlerts] = useState([]);
-  const [deviceThreshold, setDeviceThreshold] = useState(null);
   const [error, setError] = useState("");
 
   /* =====================
@@ -79,13 +78,9 @@ export default function AlertsHistory() {
     async function loadAlerts() {
       try {
         setError("");
-        const [data, device] = await Promise.all([
-          getAlerts(selectedDeviceId, {}, token),
-          getDevice(selectedDeviceId, token),
-        ]);
+        const data = await getAlerts(selectedDeviceId, {}, token);
         if (!cancelled) {
           setAlerts(data || []);
-          setDeviceThreshold(device?.threshold ?? null);
         }
       } catch (err) {
         if (!cancelled) {

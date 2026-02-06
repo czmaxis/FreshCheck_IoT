@@ -88,11 +88,6 @@ export default function DashboardSummary({ deviceId, token, onOpenLimits }) {
       parts.push(`Vlhkost ${hText}`);
     }
 
-    const doorLimit = deviceThreshold?.doorOpenMaxSeconds;
-    if (doorLimit != null) {
-      parts.push(`Dveře max ${doorLimit} s`);
-    }
-
     return parts.length > 0 ? parts.join(" • ") : "-";
   }, [deviceThreshold]);
 

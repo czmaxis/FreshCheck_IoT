@@ -85,12 +85,6 @@ function formatAlertTreshold(alert) {
     return `Limit vlhkosti ≤ ${max} %`;
   }
 
-  if (alert.type === "door" || alert.type === "doorOpen") {
-    const doorLimit = t?.doorOpenMaxSeconds ?? t?.doorOpen?.max ?? null;
-    if (doorLimit == null) return null;
-    return `Limit dveří max ${doorLimit} s`;
-  }
-
   return null;
 }
 
@@ -126,15 +120,13 @@ export default function AlertCard({ alert, actions }) {
         )}
       </Box>
 
-      <Typography sx={{ mb: 0.5 }}>
-        {formatValue(alert)}
-      </Typography>
+      <Typography sx={{ mb: 0.5 }}>{formatValue(alert)}</Typography>
       <Typography variant="body2" color="text.secondary">
         🕒 {new Date(alert.timestamp).toLocaleString("cs-CZ")}
       </Typography>
       {alertTresholdText && (
         <Typography variant="body2" color="text.secondary">
-          Limity: {alertTresholdText}
+          {alertTresholdText}
         </Typography>
       )}
 
