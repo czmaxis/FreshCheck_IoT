@@ -6,6 +6,7 @@ import AlertFilters from "../components/AlertFilters.jsx";
 import AlertPagination from "../components/AlertPagination.jsx";
 import AlertActions from "../components/AlertActions.jsx";
 import ConfirmDeleteDialog from "../components/ConfirmDeleteDialog.jsx";
+import AlertCardSkeleton from "../components/AlertCardSkeleton.jsx";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import {
@@ -24,6 +25,7 @@ export default function Alerts({ deviceId }) {
   const [perPage, setPerPage] = useState(5);
   const [page, setPage] = useState(1);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [pendingIds, setPendingIds] = useState([]);
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [dateRange, setDateRange] = useState([null, null]);
@@ -125,22 +127,28 @@ export default function Alerts({ deviceId }) {
 
   const handleResolve = async (alertId) => {
     try {
+      setPendingIds((prev) => [...prev, alertId]);
       await resolveAlert(alertId, token);
       setAlerts((prev) => prev.filter((a) => a._id !== alertId));
     } catch (err) {
       setError(
         err.response?.data?.message || "Nepodařilo se vyřešit výstrahu.",
       );
+    } finally {
+      setPendingIds((prev) => prev.filter((id) => id !== alertId));
     }
   };
 
   const handleDelete = async (alertId) => {
     try {
+      setPendingIds((prev) => [...prev, alertId]);
       await deleteAlert(alertId, token);
       setAlerts((prev) => prev.filter((a) => a._id !== alertId));
       setConfirmDeleteId(null);
     } catch (err) {
       setError(err.response?.data?.message || "Nepodařilo se smazat výstrahu.");
+    } finally {
+      setPendingIds((prev) => prev.filter((id) => id !== alertId));
     }
   };
 
@@ -233,18 +241,23 @@ export default function Alerts({ deviceId }) {
       {visible && (
         <Box px={3}>
           {pagedAlerts.map((alert) => (
-            <AlertCard
-              key={alert._id}
-              alert={alert}
-              actions={
-                <AlertActions
-                  isResolved={false}
-                  onResolve={() => handleResolve(alert._id)}
-                  onRestore={() => {}}
-                  onDelete={() => openDeleteConfirm(alert._id)}
+            <Box key={alert._id}>
+              {pendingIds.includes(alert._id) ? (
+                <AlertCardSkeleton count={1} />
+              ) : (
+                <AlertCard
+                  alert={alert}
+                  actions={
+                    <AlertActions
+                      isResolved={false}
+                      onResolve={() => handleResolve(alert._id)}
+                      onRestore={() => {}}
+                      onDelete={() => openDeleteConfirm(alert._id)}
+                    />
+                  }
                 />
-              }
-            />
+              )}
+            </Box>
           ))}
         </Box>
       )}
