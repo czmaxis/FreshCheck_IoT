@@ -50,7 +50,7 @@ function getDoorState(illuminance) {
   return { label: "Otevřeno", color: "warning" };
 }
 
-export default function SensorData({ deviceId }) {
+export default function SensorData({ deviceId, refreshKey }) {
   const { token } = useAuth();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -114,7 +114,7 @@ export default function SensorData({ deviceId }) {
     return () => {
       cancelled = true;
     };
-  }, [deviceId, token]);
+  }, [deviceId, token, refreshKey]);
 
   useEffect(() => {
     const [start, end] = dateRange;

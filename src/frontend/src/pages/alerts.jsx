@@ -12,7 +12,7 @@ import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import { getAlerts, resolveAlert, deleteAlert } from "../services/alertService.js";
 import { useAuth } from "../context/AuthContext.jsx";
 
-export default function Alerts({ deviceId }) {
+export default function Alerts({ deviceId, refreshKey }) {
   const { token } = useAuth();
 
   const [alerts, setAlerts] = useState([]);
@@ -51,7 +51,7 @@ export default function Alerts({ deviceId }) {
     return () => {
       cancelled = true;
     };
-  }, [deviceId, token]);
+  }, [deviceId, token, refreshKey]);
 
   useEffect(() => {
     setPage(1);

@@ -67,6 +67,14 @@ export default function Dashboard() {
   const [summaryDeviceThreshold, setSummaryDeviceThreshold] = useState(null);
   const [limitsVersion, setLimitsVersion] = useState(0);
   const [limitsSaving, setLimitsSaving] = useState(false);
+  const [refreshTick, setRefreshTick] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setRefreshTick((v) => v + 1);
+    }, 60 * 1000);
+    return () => clearInterval(id);
+  }, []);
 
   useEffect(() => {
     async function load() {
@@ -114,7 +122,7 @@ export default function Dashboard() {
     return () => {
       cancelled = true;
     };
-  }, [selectedDeviceId, token]);
+  }, [selectedDeviceId, token, refreshTick]);
 
   const handleSelectDevice = (deviceId) => {
     setSelectedDeviceId(deviceId);
@@ -401,12 +409,16 @@ export default function Dashboard() {
           deviceId={selectedDeviceId}
           token={token}
           onOpenLimits={openLimitsDialog}
-          refreshKey={limitsVersion}
+          refreshKey={limitsVersion + refreshTick}
           limitsLoading={limitsSaving}
         />
         <p />
         {selectedDeviceId && (
-          <Alerts deviceId={selectedDeviceId} sx={{ mb: 2, mt: 2 }} />
+          <Alerts
+            deviceId={selectedDeviceId}
+            refreshKey={refreshTick}
+            sx={{ mb: 2, mt: 2 }}
+          />
         )}
         {error && (
           <Typography color="error" sx={{ mb: 2, mt: 2 }}>
@@ -416,10 +428,10 @@ export default function Dashboard() {
         <Box width="100%" mt={4}>
           {selectedDeviceId ? (
             <>
-              <SensorData deviceId={selectedDeviceId} />
+              <SensorData deviceId={selectedDeviceId} refreshKey={refreshTick} />
               <DeviceCharts
                 deviceId={selectedDeviceId}
-                refreshKey={limitsVersion}
+                refreshKey={limitsVersion + refreshTick}
                 limitsLoading={limitsSaving}
               />
             </>
