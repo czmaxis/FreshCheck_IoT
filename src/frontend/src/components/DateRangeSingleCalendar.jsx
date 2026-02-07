@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+﻿import React, { useMemo, useState, useEffect, useRef } from "react";
 import { Box, Button, Popover, TextField, Typography } from "@mui/material";
 import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
 import dayjs from "dayjs";
@@ -11,8 +11,10 @@ export default function DateRangeSingleCalendar({
   size = "small",
   fullWidth = false,
   textFieldSx = {},
+  autoOpenKey,
 }) {
   const [anchorEl, setAnchorEl] = useState(null);
+  const inputRef = useRef(null);
   const [start, end] = value || [null, null];
 
   const displayValue = useMemo(() => {
@@ -24,6 +26,13 @@ export default function DateRangeSingleCalendar({
 
   const handleOpen = (event) => setAnchorEl(event.currentTarget);
   const handleClose = () => setAnchorEl(null);
+
+  useEffect(() => {
+    if (autoOpenKey === undefined || autoOpenKey === null) return;
+    if (inputRef.current) {
+      setAnchorEl(inputRef.current);
+    }
+  }, [autoOpenKey]);
 
   const handleSelect = (newDate) => {
     if (!newDate) return;
@@ -53,6 +62,7 @@ export default function DateRangeSingleCalendar({
         size={size}
         value={displayValue}
         onClick={handleOpen}
+        inputRef={inputRef}
         inputProps={{ readOnly: true }}
         fullWidth={fullWidth}
         sx={{

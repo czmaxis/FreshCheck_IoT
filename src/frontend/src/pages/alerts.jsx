@@ -5,12 +5,18 @@ import {
   Button,
   MenuItem,
   TextField,
+  Checkbox,
+  useMediaQuery,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
 } from "@mui/material";
 import dayjs from "dayjs";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import "dayjs/locale/cs";
+import DateRangeSingleCalendar from "../components/DateRangeSingleCalendar.jsx";
 import AlertCard from "../components/AlertCard.jsx";
 import AlertFilters from "../components/AlertFilters.jsx";
 import AlertPagination from "../components/AlertPagination.jsx";
@@ -21,9 +27,12 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import { getAlerts, resolveAlert, deleteAlert } from "../services/alertService.js";
 import { useAuth } from "../context/AuthContext.jsx";
+import { useTheme } from "@mui/material/styles";
 
 export default function Alerts({ deviceId, refreshKey }) {
   const { token } = useAuth();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const [alerts, setAlerts] = useState([]);
   const [error, setError] = useState("");
@@ -36,6 +45,23 @@ export default function Alerts({ deviceId, refreshKey }) {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [dateRange, setDateRange] = useState([null, null]);
+  const [deleteMode, setDeleteMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState(() => new Set());
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [confirmDeleteScope, setConfirmDeleteScope] = useState(null);
+  const [deleteDateRange, setDeleteDateRange] = useState([null, null]);
+  const [showDeleteCustomRange, setShowDeleteCustomRange] = useState(false);
+  const [deleteCalendarOpenKey, setDeleteCalendarOpenKey] = useState(0);
+
+  const DELETE_OPTIONS = [
+    { label: "Smazat za poslední hodinu", value: "1h" },
+    { label: "Smazat za posledních 6 hodin", value: "6h" },
+    { label: "Smazat za posledních 24 hodin", value: "24h" },
+    { label: "Smazat za poslední týden", value: "7d" },
+    { label: "Smazat vše", value: "all" },
+    { label: "Označit a smazat", value: "select" },
+    { label: "Od–do", value: "custom" },
+  ];
 
   useEffect(() => {
     if (!deviceId) return;
@@ -67,6 +93,13 @@ export default function Alerts({ deviceId, refreshKey }) {
   useEffect(() => {
     setPage(1);
   }, [deviceId, perPage]);
+
+  useEffect(() => {
+    setDeleteMode(false);
+    setSelectedIds(new Set());
+    setDeleteDateRange([null, null]);
+    setShowDeleteCustomRange(false);
+  }, [deviceId]);
 
   useEffect(() => {
     setPage(1);
@@ -192,6 +225,103 @@ export default function Alerts({ deviceId, refreshKey }) {
     }
   };
 
+  const handleDeleteSelection = async (ids) => {
+    if (!ids.length) return;
+    try {
+      setDeleteLoading(true);
+      await Promise.all(ids.map((id) => deleteAlert(id, token)));
+      setAlerts((prev) => prev.filter((a) => !ids.includes(a._id)));
+      setSelectedIds(new Set());
+      setDeleteMode(false);
+    } catch (err) {
+      setError(
+        err.response?.data?.message || "Nepodařilo se smazat výstrahy.",
+      );
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const handleDeleteRange = (value) => {
+    if (value === "select") {
+      setDeleteMode(true);
+      return;
+    }
+
+    if (value === "custom") {
+      setShowDeleteCustomRange(true);
+      setDeleteCalendarOpenKey((k) => k + 1);
+      return;
+    }
+
+    setShowDeleteCustomRange(false);
+
+    const now = new Date();
+    let from = null;
+    if (value === "1h") {
+      from = new Date(now.getTime() - 60 * 60 * 1000);
+    } else if (value === "6h") {
+      from = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+    } else if (value === "24h") {
+      from = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    } else if (value === "7d") {
+      from = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    } else if (value === "all") {
+      from = null;
+    }
+
+    const fromTs = from ? from.getTime() : null;
+    const idsToDelete = alerts
+      .filter((a) => {
+        const ts = a.timestamp ? new Date(a.timestamp).getTime() : null;
+        if (!ts) return false;
+        if (fromTs != null && ts < fromTs) return false;
+        return true;
+      })
+      .map((a) => a._id)
+      .filter(Boolean);
+
+    setConfirmDeleteScope({ type: "range", value, ids: idsToDelete });
+  };
+
+  useEffect(() => {
+    if (!showDeleteCustomRange) return;
+    const [start, end] = deleteDateRange;
+    if (!start || !end) return;
+
+    const fromTs = dayjs(start).startOf("day").valueOf();
+    const toTs = dayjs(end).endOf("day").valueOf();
+
+    const idsToDelete = alerts
+      .filter((a) => {
+        const ts = a.timestamp ? new Date(a.timestamp).getTime() : null;
+        if (!ts) return false;
+        if (ts < fromTs) return false;
+        if (ts > toTs) return false;
+        return true;
+      })
+      .map((a) => a._id)
+      .filter(Boolean);
+
+    setConfirmDeleteScope({ type: "range", value: "custom", ids: idsToDelete });
+  }, [deleteDateRange, showDeleteCustomRange, alerts]);
+
+  const requestDeleteSelected = () => {
+    setConfirmDeleteScope({
+      type: "selected",
+      ids: [...selectedIds],
+    });
+  };
+
+  const confirmDelete = async () => {
+    if (!confirmDeleteScope?.ids?.length) {
+      setConfirmDeleteScope(null);
+      return;
+    }
+    await handleDeleteSelection(confirmDeleteScope.ids);
+    setConfirmDeleteScope(null);
+  };
+
   const confirmBulk = async () => {
     try {
       if (confirmBulkAction === "resolve") {
@@ -285,6 +415,78 @@ export default function Alerts({ deviceId, refreshKey }) {
           flexWrap="wrap"
           sx={{ width: { xs: "100%", sm: "auto" } }}
         >
+          <Box
+            display="flex"
+            alignItems="center"
+            gap={1}
+            sx={{ width: { xs: "100%", sm: "auto" } }}
+          >
+            {!deleteMode ? (
+              <TextField
+                select
+                size="small"
+                label="Smazat"
+                value=""
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (!value) return;
+                  handleDeleteRange(value);
+                }}
+                sx={{ minWidth: 180, width: { xs: "100%", sm: 200 } }}
+              >
+                {DELETE_OPTIONS.map((opt) => (
+                  <MenuItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </MenuItem>
+                ))}
+              </TextField>
+            ) : (
+              <Box
+                display="flex"
+                alignItems="center"
+                gap={1}
+                sx={{ width: { xs: "100%", sm: "auto" } }}
+              >
+                <Button
+                  variant="contained"
+                  color="error"
+                  size="small"
+                  onClick={requestDeleteSelected}
+                  disabled={selectedIds.size === 0 || deleteLoading}
+                  sx={{ width: { xs: "100%", sm: "auto" } }}
+                >
+                  Smazat
+                </Button>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => {
+                    setDeleteMode(false);
+                    setSelectedIds(new Set());
+                  }}
+                  sx={{ width: { xs: "100%", sm: "auto" } }}
+                >
+                  Zrušit
+                </Button>
+              </Box>
+            )}
+          </Box>
+
+          {showDeleteCustomRange && !deleteMode && (
+            <Box sx={{ width: { xs: "100%", sm: "auto" } }}>
+              <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="cs">
+                <DateRangeSingleCalendar
+                  value={deleteDateRange}
+                  onChange={setDeleteDateRange}
+                  label="Od–do"
+                  size="small"
+                  fullWidth={isMobile}
+                  autoOpenKey={deleteCalendarOpenKey}
+                />
+              </LocalizationProvider>
+            </Box>
+          )}
+
           <AlertFilters
             dateRange={dateRange}
             onDateRangeChange={setDateRange}
@@ -334,22 +536,49 @@ export default function Alerts({ deviceId, refreshKey }) {
       {visible && (
         <Box px={{ xs: 1.5, sm: 3 }}>
           {pagedAlerts.map((alert) => (
-            <Box key={alert._id}>
-              {pendingIds.includes(alert._id) ? (
-                <AlertCardSkeleton count={1} />
-              ) : (
-                <AlertCard
-                  alert={alert}
-                  actions={
-                    <AlertActions
-                      isResolved={false}
-                      onResolve={() => handleResolve(alert._id)}
-                      onRestore={() => {}}
-                      onDelete={() => openDeleteConfirm(alert._id)}
-                    />
-                  }
-                />
+            <Box key={alert._id} display="flex" alignItems="flex-start" gap={1}>
+              {deleteMode && (
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    flexShrink: 0,
+                    pt: 1,
+                  }}
+                >
+                  <Checkbox
+                    checked={selectedIds.has(alert._id)}
+                    onChange={(e) => {
+                      setSelectedIds((prev) => {
+                        const next = new Set(prev);
+                        if (e.target.checked) {
+                          next.add(alert._id);
+                        } else {
+                          next.delete(alert._id);
+                        }
+                        return next;
+                      });
+                    }}
+                  />
+                </Box>
               )}
+              <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                {pendingIds.includes(alert._id) ? (
+                  <AlertCardSkeleton count={1} />
+                ) : (
+                  <AlertCard
+                    alert={alert}
+                    actions={
+                      <AlertActions
+                        isResolved={false}
+                        onResolve={() => handleResolve(alert._id)}
+                        onRestore={() => {}}
+                        onDelete={() => openDeleteConfirm(alert._id)}
+                      />
+                    }
+                  />
+                )}
+              </Box>
             </Box>
           ))}
         </Box>
@@ -402,6 +631,33 @@ export default function Alerts({ deviceId, refreshKey }) {
             onClick={confirmBulk}
           >
             {confirmBulkAction === "delete" ? "Smazat vše" : "Potvrdit vše"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(confirmDeleteScope)}
+        onClose={() => setConfirmDeleteScope(null)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>Smazat výstrahy?</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2">
+            {confirmDeleteScope?.type === "selected"
+              ? `Opravdu chcete smazat vybrané výstrahy? (${confirmDeleteScope.ids.length})`
+              : `Opravdu chcete smazat výstrahy pro zvolený rozsah? (${confirmDeleteScope?.ids?.length ?? 0})`}
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmDeleteScope(null)}>Zrušit</Button>
+          <Button
+            color="error"
+            variant="contained"
+            onClick={confirmDelete}
+            disabled={deleteLoading}
+          >
+            Smazat
           </Button>
         </DialogActions>
       </Dialog>

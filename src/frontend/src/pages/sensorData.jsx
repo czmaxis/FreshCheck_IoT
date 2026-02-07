@@ -22,6 +22,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import "dayjs/locale/cs";
 import dayjs from "dayjs";
 import DateRangeSingleCalendar from "../components/DateRangeSingleCalendar.jsx";
+import TimeRangeSelector from "../components/TimeRangeSelector.jsx";
 import DeviceThermostatIcon from "@mui/icons-material/DeviceThermostat";
 import OpacityIcon from "@mui/icons-material/Opacity";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
@@ -66,6 +67,9 @@ export default function SensorData({ deviceId, refreshKey }) {
   const [selectedIds, setSelectedIds] = useState(() => new Set());
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [confirmDeleteScope, setConfirmDeleteScope] = useState(null);
+  const [deleteDateRange, setDeleteDateRange] = useState([null, null]);
+  const [showDeleteCustomRange, setShowDeleteCustomRange] = useState(false);
+  const [deleteCalendarOpenKey, setDeleteCalendarOpenKey] = useState(0);
 
   // single collapse/expand state for the whole block
   const [expanded, setExpanded] = useState(true);
@@ -78,15 +82,6 @@ export default function SensorData({ deviceId, refreshKey }) {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [dateRange, setDateRange] = useState([null, null]);
-  const QUICK_RANGES = [
-    { label: "1h", value: "1h" },
-    { label: "6h", value: "6h" },
-    { label: "24h", value: "24h" },
-    { label: "Včera", value: "yesterday" },
-    { label: "Tento týden", value: "thisWeek" },
-    { label: "7d", value: "7d" },
-    { label: "Vše", value: "all" },
-  ];
   const DELETE_OPTIONS = [
     { label: "Smazat za poslední hodinu", value: "1h" },
     { label: "Smazat za posledních 6 hodin", value: "6h" },
@@ -94,6 +89,7 @@ export default function SensorData({ deviceId, refreshKey }) {
     { label: "Smazat za poslední týden", value: "7d" },
     { label: "Smazat vše", value: "all" },
     { label: "Označit a smazat", value: "select" },
+    { label: "Od–do", value: "custom" },
   ];
 
   useEffect(() => {
@@ -102,6 +98,8 @@ export default function SensorData({ deviceId, refreshKey }) {
     setExpanded(true);
     setDeleteMode(false);
     setSelectedIds(new Set());
+    setDeleteDateRange([null, null]);
+    setShowDeleteCustomRange(false);
   }, [deviceId]);
 
   useEffect(() => {
@@ -260,6 +258,14 @@ export default function SensorData({ deviceId, refreshKey }) {
 
     if (!deviceId) return;
 
+    if (value === "custom") {
+      setShowDeleteCustomRange(true);
+      setDeleteCalendarOpenKey((k) => k + 1);
+      return;
+    }
+
+    setShowDeleteCustomRange(false);
+
     let from = null;
     const now = new Date();
     if (value === "1h") {
@@ -287,6 +293,28 @@ export default function SensorData({ deviceId, refreshKey }) {
 
     setConfirmDeleteScope({ type: "range", value, ids: idsToDelete });
   };
+
+  useEffect(() => {
+    if (!showDeleteCustomRange) return;
+    const [start, end] = deleteDateRange;
+    if (!start || !end) return;
+
+    const fromTs = dayjs(start).startOf("day").valueOf();
+    const toTs = dayjs(end).endOf("day").valueOf();
+
+    const idsToDelete = data
+      .filter((item) => {
+        const ts = item.timestamp ? new Date(item.timestamp).getTime() : null;
+        if (!ts) return false;
+        if (ts < fromTs) return false;
+        if (ts > toTs) return false;
+        return true;
+      })
+      .map((item) => item._id)
+      .filter(Boolean);
+
+    setConfirmDeleteScope({ type: "range", value: "custom", ids: idsToDelete });
+  }, [deleteDateRange, showDeleteCustomRange, data]);
 
   const requestDeleteSelected = () => {
     setConfirmDeleteScope({
@@ -382,38 +410,27 @@ export default function SensorData({ deviceId, refreshKey }) {
             )}
           </Box>
 
-          <Box
-            sx={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 1,
-              width: { xs: "100%", sm: "auto" },
-            }}
-          >
-            {QUICK_RANGES.map((r) => (
-              <Button
-                key={r.value}
-                size="small"
-                variant="outlined"
-                onClick={() => applyQuickRange(r.value)}
-                sx={{ flex: { xs: "1 1 auto", sm: "0 0 auto" } }}
-              >
-                {r.label}
-              </Button>
-            ))}
-          </Box>
+          {showDeleteCustomRange && !deleteMode && (
+            <Box sx={{ width: { xs: "100%", sm: "auto" } }}>
+              <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="cs">
+                <DateRangeSingleCalendar
+                  value={deleteDateRange}
+                  onChange={setDeleteDateRange}
+                  label="Od–do"
+                  size="small"
+                  fullWidth={isMobile}
+                  autoOpenKey={deleteCalendarOpenKey}
+                />
+              </LocalizationProvider>
+            </Box>
+          )}
 
-          <Box sx={{ width: { xs: "100%", sm: "auto" } }}>
-            <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="cs">
-              <DateRangeSingleCalendar
-                value={dateRange}
-                onChange={setDateRange}
-                label="Od–do"
-                size="small"
-                fullWidth={isMobile}
-              />
-            </LocalizationProvider>
-          </Box>
+          <TimeRangeSelector
+            dateRange={dateRange}
+            onDateRangeChange={setDateRange}
+            onQuickRange={applyQuickRange}
+            label="Zobrazit"
+          />
 
           <Box
             display="flex"
