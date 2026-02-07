@@ -192,8 +192,10 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
     });
   }, [alertTimes, range, fromDate, toDate]);
 
+  const visibleData = dateFilteredData;
+
   const temperatureDomain = useMemo(() => {
-    const temps = dateFilteredData
+    const temps = visibleData
       .map((d) => d.temperature)
       .filter((v) => v != null && !Number.isNaN(v));
     const tMin = threshold?.temperature?.min;
@@ -213,7 +215,7 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
     const pad = rangeVal > 0 ? rangeVal * 0.1 : 1;
     return { min: min - pad, max: max + pad };
   }, [
-    dateFilteredData,
+    visibleData,
     threshold?.temperature?.min,
     threshold?.temperature?.max,
   ]);
