@@ -10,13 +10,12 @@ import {
   useTheme,
   useMediaQuery,
 } from "@mui/material";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+
 import "dayjs/locale/cs";
 import dayjs from "dayjs";
-import DateRangeSingleCalendar from "../components/DateRangeSingleCalendar.jsx";
+
 import TimeRangeSelector from "../components/TimeRangeSelector.jsx";
-import LimitsSkeleton from "../components/LimitsSkeleton.jsx";
+
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import DeviceThermostatIcon from "@mui/icons-material/DeviceThermostat";
@@ -30,7 +29,6 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
-  ReferenceLine,
   ReferenceArea,
   Brush,
 } from "recharts";
@@ -41,7 +39,7 @@ import { getDevice } from "../services/deviceService.js";
 
 function parseTimestamp(ts) {
   const d = new Date(ts);
-  d.setHours(d.getHours() + 1); // +1 hour to temporarily fix timezone issue in CZ
+  d.setHours(d.getHours());
   return d;
 }
 
@@ -69,6 +67,7 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
   const [error, setError] = useState("");
   const [expanded, setExpanded] = useState(true);
   const [zoomResetKey, setZoomResetKey] = useState(0);
+  const [brushWindow, setBrushWindow] = useState(null);
 
   const sorted = [...rawData].sort((a, b) => a.ts - b.ts);
   const latest = sorted.length > 0 ? sorted[sorted.length - 1] : null;
@@ -210,11 +209,7 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
     const rangeVal = max - min;
     const pad = rangeVal > 0 ? rangeVal * 0.1 : 1;
     return { min: min - pad, max: max + pad };
-  }, [
-    visibleData,
-    threshold?.temperature?.min,
-    threshold?.temperature?.max,
-  ]);
+  }, [visibleData, threshold?.temperature?.min, threshold?.temperature?.max]);
 
   const toggle = () => setExpanded((v) => !v);
 
@@ -266,8 +261,62 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
     return { startIndex: 0, endIndex: len - 1 };
   }, [dateFilteredData.length, range]);
 
+  useEffect(() => {
+    setBrushWindow(defaultBrushWindow);
+  }, [defaultBrushWindow, zoomResetKey]);
+
   const resetZoom = () => {
     setZoomResetKey((k) => k + 1);
+  };
+
+  const findClosestIndexByTs = (targetTs) => {
+    const data = dateFilteredData;
+    if (!data.length) return 0;
+    let lo = 0;
+    let hi = data.length - 1;
+    while (lo <= hi) {
+      const mid = Math.floor((lo + hi) / 2);
+      const ts = data[mid].ts;
+      if (ts === targetTs) return mid;
+      if (ts < targetTs) lo = mid + 1;
+      else hi = mid - 1;
+    }
+    if (lo >= data.length) return data.length - 1;
+    if (lo <= 0) return 0;
+    const prev = data[lo - 1].ts;
+    const next = data[lo].ts;
+    return Math.abs(prev - targetTs) <= Math.abs(next - targetTs) ? lo - 1 : lo;
+  };
+
+  const handleBrushChange = (next) => {
+    if (!next) return;
+    const { startIndex, endIndex } = next;
+    if (startIndex == null || endIndex == null) return;
+    const data = dateFilteredData;
+    if (!data.length) return;
+
+    const startTs = data[startIndex]?.ts;
+    const endTs = data[endIndex]?.ts;
+    if (!startTs || !endTs) return;
+
+    const startHour = dayjs(startTs).startOf("hour").valueOf();
+    const endHour = dayjs(endTs).endOf("hour").valueOf();
+
+    const snappedStart = findClosestIndexByTs(startHour);
+    const snappedEnd = findClosestIndexByTs(endHour);
+
+    const nextWindow = {
+      startIndex: Math.min(snappedStart, snappedEnd),
+      endIndex: Math.max(snappedStart, snappedEnd),
+    };
+
+    if (
+      !brushWindow ||
+      brushWindow.startIndex !== nextWindow.startIndex ||
+      brushWindow.endIndex !== nextWindow.endIndex
+    ) {
+      setBrushWindow(nextWindow);
+    }
   };
 
   return (
@@ -329,7 +378,11 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
 
       {dateFilteredData.length > 0 && (
         <Box sx={{ mt: 1.5, pb: 0.5 }}>
-          <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: "block" }}>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ mb: 0.5, display: "block" }}
+          >
             Posuň výběr pro přiblížení/oddálení časového úseku grafů.
           </Typography>
           <ResponsiveContainer width="100%" height={isMobile ? 36 : 40}>
@@ -341,8 +394,11 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
                 height={isMobile ? 28 : 32}
                 travellerWidth={10}
                 tickFormatter={formatAxisTime}
-                startIndex={defaultBrushWindow.startIndex}
-                endIndex={defaultBrushWindow.endIndex}
+                startIndex={
+                  brushWindow?.startIndex ?? defaultBrushWindow.startIndex
+                }
+                endIndex={brushWindow?.endIndex ?? defaultBrushWindow.endIndex}
+                onChange={handleBrushChange}
               />
             </LineChart>
           </ResponsiveContainer>
@@ -406,11 +462,11 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
                         domain={["dataMin", "dataMax"]}
                         padding={{ left: 8, right: 16 }}
                         tickFormatter={formatAxisTime}
-                    interval={tickInterval}
-                    tick={{ fontSize: isMobile ? 10 : 12 }}
-                    minTickGap={isMobile ? 8 : 8}
-                    height={isMobile ? 30 : 50}
-                  />
+                        interval={tickInterval}
+                        tick={{ fontSize: isMobile ? 10 : 12 }}
+                        minTickGap={isMobile ? 8 : 8}
+                        height={isMobile ? 30 : 50}
+                      />
                       <YAxis
                         domain={[temperatureDomain.min, temperatureDomain.max]}
                         tickFormatter={(v) => `${Math.round(v)}°`}
@@ -465,7 +521,6 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
                           strokeOpacity={0}
                         />
                       )}
-
 
                       <Line
                         type="linear"
@@ -530,11 +585,11 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
                         domain={["dataMin", "dataMax"]}
                         padding={{ left: 8, right: 16 }}
                         tickFormatter={formatAxisTime}
-                    interval={tickInterval}
-                    tick={{ fontSize: isMobile ? 10 : 12 }}
-                    minTickGap={isMobile ? 8 : 8}
-                    height={isMobile ? 30 : 50}
-                  />
+                        interval={tickInterval}
+                        tick={{ fontSize: isMobile ? 10 : 12 }}
+                        minTickGap={isMobile ? 8 : 8}
+                        height={isMobile ? 30 : 50}
+                      />
                       <YAxis
                         domain={[0, 100]}
                         tickFormatter={(v) => `${v}%`}
@@ -589,7 +644,6 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
                           strokeOpacity={0}
                         />
                       )}
-
 
                       <Line
                         type="linear"
