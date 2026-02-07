@@ -9,12 +9,16 @@ import MenuItem from "@mui/material/MenuItem";
 import Button from "@mui/material/Button";
 import Avatar from "@mui/material/Avatar";
 import Tooltip from "@mui/material/Tooltip";
+import useMediaQuery from "@mui/material/useMediaQuery";
+import { useTheme } from "@mui/material/styles";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 
 export default function NavBar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const [anchorElUser, setAnchorElUser] = React.useState(null);
 
@@ -34,7 +38,7 @@ export default function NavBar() {
 
   return (
     <AppBar position="static">
-      <Toolbar disableGutters sx={{ px: 2 }}>
+      <Toolbar disableGutters sx={{ px: { xs: 1, sm: 2 } }}>
         <Typography
           variant="h6"
           sx={{
@@ -46,32 +50,53 @@ export default function NavBar() {
         >
           FreshCheck IoT
         </Typography>
+
         <Box
           sx={{
             flexGrow: 1,
             display: "flex",
-            gap: 1,
-            overflow: "hidden",
+            gap: { xs: 0.5, sm: 1 },
+            minWidth: 0,
           }}
         >
-          <Button component={Link} to="/dashboard" color="inherit">
-            Dashboard
+          <Button
+            component={Link}
+            to="/dashboard"
+            color="inherit"
+            size={isMobile ? "small" : "medium"}
+            sx={{
+              minWidth: 0,
+              px: { xs: 0.75, sm: 1.5 },
+              fontSize: { xs: "0.78rem", sm: "0.875rem" },
+              whiteSpace: "nowrap",
+            }}
+          >
+            DASHBOARD
           </Button>
-          <Button component={Link} to="/history" color="inherit">
-            Historie výstrah
+          <Button
+            component={Link}
+            to="/history"
+            color="inherit"
+            size={isMobile ? "small" : "medium"}
+            sx={{
+              minWidth: 0,
+              px: { xs: 0.75, sm: 1.5 },
+              fontSize: { xs: "0.78rem", sm: "0.875rem" },
+              whiteSpace: "nowrap",
+            }}
+          >
+            HISTORIE VÝSTRAH
           </Button>
         </Box>
 
-        <Box
-          sx={{
-            flexGrow: 0,
-            display: "flex",
-            alignItems: "center",
-          }}
-        >
-          <Tooltip title={user ? user.name : "Uživatel"}>
-            <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
-              <Avatar alt={user ? user.name : "U"} src={user?.avatar || ""} />
+        <Box sx={{ flexGrow: 0, display: "flex", alignItems: "center" }}>
+          <Tooltip title={user ? user.name : "Uzivatel"}>
+            <IconButton onClick={handleOpenUserMenu} sx={{ p: 0, ml: 0.5 }}>
+              <Avatar
+                alt={user ? user.name : "U"}
+                src={user?.avatar || ""}
+                sx={{ width: { xs: 34, sm: 40 }, height: { xs: 34, sm: 40 } }}
+              />
             </IconButton>
           </Tooltip>
           <Menu
@@ -91,8 +116,7 @@ export default function NavBar() {
             >
               Profil
             </MenuItem>
-
-            <MenuItem onClick={handleLogout}>Odhlásit se</MenuItem>
+            <MenuItem onClick={handleLogout}>Odhlasit se</MenuItem>
           </Menu>
         </Box>
       </Toolbar>

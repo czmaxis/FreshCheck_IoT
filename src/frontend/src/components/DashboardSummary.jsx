@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Box, Typography, Stack, TextField, MenuItem, Button } from "@mui/material";
 import LimitsSkeleton from "./LimitsSkeleton.jsx";
 import { getSensorData } from "../services/sensorDataService.js";
@@ -122,28 +122,12 @@ export default function DashboardSummary({
       const y = new Date(now);
       y.setDate(y.getDate() - 1);
       from = new Date(y.getFullYear(), y.getMonth(), y.getDate(), 0, 0, 0, 0);
-      to = new Date(
-        y.getFullYear(),
-        y.getMonth(),
-        y.getDate(),
-        23,
-        59,
-        59,
-        999,
-      );
+      to = new Date(y.getFullYear(), y.getMonth(), y.getDate(), 23, 59, 59, 999);
     } else if (range === "thisWeek") {
       const day = now.getDay() === 0 ? 7 : now.getDay();
       const start = new Date(now);
       start.setDate(now.getDate() - (day - 1));
-      from = new Date(
-        start.getFullYear(),
-        start.getMonth(),
-        start.getDate(),
-        0,
-        0,
-        0,
-        0,
-      );
+      from = new Date(start.getFullYear(), start.getMonth(), start.getDate(), 0, 0, 0, 0);
       to = now;
     }
 
@@ -168,7 +152,6 @@ export default function DashboardSummary({
     let tempCount = 0;
     let humSum = 0;
     let humCount = 0;
-
     let doorOpenings = 0;
 
     for (const item of filteredData) {
@@ -185,9 +168,7 @@ export default function DashboardSummary({
         item.doors === true ||
         item.doors === 1 ||
         (item.illuminance != null && Number(item.illuminance) > 0);
-      if (doorIsOpen) {
-        doorOpenings += 1;
-      }
+      if (doorIsOpen) doorOpenings += 1;
     }
 
     return {
@@ -218,20 +199,31 @@ export default function DashboardSummary({
       maxWidth="900px"
       mt={2}
       mb={2}
-      p={2}
+      p={{ xs: 1.5, sm: 2 }}
       borderRadius={2}
-      sx={{ backgroundColor: "#f7f7f7", border: "1px solid #e0e0e0" }}
+      sx={{
+        backgroundColor: "#f7f7f7",
+        border: "1px solid #e0e0e0",
+        overflowX: "hidden",
+        boxSizing: "border-box",
+      }}
     >
-      <Box display="flex" alignItems="center" justifyContent="space-between">
+      <Box
+        display="flex"
+        alignItems={{ xs: "stretch", sm: "center" }}
+        justifyContent="space-between"
+        flexDirection={{ xs: "column", sm: "row" }}
+        gap={{ xs: 1, sm: 0 }}
+      >
         <Typography variant="subtitle1">Přehled posledních dat</Typography>
-        <Box display="flex" alignItems="center" gap={1}>
+        <Box display="flex" alignItems="center" gap={1} sx={{ width: { xs: "100%", sm: "auto" } }}>
           <Typography variant="body2">Průměry za</Typography>
           <TextField
             select
             size="small"
             value={range}
             onChange={(e) => setRange(e.target.value)}
-            sx={{ minWidth: 90 }}
+            sx={{ minWidth: 90, width: { xs: "100%", sm: 90 } }}
           >
             {RANGES.map((r) => (
               <MenuItem key={r.value} value={r.value}>
@@ -242,15 +234,8 @@ export default function DashboardSummary({
         </Box>
       </Box>
 
-      <Box
-        sx={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 3,
-          mt: 1,
-        }}
-      >
-        <Stack spacing={0.5} sx={{ minWidth: 260, flex: 1 }}>
+      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, mt: 1 }}>
+        <Stack spacing={0.5} sx={{ minWidth: { xs: 0, sm: 260 }, flex: 1 }}>
           <Typography>
             {summary.activeAlerts > 0 ? "🔴" : "🟢"} Stav zařízení:{" "}
             {summary.activeAlerts > 0 ? "Pozor" : "OK"}
@@ -273,7 +258,7 @@ export default function DashboardSummary({
           </Typography>
         </Stack>
 
-        <Stack spacing={0.5} sx={{ minWidth: 260, flex: 1 }}>
+        <Stack spacing={0.5} sx={{ minWidth: { xs: 0, sm: 260 }, flex: 1 }}>
           <Typography variant="subtitle2">Průměry</Typography>
           <Typography>
             📊 Průměrná teplota:{" "}
@@ -287,9 +272,7 @@ export default function DashboardSummary({
               ? `${averages.avgHumidity.toFixed(1)} %`
               : "-"}
           </Typography>
-          <Typography>
-            🚪 Počet otevření dveří: {averages.doorOpenings}
-          </Typography>
+          <Typography>🚪 Počet otevření dveří: {averages.doorOpenings}</Typography>
         </Stack>
       </Box>
 
@@ -305,8 +288,9 @@ export default function DashboardSummary({
           pt: 1,
           borderTop: "1px dashed #ddd",
           display: "flex",
-          alignItems: "center",
+          alignItems: { xs: "stretch", sm: "center" },
           justifyContent: "space-between",
+          flexDirection: { xs: "column", sm: "row" },
           gap: 2,
         }}
       >
@@ -322,6 +306,7 @@ export default function DashboardSummary({
           variant="outlined"
           onClick={onOpenLimits}
           disabled={!deviceId}
+          sx={{ width: { xs: "100%", sm: "auto" } }}
         >
           Nastavit limity
         </Button>

@@ -5,7 +5,6 @@ import {
   CircularProgress,
   Button,
   Collapse,
-  ButtonGroup,
   useTheme,
   useMediaQuery,
 } from "@mui/material";
@@ -206,7 +205,6 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
     }
     return formatTime(d);
   };
-  const mobileChartWidth = Math.max(360, dateFilteredData.length * 60);
   const defaultBrushWindow = useMemo(() => {
     const len = dateFilteredData.length;
     if (len === 0) return { startIndex: 0, endIndex: 0 };
@@ -221,48 +219,76 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
   };
 
   return (
-    <Box p={3} mt={4}>
+    <Box
+      p={{ xs: 1.5, sm: 3 }}
+      mt={{ xs: 2, sm: 4 }}
+      sx={{ maxWidth: "100%", overflowX: "hidden", boxSizing: "border-box" }}
+    >
       <Box
         display="flex"
-        alignItems="center"
+        alignItems={{ xs: "stretch", sm: "center" }}
         justifyContent="space-between"
-        flexWrap="wrap"
+        flexDirection={{ xs: "column", sm: "row" }}
         gap={2}
       >
         <Typography variant="h5">Grafy (teplota / vlhkost)</Typography>
 
-        <Box display="flex" alignItems="center" gap={2} flexWrap="wrap">
-          <ButtonGroup size="small">
+        <Box
+          display="flex"
+          alignItems="center"
+          gap={1}
+          flexWrap="wrap"
+          sx={{ width: { xs: "100%", sm: "auto" } }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 1,
+              width: { xs: "100%", sm: "auto" },
+            }}
+          >
             {RANGES.map((r) => (
               <Button
                 key={r.value}
+                size="small"
                 variant={range === r.value ? "contained" : "outlined"}
                 onClick={() => setRange(r.value)}
+                sx={{ flex: { xs: "1 1 auto", sm: "0 0 auto" } }}
               >
                 {r.label}
               </Button>
             ))}
-          </ButtonGroup>
+          </Box>
 
-          <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="cs">
-            <DateRangeSingleCalendar
-              value={dateRange}
-              onChange={setDateRange}
-              label="Od–do"
-              size="small"
-            />
-          </LocalizationProvider>
+          <Box sx={{ width: { xs: "100%", sm: "auto" } }}>
+            <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="cs">
+              <DateRangeSingleCalendar
+                value={dateRange}
+                onChange={setDateRange}
+                label="Od–do"
+                size="small"
+                fullWidth={isMobile}
+              />
+            </LocalizationProvider>
+          </Box>
 
           <Button
             size="small"
             variant="outlined"
             onClick={toggle}
             startIcon={expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+            sx={{ width: { xs: "calc(50% - 4px)", sm: "auto" } }}
           >
             {expanded ? "Skrýt" : "Zobrazit"}
           </Button>
-          <Button size="small" variant="outlined" onClick={resetZoom}>
-            Reset zoom
+          <Button
+            size="small"
+            variant="outlined"
+            onClick={resetZoom}
+            sx={{ width: { xs: "calc(50% - 4px)", sm: "auto" } }}
+          >
+            {isMobile ? "Reset" : "Reset zoom"}
           </Button>
         </Box>
       </Box>
@@ -331,19 +357,7 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
               </Box>
             )}
 
-            <Box
-              sx={{
-                width: "100%",
-                mt: 1,
-                overflowX: isMobile ? "auto" : "visible",
-              }}
-            >
-              <Box
-                sx={{
-                  width: isMobile ? `${mobileChartWidth}px` : "100%",
-                  height: isMobile ? 260 : 300,
-                }}
-              >
+            <Box sx={{ width: "100%", height: isMobile ? 260 : 300, mt: 1 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={dateFilteredData} syncId="deviceChartsSync">
                   <CartesianGrid strokeDasharray="3 3" />
@@ -427,22 +441,9 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
                   />
                   </LineChart>
                 </ResponsiveContainer>
-              </Box>
             </Box>
 
-            <Box
-              sx={{
-                width: "100%",
-                mt: 3,
-                overflowX: isMobile ? "auto" : "visible",
-              }}
-            >
-              <Box
-                sx={{
-                  width: isMobile ? `${mobileChartWidth}px` : "100%",
-                  height: isMobile ? 260 : 300,
-                }}
-              >
+            <Box sx={{ width: "100%", height: isMobile ? 260 : 300, mt: 3 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={dateFilteredData} syncId="deviceChartsSync">
                   <CartesianGrid strokeDasharray="3 3" />
@@ -516,7 +517,6 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
                   />
                   </LineChart>
                 </ResponsiveContainer>
-              </Box>
             </Box>
           </>
         ) : (

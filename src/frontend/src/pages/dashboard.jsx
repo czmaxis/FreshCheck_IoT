@@ -328,10 +328,26 @@ export default function Dashboard() {
         alignItems="center"
         justifyContent="flex-start"
         minHeight="100vh"
-        p={2}
+        p={{ xs: 1.5, sm: 2 }}
+        sx={{
+          width: "100%",
+          maxWidth: "100%",
+          overflowX: "hidden",
+          boxSizing: "border-box",
+        }}
       >
-        <Box mt={3} display="flex" alignItems="center" gap={1}>
-          <FormControl variant="standard" sx={{ minWidth: 220 }}>
+        <Box
+          mt={3}
+          display="flex"
+          alignItems="center"
+          gap={1}
+          flexWrap="wrap"
+          sx={{ width: "100%", maxWidth: 800 }}
+        >
+          <FormControl
+            variant="standard"
+            sx={{ minWidth: { xs: 0, sm: 220 }, width: { xs: "100%", sm: "auto" }, flex: 1 }}
+          >
             <InputLabel id="device-select-label">Vyber zařízení</InputLabel>
             <Select
               labelId="device-select-label"
@@ -358,6 +374,7 @@ export default function Dashboard() {
             aria-label="nastavení zařízení"
             onClick={handleOpenSettings}
             size="small"
+            sx={{ ml: { xs: "auto", sm: 0 } }}
           >
             <SettingsIcon />
           </IconButton>

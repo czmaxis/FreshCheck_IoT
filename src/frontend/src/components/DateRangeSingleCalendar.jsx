@@ -9,9 +9,10 @@ export default function DateRangeSingleCalendar({
   onChange,
   label = "Období",
   size = "small",
+  fullWidth = false,
+  textFieldSx = {},
 }) {
   const [anchorEl, setAnchorEl] = useState(null);
-
   const [start, end] = value || [null, null];
 
   const displayValue = useMemo(() => {
@@ -21,13 +22,8 @@ export default function DateRangeSingleCalendar({
     return `${startText} – ${endText}`;
   }, [start, end]);
 
-  const handleOpen = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
+  const handleOpen = (event) => setAnchorEl(event.currentTarget);
+  const handleClose = () => setAnchorEl(null);
 
   const handleSelect = (newDate) => {
     if (!newDate) return;
@@ -48,9 +44,7 @@ export default function DateRangeSingleCalendar({
     handleClose();
   };
 
-  const handleClear = () => {
-    onChange([null, null]);
-  };
+  const handleClear = () => onChange([null, null]);
 
   return (
     <Box>
@@ -60,7 +54,12 @@ export default function DateRangeSingleCalendar({
         value={displayValue}
         onClick={handleOpen}
         inputProps={{ readOnly: true }}
-        sx={{ minWidth: 220 }}
+        fullWidth={fullWidth}
+        sx={{
+          minWidth: fullWidth ? 0 : 220,
+          width: fullWidth ? "100%" : "auto",
+          ...textFieldSx,
+        }}
       />
       <Popover
         open={Boolean(anchorEl)}

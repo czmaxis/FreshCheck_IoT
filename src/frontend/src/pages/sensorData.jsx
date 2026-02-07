@@ -11,7 +11,6 @@ import {
   Pagination,
   Button,
   TextField,
-  ButtonGroup,
 } from "@mui/material";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -215,29 +214,65 @@ export default function SensorData({ deviceId }) {
   };
 
   return (
-    <Box p={3}>
-      <Box display="flex" justifyContent="space-between" alignItems="center">
+    <Box
+      p={{ xs: 1.5, sm: 3 }}
+      sx={{ maxWidth: "100%", overflowX: "hidden", boxSizing: "border-box" }}
+    >
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems={{ xs: "stretch", sm: "center" }}
+        flexDirection={{ xs: "column", sm: "row" }}
+        gap={2}
+      >
         <Typography variant="h5">Naměřená data</Typography>
 
-        <Box display="flex" alignItems="center" gap={2} flexWrap="wrap">
-          <ButtonGroup size="small" variant="outlined">
+        <Box
+          display="flex"
+          alignItems="center"
+          gap={1}
+          flexWrap="wrap"
+          sx={{ width: { xs: "100%", sm: "auto" } }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 1,
+              width: { xs: "100%", sm: "auto" },
+            }}
+          >
             {QUICK_RANGES.map((r) => (
-              <Button key={r.value} onClick={() => applyQuickRange(r.value)}>
+              <Button
+                key={r.value}
+                size="small"
+                variant="outlined"
+                onClick={() => applyQuickRange(r.value)}
+                sx={{ flex: { xs: "1 1 auto", sm: "0 0 auto" } }}
+              >
                 {r.label}
               </Button>
             ))}
-          </ButtonGroup>
+          </Box>
 
-          <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="cs">
-            <DateRangeSingleCalendar
-              value={dateRange}
-              onChange={setDateRange}
-              label="Od–do"
-              size="small"
-            />
-          </LocalizationProvider>
+          <Box sx={{ width: { xs: "100%", sm: "auto" } }}>
+            <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="cs">
+              <DateRangeSingleCalendar
+                value={dateRange}
+                onChange={setDateRange}
+                label="Od–do"
+                size="small"
+                fullWidth={isMobile}
+              />
+            </LocalizationProvider>
+          </Box>
 
-          <Box display="flex" alignItems="center" gap={1}>
+          <Box
+            display="flex"
+            alignItems="center"
+            gap={1}
+            sx={{ width: { xs: "100%", sm: "auto" } }}
+          >
             <Typography variant="body2">Na stránce</Typography>
             <TextField
               select
@@ -249,6 +284,7 @@ export default function SensorData({ deviceId }) {
               }}
               sx={{
                 minWidth: 60,
+                width: { xs: "100%", sm: 80 },
               }}
             >
               {[1, 5, 10, 20].map((n) => (
@@ -264,6 +300,7 @@ export default function SensorData({ deviceId }) {
             variant="outlined"
             size="small"
             startIcon={expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+            sx={{ width: { xs: "100%", sm: "auto" } }}
           >
             {expanded ? "Skrýt" : "Zobrazit"}
           </Button>
@@ -310,6 +347,8 @@ export default function SensorData({ deviceId }) {
                       sx={{
                         mt: isMobile ? 1 : 0,
                         width: isMobile ? "100%" : "auto",
+                        flexWrap: "wrap",
+                        rowGap: 1,
                       }}
                     >
                       <Chip
@@ -367,7 +406,13 @@ export default function SensorData({ deviceId }) {
             </Typography>
 
             {totalPages > 1 && (
-              <Box display="flex" alignItems="center" gap={1}>
+              <Box
+                display="flex"
+                alignItems="center"
+                gap={1}
+                flexWrap="wrap"
+                justifyContent="center"
+              >
                 <Button
                   size="small"
                   variant="outlined"

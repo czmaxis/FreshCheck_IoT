@@ -9,11 +9,7 @@ import ConfirmDeleteDialog from "../components/ConfirmDeleteDialog.jsx";
 import AlertCardSkeleton from "../components/AlertCardSkeleton.jsx";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
-import {
-  getAlerts,
-  resolveAlert,
-  deleteAlert,
-} from "../services/alertService.js";
+import { getAlerts, resolveAlert, deleteAlert } from "../services/alertService.js";
 import { useAuth } from "../context/AuthContext.jsx";
 
 export default function Alerts({ deviceId }) {
@@ -177,41 +173,53 @@ export default function Alerts({ deviceId }) {
   });
 
   const totalItems = filteredAlerts.length;
-  const pagedAlerts = filteredAlerts.slice(
-    (page - 1) * perPage,
-    page * perPage
-  );
+  const pagedAlerts = filteredAlerts.slice((page - 1) * perPage, page * perPage);
 
   return (
-    <Box width="100%" mb={3}>
+    <Box
+      width="100%"
+      mb={3}
+      sx={{ maxWidth: "100%", overflowX: "hidden", boxSizing: "border-box" }}
+    >
       <Box
-        p={3}
+        p={{ xs: 1.5, sm: 3 }}
         display="flex"
         justifyContent="space-between"
-        alignItems="center"
+        alignItems={{ xs: "stretch", sm: "center" }}
+        flexDirection={{ xs: "column", sm: "row" }}
+        gap={2}
         mb={1}
       >
-        <Typography variant="h5" mr={1}>
+        <Typography variant="h5" mr={{ xs: 0, sm: 1 }}>
           Výstrahy
         </Typography>
 
-        <Box display="flex" alignItems="center" gap={2} flexWrap="wrap">
+        <Box
+          display="flex"
+          alignItems="center"
+          gap={1}
+          flexWrap="wrap"
+          sx={{ width: { xs: "100%", sm: "auto" } }}
+        >
           <AlertFilters
             dateRange={dateRange}
             onDateRangeChange={setDateRange}
             onQuickRange={applyQuickRange}
           />
 
-          <Box display="flex" alignItems="center" gap={1}>
+          <Box
+            display="flex"
+            alignItems="center"
+            gap={1}
+            sx={{ width: { xs: "100%", sm: "auto" } }}
+          >
             <Typography variant="body2">Na stránce</Typography>
             <TextField
               select
               size="small"
               value={perPage}
               onChange={(e) => setPerPage(Number(e.target.value))}
-              sx={{
-                minWidth: 60,
-              }}
+              sx={{ minWidth: 60, width: { xs: "100%", sm: 80 } }}
             >
               {[1, 5, 10, 20].map((n) => (
                 <MenuItem key={n} value={n}>
@@ -226,6 +234,7 @@ export default function Alerts({ deviceId }) {
             variant="outlined"
             onClick={() => setVisible((v) => !v)}
             startIcon={visible ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+            sx={{ width: { xs: "100%", sm: "auto" } }}
           >
             {visible ? "Skrýt" : "Zobrazit"}
           </Button>
@@ -239,7 +248,7 @@ export default function Alerts({ deviceId }) {
       )}
 
       {visible && (
-        <Box px={3}>
+        <Box px={{ xs: 1.5, sm: 3 }}>
           {pagedAlerts.map((alert) => (
             <Box key={alert._id}>
               {pendingIds.includes(alert._id) ? (
@@ -285,3 +294,5 @@ export default function Alerts({ deviceId }) {
     </Box>
   );
 }
+
+
