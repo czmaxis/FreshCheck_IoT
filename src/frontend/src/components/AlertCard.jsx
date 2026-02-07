@@ -1,5 +1,10 @@
 ﻿import React from "react";
 import { Box, Typography, Chip } from "@mui/material";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import ThermostatIcon from "@mui/icons-material/Thermostat";
+import WaterDropIcon from "@mui/icons-material/WaterDrop";
+import DoorFrontIcon from "@mui/icons-material/DoorFront";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
 
 function getTypeLabel(alert) {
   switch (alert.type) {
@@ -50,17 +55,36 @@ function getTitle(alert) {
   return "Výstraha";
 }
 
-function formatValue(alert) {
+function renderValue(alert) {
   if (alert.type === "humidity") {
-    return `💧 ${alert.value ?? "-"} %`;
+    return (
+      <Box display="flex" alignItems="center" gap={1}>
+        <WaterDropIcon fontSize="small" color="info" />
+        <Typography>{`${alert.value ?? "-"} %`}</Typography>
+      </Box>
+    );
   }
   if (alert.type === "temperature") {
-    return `🌡 ${alert.value ?? "-"} °C`;
+    return (
+      <Box display="flex" alignItems="center" gap={1}>
+        <ThermostatIcon fontSize="small" color="error" />
+        <Typography>{`${alert.value ?? "-"} °C`}</Typography>
+      </Box>
+    );
   }
   if (alert.type === "door" || alert.type === "doorOpen") {
-    return `🚪 ${alert.value ?? "-"} s`;
+    return (
+      <Box display="flex" alignItems="center" gap={1}>
+        <DoorFrontIcon fontSize="small" color="action" />
+        <Typography>{`${alert.value ?? "-"} s`}</Typography>
+      </Box>
+    );
   }
-  return `${alert.value ?? "-"}`;
+  return (
+    <Box display="flex" alignItems="center" gap={1}>
+      <Typography>{`${alert.value ?? "-"}`}</Typography>
+    </Box>
+  );
 }
 
 function formatAlertTreshold(alert) {
@@ -104,7 +128,10 @@ export default function AlertCard({ alert, actions }) {
     >
       <Box display="flex" alignItems="center" gap={1} mb={1}>
         <Typography variant="subtitle1" fontWeight={600}>
-          ⚠️ {getTitle(alert)}
+          <Box display="flex" alignItems="center" gap={1}>
+            <WarningAmberIcon fontSize="small" color="warning" />
+            {getTitle(alert)}
+          </Box>
         </Typography>
 
         {!isActive && (
@@ -120,10 +147,13 @@ export default function AlertCard({ alert, actions }) {
         )}
       </Box>
 
-      <Typography sx={{ mb: 0.5 }}>{formatValue(alert)}</Typography>
-      <Typography variant="body2" color="text.secondary">
-        🕒 {new Date(alert.timestamp).toLocaleString("cs-CZ")}
-      </Typography>
+      <Box sx={{ mb: 0.5 }}>{renderValue(alert)}</Box>
+      <Box display="flex" alignItems="center" gap={1}>
+        <AccessTimeIcon fontSize="small" color="action" />
+        <Typography variant="body2" color="text.secondary">
+          {new Date(alert.timestamp).toLocaleString("cs-CZ")}
+        </Typography>
+      </Box>
       {alertTresholdText && (
         <Typography variant="body2" color="text.secondary">
           {alertTresholdText}

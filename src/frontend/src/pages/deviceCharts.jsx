@@ -18,6 +18,8 @@ import DateRangeSingleCalendar from "../components/DateRangeSingleCalendar.jsx";
 import LimitsSkeleton from "../components/LimitsSkeleton.jsx";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
+import DeviceThermostatIcon from "@mui/icons-material/DeviceThermostat";
+import OpacityIcon from "@mui/icons-material/Opacity";
 import {
   ResponsiveContainer,
   LineChart,
@@ -395,7 +397,13 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
                   gap={1}
                   sx={{ mb: 1 }}
                 >
-                  <Typography variant="subtitle1">🌡️ Teplota (°C)</Typography>
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <DeviceThermostatIcon
+                      fontSize="small"
+                      sx={{ color: "#ff5a3c" }}
+                    />
+                    <Typography variant="subtitle1">Teplota (°C)</Typography>
+                  </Box>
                   <Typography variant="body2" color="text.secondary">
                     Aktuální teplota:{" "}
                     {latest?.temperature != null
@@ -440,7 +448,7 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
                           isMobile
                             ? undefined
                             : {
-                                value: "🌡 Teplota (°C)",
+                                value: "Teplota (°C)",
                                 angle: -90,
                                 position: "insideLeft",
                               }
@@ -518,7 +526,10 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
                   gap={1}
                   sx={{ mb: 1 }}
                 >
-                  <Typography variant="subtitle1">💧 Vlhkost (%)</Typography>
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <OpacityIcon fontSize="small" sx={{ color: "#1aa6c8" }} />
+                    <Typography variant="subtitle1">Vlhkost (%)</Typography>
+                  </Box>
                   <Typography variant="body2" color="text.secondary">
                     Aktuální vlhkost:{" "}
                     {latest?.humidity != null ? `${latest.humidity} %` : "-"}
@@ -561,7 +572,7 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
                           isMobile
                             ? undefined
                             : {
-                                value: "💧 Vlhkost (%)",
+                                value: "Vlhkost (%)",
                                 angle: -90,
                                 position: "insideLeft",
                               }

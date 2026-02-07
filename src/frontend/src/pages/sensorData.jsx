@@ -352,13 +352,18 @@ export default function SensorData({ deviceId, refreshKey }) {
                       }}
                     >
                       <Chip
-                        icon={<DeviceThermostatIcon />}
+                        icon={
+                          <DeviceThermostatIcon />
+                        }
                         label={`${
                           item.temperature != null
                             ? item.temperature
                             : "-"
                         }${item.temperature != null ? " °C" : ""}`}
                         variant="outlined"
+                        sx={{
+                          "& .MuiChip-icon": { color: "error.main" },
+                        }}
                       />
 
                       <Chip
@@ -367,18 +372,33 @@ export default function SensorData({ deviceId, refreshKey }) {
                           item.humidity != null ? item.humidity : "-"
                         }${item.humidity != null ? " %" : ""}`}
                         variant="outlined"
+                        sx={{
+                          "& .MuiChip-icon": { color: "info.main" },
+                        }}
                       />
 
                       {(() => {
                         const door = getDoorState(item.illuminance);
                         return (
                           <Chip
-                            icon={<DoorFrontIcon />}
+                            icon={
+                              <DoorFrontIcon />
+                            }
                             label={
                               isMobile ? undefined : `Dveře: ${door.label}`
                             }
                             color={door.color}
                             variant="outlined"
+                            sx={{
+                              "& .MuiChip-icon": {
+                                color:
+                                  door.color === "success"
+                                    ? "success.main"
+                                    : door.color === "warning"
+                                      ? "warning.main"
+                                      : "text.secondary",
+                              },
+                            }}
                           />
                         );
                       })()}

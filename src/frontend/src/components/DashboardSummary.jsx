@@ -1,5 +1,19 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Box, Typography, Stack, TextField, MenuItem, Button } from "@mui/material";
+﻿import React, { useEffect, useMemo, useState } from "react";
+import {
+  Box,
+  Typography,
+  Stack,
+  TextField,
+  MenuItem,
+  Button,
+} from "@mui/material";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import ThermostatIcon from "@mui/icons-material/Thermostat";
+import OpacityIcon from "@mui/icons-material/Opacity";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import EqualizerIcon from "@mui/icons-material/Equalizer";
+import DoorFrontIcon from "@mui/icons-material/DoorFront";
 import LimitsSkeleton from "./LimitsSkeleton.jsx";
 import { getSensorData } from "../services/sensorDataService.js";
 import { getAlerts } from "../services/alertService.js";
@@ -122,12 +136,28 @@ export default function DashboardSummary({
       const y = new Date(now);
       y.setDate(y.getDate() - 1);
       from = new Date(y.getFullYear(), y.getMonth(), y.getDate(), 0, 0, 0, 0);
-      to = new Date(y.getFullYear(), y.getMonth(), y.getDate(), 23, 59, 59, 999);
+      to = new Date(
+        y.getFullYear(),
+        y.getMonth(),
+        y.getDate(),
+        23,
+        59,
+        59,
+        999,
+      );
     } else if (range === "thisWeek") {
       const day = now.getDay() === 0 ? 7 : now.getDay();
       const start = new Date(now);
       start.setDate(now.getDate() - (day - 1));
-      from = new Date(start.getFullYear(), start.getMonth(), start.getDate(), 0, 0, 0, 0);
+      from = new Date(
+        start.getFullYear(),
+        start.getMonth(),
+        start.getDate(),
+        0,
+        0,
+        0,
+        0,
+      );
       to = now;
     }
 
@@ -193,6 +223,20 @@ export default function DashboardSummary({
     return `před ${diffDays} dny`;
   };
 
+  const renderRow = (icon, text) => (
+    <Box display="flex" alignItems="center" gap={1}>
+      {icon}
+      <Typography>{text}</Typography>
+    </Box>
+  );
+
+  const statusIcon =
+    summary.activeAlerts > 0 ? (
+      <WarningAmberIcon fontSize="small" color="warning" />
+    ) : (
+      <CheckCircleIcon fontSize="small" color="success" />
+    );
+
   return (
     <Box
       width="100%"
@@ -216,7 +260,12 @@ export default function DashboardSummary({
         gap={{ xs: 1, sm: 0 }}
       >
         <Typography variant="subtitle1">Přehled posledních dat</Typography>
-        <Box display="flex" alignItems="center" gap={1} sx={{ width: { xs: "100%", sm: "auto" } }}>
+        <Box
+          display="flex"
+          alignItems="center"
+          gap={1}
+          sx={{ width: { xs: "100%", sm: "auto" } }}
+        >
           <Typography variant="body2">Průměry za</Typography>
           <TextField
             select
@@ -235,44 +284,40 @@ export default function DashboardSummary({
       </Box>
 
       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, mt: 1 }}>
-        <Stack spacing={0.5} sx={{ minWidth: { xs: 0, sm: 260 }, flex: 1 }}>
-          <Typography>
-            {summary.activeAlerts > 0 ? "🔴" : "🟢"} Stav zařízení:{" "}
-            {summary.activeAlerts > 0 ? "Pozor" : "OK"}
-          </Typography>
-          <Typography>
-            {summary.activeAlerts > 0 ? "🔴" : "🟢"} Aktivní výstrahy:{" "}
-            {summary.activeAlerts}
-          </Typography>
-          <Typography>
-            🌡 Poslední teplota: {summary.latest?.temperature ?? "-"} °C
-          </Typography>
-          <Typography>
-            💧 Poslední vlhkost: {summary.latest?.humidity ?? "-"} %
-          </Typography>
-          <Typography>
-            🕒 Poslední data:{" "}
-            {summary.latest?.timestamp
-              ? formatRelativeTime(summary.latest.timestamp)
-              : "-"}
-          </Typography>
+        <Stack spacing={0.75} sx={{ minWidth: { xs: 0, sm: 260 }, flex: 1 }}>
+          {renderRow(
+            statusIcon,
+            `Stav zařízení: ${summary.activeAlerts > 0 ? "Pozor" : "OK"}`,
+          )}
+          {renderRow(statusIcon, `Aktivní výstrahy: ${summary.activeAlerts}`)}
+          {renderRow(
+            <ThermostatIcon fontSize="small" color="error" />,
+            `Aktuální teplota: ${summary.latest?.temperature ?? "-"} °C`,
+          )}
+          {renderRow(
+            <OpacityIcon fontSize="small" color="info" />,
+            `Aktuální vlhkost: ${summary.latest?.humidity ?? "-"} %`,
+          )}
+          {renderRow(
+            <AccessTimeIcon fontSize="small" color="action" />,
+            `Poslední data: ${summary.latest?.timestamp ? formatRelativeTime(summary.latest.timestamp) : "-"}`,
+          )}
         </Stack>
 
-        <Stack spacing={0.5} sx={{ minWidth: { xs: 0, sm: 260 }, flex: 1 }}>
+        <Stack spacing={0.75} sx={{ minWidth: { xs: 0, sm: 260 }, flex: 1 }}>
           <Typography variant="subtitle2">Průměry</Typography>
-          <Typography>
-            📊 Průměrná teplota:{" "}
-            {averages.avgTemp != null
-              ? `${averages.avgTemp.toFixed(1)} °C`
-              : "-"}
-          </Typography>
-          <Typography>
-            📊 Průměrná vlhkost:{" "}
-            {averages.avgHumidity != null
-              ? `${averages.avgHumidity.toFixed(1)} %`
-              : "-"}
-          </Typography>
-          <Typography>🚪 Počet otevření dveří: {averages.doorOpenings}</Typography>
+          {renderRow(
+            <EqualizerIcon fontSize="small" color="action" />,
+            `Průměrná teplota: ${averages.avgTemp != null ? `${averages.avgTemp.toFixed(1)} °C` : "-"}`,
+          )}
+          {renderRow(
+            <EqualizerIcon fontSize="small" color="action" />,
+            `Průměrná vlhkost: ${averages.avgHumidity != null ? `${averages.avgHumidity.toFixed(1)} %` : "-"}`,
+          )}
+          {renderRow(
+            <DoorFrontIcon fontSize="small" color="action" />,
+            `Počet otevření dveří: ${averages.doorOpenings}`,
+          )}
         </Stack>
       </Box>
 
