@@ -416,7 +416,7 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
                       data={dateFilteredData}
                       syncId="deviceChartsSync"
                     >
-                      <CartesianGrid strokeDasharray="3 3" />
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
                       <XAxis
                         dataKey="ts"
                         type="number"
@@ -483,14 +483,6 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
                         />
                       )}
 
-                      {filteredAlertTimes.map((t) => (
-                        <ReferenceLine
-                          key={`temperature-alert-${t}`}
-                          x={t}
-                          stroke="#ffa000"
-                          strokeDasharray="2 6"
-                        />
-                      ))}
 
                       <Line
                         type="linear"
@@ -545,7 +537,7 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
                       data={dateFilteredData}
                       syncId="deviceChartsSync"
                     >
-                      <CartesianGrid strokeDasharray="3 3" />
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
                       <XAxis
                         dataKey="ts"
                         type="number"
@@ -612,14 +604,6 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
                         />
                       )}
 
-                      {filteredAlertTimes.map((t) => (
-                        <ReferenceLine
-                          key={`humidity-alert-${t}`}
-                          x={t}
-                          stroke="#4fb3ff"
-                          strokeDasharray="2 6"
-                        />
-                      ))}
 
                       <Line
                         type="linear"
