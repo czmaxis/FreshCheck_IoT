@@ -1,5 +1,15 @@
 ﻿import React, { useEffect, useState } from "react";
-import { Box, Typography, Button, MenuItem, TextField } from "@mui/material";
+import {
+  Box,
+  Typography,
+  Button,
+  MenuItem,
+  TextField,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+} from "@mui/material";
 import dayjs from "dayjs";
 import AlertCard from "../components/AlertCard.jsx";
 import AlertFilters from "../components/AlertFilters.jsx";
@@ -21,6 +31,7 @@ export default function Alerts({ deviceId, refreshKey }) {
   const [perPage, setPerPage] = useState(5);
   const [page, setPage] = useState(1);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [confirmBulkAction, setConfirmBulkAction] = useState(null);
   const [pendingIds, setPendingIds] = useState([]);
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
@@ -148,6 +159,51 @@ export default function Alerts({ deviceId, refreshKey }) {
     }
   };
 
+  const handleResolveAll = async () => {
+    const ids = alerts.map((a) => a._id).filter(Boolean);
+    if (ids.length === 0) return;
+    try {
+      setPendingIds((prev) => [...prev, ...ids]);
+      await Promise.all(ids.map((id) => resolveAlert(id, token)));
+      setAlerts([]);
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          "Nepodařilo se potvrdit všechny výstrahy.",
+      );
+    } finally {
+      setPendingIds((prev) => prev.filter((id) => !ids.includes(id)));
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    const ids = alerts.map((a) => a._id).filter(Boolean);
+    if (ids.length === 0) return;
+    try {
+      setPendingIds((prev) => [...prev, ...ids]);
+      await Promise.all(ids.map((id) => deleteAlert(id, token)));
+      setAlerts([]);
+    } catch (err) {
+      setError(
+        err.response?.data?.message || "Nepodařilo se smazat všechny výstrahy.",
+      );
+    } finally {
+      setPendingIds((prev) => prev.filter((id) => !ids.includes(id)));
+    }
+  };
+
+  const confirmBulk = async () => {
+    try {
+      if (confirmBulkAction === "resolve") {
+        await handleResolveAll();
+      } else if (confirmBulkAction === "delete") {
+        await handleDeleteAll();
+      }
+    } finally {
+      setConfirmBulkAction(null);
+    }
+  };
+
   const openDeleteConfirm = (alertId) => {
     setConfirmDeleteId(alertId);
   };
@@ -190,9 +246,37 @@ export default function Alerts({ deviceId, refreshKey }) {
         gap={2}
         mb={1}
       >
-        <Typography variant="h5" mr={{ xs: 0, sm: 1 }}>
-          Výstrahy
-        </Typography>
+        <Box
+          display="flex"
+          alignItems="center"
+          gap={1}
+          flexWrap="wrap"
+          sx={{ width: { xs: "100%", sm: "auto" } }}
+        >
+          <Typography variant="h5" mr={{ xs: 0, sm: 1 }}>
+            Výstrahy
+          </Typography>
+          <Button
+            size="small"
+            variant="outlined"
+            color="primary"
+            onClick={() => setConfirmBulkAction("resolve")}
+            disabled={alerts.length === 0 || pendingIds.length > 0}
+            sx={{ width: { xs: "100%", sm: "auto" } }}
+          >
+            Potvrdit vše
+          </Button>
+          <Button
+            size="small"
+            variant="outlined"
+            color="error"
+            onClick={() => setConfirmBulkAction("delete")}
+            disabled={alerts.length === 0 || pendingIds.length > 0}
+            sx={{ width: { xs: "100%", sm: "auto" } }}
+          >
+            Smazat vše
+          </Button>
+        </Box>
 
         <Box
           display="flex"
@@ -291,6 +375,36 @@ export default function Alerts({ deviceId, refreshKey }) {
         onClose={closeDeleteConfirm}
         onConfirm={() => handleDelete(confirmDeleteId)}
       />
+
+      <Dialog
+        open={Boolean(confirmBulkAction)}
+        onClose={() => setConfirmBulkAction(null)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>
+          {confirmBulkAction === "delete"
+            ? "Smazat všechny výstrahy?"
+            : "Potvrdit všechny výstrahy?"}
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2">
+            {confirmBulkAction === "delete"
+              ? "Smažete všechny aktuální výstrahy pro toto zařízení. Opravdu pokračovat?"
+              : "Potvrdíte všechny aktuální výstrahy pro toto zařízení. Opravdu pokračovat?"}
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmBulkAction(null)}>Zrušit</Button>
+          <Button
+            variant="contained"
+            color={confirmBulkAction === "delete" ? "error" : "primary"}
+            onClick={confirmBulk}
+          >
+            {confirmBulkAction === "delete" ? "Smazat vše" : "Potvrdit vše"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
