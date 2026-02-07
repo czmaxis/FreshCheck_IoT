@@ -5,6 +5,8 @@ import {
   CircularProgress,
   Button,
   Collapse,
+  Card,
+  CardContent,
   useTheme,
   useMediaQuery,
 } from "@mui/material";
@@ -26,6 +28,7 @@ import {
   Tooltip,
   Legend,
   ReferenceLine,
+  ReferenceArea,
   Brush,
 } from "recharts";
 import { useAuth } from "../context/AuthContext.jsx";
@@ -187,6 +190,32 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
       return true;
     });
   }, [alertTimes, range, fromDate, toDate]);
+
+  const temperatureDomain = useMemo(() => {
+    const temps = dateFilteredData
+      .map((d) => d.temperature)
+      .filter((v) => v != null && !Number.isNaN(v));
+    const tMin = threshold?.temperature?.min;
+    const tMax = threshold?.temperature?.max;
+
+    let min = temps.length > 0 ? Math.min(...temps) : null;
+    let max = temps.length > 0 ? Math.max(...temps) : null;
+
+    if (tMin != null) min = min == null ? tMin : Math.min(min, tMin);
+    if (tMax != null) max = max == null ? tMax : Math.max(max, tMax);
+
+    if (min == null || max == null) {
+      return { min: "auto", max: "auto" };
+    }
+
+    const rangeVal = max - min;
+    const pad = rangeVal > 0 ? rangeVal * 0.1 : 1;
+    return { min: min - pad, max: max + pad };
+  }, [
+    dateFilteredData,
+    threshold?.temperature?.min,
+    threshold?.temperature?.max,
+  ]);
 
   const toggle = () => setExpanded((v) => !v);
 
@@ -357,167 +386,232 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
               </Box>
             )}
 
-            <Box sx={{ width: "100%", height: isMobile ? 260 : 300, mt: 1 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={dateFilteredData} syncId="deviceChartsSync">
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis
-                    dataKey="ts"
-                    type="number"
-                    domain={["dataMin", "dataMax"]}
-                    padding={{ left: 8, right: 16 }}
-                    tickFormatter={formatAxisTime}
-                    interval={tickInterval}
-                    tick={{ fontSize: isMobile ? 10 : 12 }}
-                    minTickGap={isMobile ? 20 : 8}
-                    height={isMobile ? 30 : 50}
-                  />
-                  <YAxis
-                    domain={["auto", "auto"]}
-                    tickFormatter={(v) => `${v}°`}
-                    axisLine={{ stroke: "#ff5722" }}
-                    tickLine={{ stroke: "#ff5722" }}
-                    width={isMobile ? 36 : 60}
-                    label={
-                      isMobile
-                        ? undefined
-                        : {
-                            value: "🌡 Teplota (°C)",
-                            angle: -90,
-                            position: "insideLeft",
-                          }
-                    }
-                  />
-                  <Tooltip
-                    labelFormatter={(v) => formatTime(new Date(v))}
-                    formatter={(value, name) => {
-                      if (name.includes("Teplota"))
-                        return [`${value} °C`, name];
-                      return [value, name];
-                    }}
-                  />
-                  {!isMobile && <Legend />}
+            <Card
+              elevation={2}
+              sx={{
+                mt: 2,
+                backgroundColor: "#f7efe7",
+                borderRadius: 2,
+                boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+              }}
+            >
+              <CardContent sx={{ pb: 2 }}>
+                <Typography variant="subtitle1" sx={{ mb: 1 }}>
+                  🌡️ Teplota (°C)
+                </Typography>
+                <Box sx={{ width: "100%", height: isMobile ? 260 : 300 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={dateFilteredData}
+                      syncId="deviceChartsSync"
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis
+                        dataKey="ts"
+                        type="number"
+                        domain={["dataMin", "dataMax"]}
+                        padding={{ left: 8, right: 16 }}
+                        tickFormatter={formatAxisTime}
+                        interval={tickInterval}
+                        tick={{ fontSize: isMobile ? 10 : 12 }}
+                        minTickGap={isMobile ? 20 : 8}
+                        height={isMobile ? 30 : 50}
+                      />
+                      <YAxis
+                        domain={[temperatureDomain.min, temperatureDomain.max]}
+                        tickFormatter={(v) => `${Math.round(v)}°`}
+                        axisLine={{ stroke: "#ff5722" }}
+                        tickLine={{ stroke: "#ff5722" }}
+                        width={isMobile ? 36 : 60}
+                        label={
+                          isMobile
+                            ? undefined
+                            : {
+                                value: "🌡 Teplota (°C)",
+                                angle: -90,
+                                position: "insideLeft",
+                              }
+                        }
+                      />
+                      <Tooltip
+                        labelFormatter={(v) => formatTime(new Date(v))}
+                        formatter={(value, name) => {
+                          if (name.includes("Teplota"))
+                            return [`${value} °C`, name];
+                          return [value, name];
+                        }}
+                      />
+                      {!isMobile && <Legend />}
 
-                  {threshold?.temperature?.max != null && (
-                    <ReferenceLine
-                      y={threshold.temperature.max}
-                      stroke="#ff8a65"
-                      strokeDasharray="4 4"
-                    />
-                  )}
-                  {threshold?.temperature?.min != null && (
-                    <ReferenceLine
-                      y={threshold.temperature.min}
-                      stroke="#ff8a65"
-                      strokeDasharray="4 4"
-                    />
-                  )}
+                      {threshold?.temperature?.min != null && (
+                        <ReferenceArea
+                          y1={temperatureDomain.min}
+                          y2={threshold.temperature.min}
+                          fill="#e5e5e5"
+                          fillOpacity={0.35}
+                          strokeOpacity={0}
+                        />
+                      )}
+                      {threshold?.temperature?.min != null &&
+                        threshold?.temperature?.max != null && (
+                          <ReferenceArea
+                            y1={threshold.temperature.min}
+                            y2={threshold.temperature.max}
+                            fill="#f8fbf7"
+                            fillOpacity={0.35}
+                            strokeOpacity={0}
+                          />
+                        )}
+                      {threshold?.temperature?.max != null && (
+                        <ReferenceArea
+                          y1={threshold.temperature.max}
+                          y2={temperatureDomain.max}
+                          fill="#e5e5e5"
+                          fillOpacity={0.55}
+                          strokeOpacity={0}
+                        />
+                      )}
 
-                  {filteredAlertTimes.map((t) => (
-                    <ReferenceLine
-                      key={`temperature-alert-${t}`}
-                      x={t}
-                      stroke="#ffb300"
-                      strokeDasharray="2 6"
-                    />
-                  ))}
+                      {filteredAlertTimes.map((t) => (
+                        <ReferenceLine
+                          key={`temperature-alert-${t}`}
+                          x={t}
+                          stroke="#ffa000"
+                          strokeDasharray="2 6"
+                        />
+                      ))}
 
-                  <Line
-                    type="linear"
-                    dataKey="temperature"
-                    name="Teplota (°C)"
-                    stroke="#ff5722"
-                    dot={!isMobile}
-                    connectNulls={true}
-                  />
-                  <Brush
-                    key={`temp-brush-${zoomResetKey}-${defaultBrushWindow.startIndex}-${defaultBrushWindow.endIndex}`}
-                    dataKey="ts"
-                    height={isMobile ? 24 : 28}
-                    travellerWidth={10}
-                    tickFormatter={formatAxisTime}
-                    startIndex={defaultBrushWindow.startIndex}
-                    endIndex={defaultBrushWindow.endIndex}
-                  />
-                  </LineChart>
-                </ResponsiveContainer>
-            </Box>
+                      <Line
+                        type="linear"
+                        dataKey="temperature"
+                        name="Teplota (°C)"
+                        stroke="#ff5a3c"
+                        dot={!isMobile}
+                        connectNulls={true}
+                      />
+                      <Brush
+                        key={`temp-brush-${zoomResetKey}-${defaultBrushWindow.startIndex}-${defaultBrushWindow.endIndex}`}
+                        dataKey="ts"
+                        height={isMobile ? 24 : 28}
+                        travellerWidth={10}
+                        tickFormatter={formatAxisTime}
+                        startIndex={defaultBrushWindow.startIndex}
+                        endIndex={defaultBrushWindow.endIndex}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Box>
+              </CardContent>
+            </Card>
 
-            <Box sx={{ width: "100%", height: isMobile ? 260 : 300, mt: 3 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={dateFilteredData} syncId="deviceChartsSync">
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis
-                    dataKey="ts"
-                    type="number"
-                    domain={["dataMin", "dataMax"]}
-                    padding={{ left: 8, right: 16 }}
-                    tickFormatter={formatAxisTime}
-                    interval={tickInterval}
-                    tick={{ fontSize: isMobile ? 10 : 12 }}
-                    minTickGap={isMobile ? 20 : 8}
-                    height={isMobile ? 30 : 50}
-                  />
-                  <YAxis
-                    domain={[0, 100]}
-                    tickFormatter={(v) => `${v}%`}
-                    axisLine={{ stroke: "#2196f3" }}
-                    tickLine={{ stroke: "#2196f3" }}
-                    width={isMobile ? 36 : 60}
-                    label={
-                      isMobile
-                        ? undefined
-                        : {
-                            value: "💧 Vlhkost (%)",
-                            angle: -90,
-                            position: "insideLeft",
-                          }
-                    }
-                  />
-                  <Tooltip
-                    labelFormatter={(v) => formatTime(new Date(v))}
-                    formatter={(value, name) => {
-                      if (name.includes("Vlhkost")) return [`${value} %`, name];
-                      return [value, name];
-                    }}
-                  />
-                  {!isMobile && <Legend />}
+            <Card
+              elevation={2}
+              sx={{
+                mt: 3,
+                backgroundColor: "#eaf5f8",
+                borderRadius: 2,
+                boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+              }}
+            >
+              <CardContent sx={{ pb: 2 }}>
+                <Typography variant="subtitle1" sx={{ mb: 1 }}>
+                  💧 Vlhkost (%)
+                </Typography>
+                <Box sx={{ width: "100%", height: isMobile ? 260 : 300 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={dateFilteredData}
+                      syncId="deviceChartsSync"
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis
+                        dataKey="ts"
+                        type="number"
+                        domain={["dataMin", "dataMax"]}
+                        padding={{ left: 8, right: 16 }}
+                        tickFormatter={formatAxisTime}
+                        interval={tickInterval}
+                        tick={{ fontSize: isMobile ? 10 : 12 }}
+                        minTickGap={isMobile ? 20 : 8}
+                        height={isMobile ? 30 : 50}
+                      />
+                      <YAxis
+                        domain={[0, 100]}
+                        tickFormatter={(v) => `${v}%`}
+                        axisLine={{ stroke: "#2196f3" }}
+                        tickLine={{ stroke: "#2196f3" }}
+                        width={isMobile ? 36 : 60}
+                        label={
+                          isMobile
+                            ? undefined
+                            : {
+                                value: "💧 Vlhkost (%)",
+                                angle: -90,
+                                position: "insideLeft",
+                              }
+                        }
+                      />
+                      <Tooltip
+                        labelFormatter={(v) => formatTime(new Date(v))}
+                        formatter={(value, name) => {
+                          if (name.includes("Vlhkost"))
+                            return [`${value} %`, name];
+                          return [value, name];
+                        }}
+                      />
+                      {!isMobile && <Legend />}
 
-                  {threshold?.humidity?.max != null && (
-                    <ReferenceLine
-                      y={threshold.humidity.max}
-                      stroke="#64b5f6"
-                      strokeDasharray="4 4"
-                    />
-                  )}
-                  {threshold?.humidity?.min != null && (
-                    <ReferenceLine
-                      y={threshold.humidity.min}
-                      stroke="#64b5f6"
-                      strokeDasharray="4 4"
-                    />
-                  )}
+                      {threshold?.humidity?.min != null && (
+                        <ReferenceArea
+                          y1={0}
+                          y2={threshold.humidity.min}
+                          fill="#e5e5e5"
+                          fillOpacity={0.35}
+                          strokeOpacity={0}
+                        />
+                      )}
+                      {threshold?.humidity?.min != null &&
+                        threshold?.humidity?.max != null && (
+                          <ReferenceArea
+                            y1={threshold.humidity.min}
+                            y2={threshold.humidity.max}
+                            fill="#f8fbf7"
+                            fillOpacity={0.35}
+                            strokeOpacity={0}
+                          />
+                        )}
+                      {threshold?.humidity?.max != null && (
+                        <ReferenceArea
+                          y1={threshold.humidity.max}
+                          y2={100}
+                          fill="#e5e5e5"
+                          fillOpacity={0.35}
+                          strokeOpacity={0}
+                        />
+                      )}
 
-                  {filteredAlertTimes.map((t) => (
-                    <ReferenceLine
-                      key={`humidity-alert-${t}`}
-                      x={t}
-                      stroke="#64b5f6"
-                      strokeDasharray="2 6"
-                    />
-                  ))}
+                      {filteredAlertTimes.map((t) => (
+                        <ReferenceLine
+                          key={`humidity-alert-${t}`}
+                          x={t}
+                          stroke="#4fb3ff"
+                          strokeDasharray="2 6"
+                        />
+                      ))}
 
-                  <Line
-                    type="linear"
-                    dataKey="humidity"
-                    name="Vlhkost (%)"
-                    stroke="#2196f3"
-                    dot={!isMobile}
-                    connectNulls={true}
-                  />
-                  </LineChart>
-                </ResponsiveContainer>
-            </Box>
+                      <Line
+                        type="linear"
+                        dataKey="humidity"
+                        name="Vlhkost (%)"
+                        stroke="#1aa6c8"
+                        dot={!isMobile}
+                        connectNulls={true}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Box>
+              </CardContent>
+            </Card>
           </>
         ) : (
           !loading && (
