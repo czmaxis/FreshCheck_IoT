@@ -75,6 +75,7 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
   const [zoomResetKey, setZoomResetKey] = useState(0);
 
   const sorted = [...rawData].sort((a, b) => a.ts - b.ts);
+  const latest = sorted.length > 0 ? sorted[sorted.length - 1] : null;
   useEffect(() => {
     if (!deviceId) return;
     let cancelled = false;
@@ -221,18 +222,37 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
 
   // dynamic label interval based on density
   const tickInterval =
-    dateFilteredData.length > (isMobile ? 10 : 30)
-      ? Math.ceil(dateFilteredData.length / (isMobile ? 4 : 10))
+    dateFilteredData.length > (isMobile ? 20 : 30)
+      ? Math.ceil(dateFilteredData.length / (isMobile ? 6 : 10))
       : 0;
+
+  const timeSpanMs = useMemo(() => {
+    if (dateFilteredData.length === 0) return 0;
+    const minTs = dateFilteredData[0].ts;
+    const maxTs = dateFilteredData[dateFilteredData.length - 1].ts;
+    return Math.max(0, maxTs - minTs);
+  }, [dateFilteredData]);
 
   const formatAxisTime = (v) => {
     const d = new Date(v);
-    if (isMobile) {
-      const hours = String(d.getHours()).padStart(2, "0");
-      const minutes = String(d.getMinutes()).padStart(2, "0");
-      return `${hours}:${minutes}`;
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const hours = String(d.getHours()).padStart(2, "0");
+    const minutes = String(d.getMinutes()).padStart(2, "0");
+    const seconds = String(d.getSeconds()).padStart(2, "0");
+
+    // Prefer day-level labels for multi-day ranges
+    if (timeSpanMs >= 24 * 60 * 60 * 1000) {
+      return `${day}.${month}`;
     }
-    return formatTime(d);
+
+    // Prefer more detailed time for very short ranges (~1h)
+    if (timeSpanMs <= 2 * 60 * 60 * 1000) {
+      return `${hours}:${minutes}:${seconds}`;
+    }
+
+    // Default: hour:minute
+    return `${hours}:${minutes}`;
   };
   const defaultBrushWindow = useMemo(() => {
     const len = dateFilteredData.length;
@@ -330,62 +350,31 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
         </Typography>
       )}
 
+      {dateFilteredData.length > 0 && (
+        <Box sx={{ mt: 1.5, pb: 0.5 }}>
+          <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: "block" }}>
+            Posuň výběr pro přiblížení/oddálení časového úseku grafů.
+          </Typography>
+          <ResponsiveContainer width="100%" height={isMobile ? 36 : 40}>
+            <LineChart data={dateFilteredData} syncId="deviceChartsSync">
+              <XAxis dataKey="ts" hide />
+              <Brush
+                key={`temp-brush-${zoomResetKey}-${defaultBrushWindow.startIndex}-${defaultBrushWindow.endIndex}`}
+                dataKey="ts"
+                height={isMobile ? 28 : 32}
+                travellerWidth={10}
+                tickFormatter={formatAxisTime}
+                startIndex={defaultBrushWindow.startIndex}
+                endIndex={defaultBrushWindow.endIndex}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </Box>
+      )}
+
       <Collapse in={expanded}>
         {dateFilteredData.length > 0 ? (
           <>
-            {(limitsLoading ||
-              threshold?.temperature?.min != null ||
-              threshold?.temperature?.max != null ||
-              threshold?.humidity?.min != null ||
-              threshold?.humidity?.max != null) && (
-              <Box
-                sx={{
-                  mt: 2,
-                  mb: 1,
-                  p: 1.5,
-                  borderRadius: 1,
-                  border: "1px solid #e0e0e0",
-                  backgroundColor: "#fafafa",
-                }}
-              >
-                <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
-                  Limity
-                </Typography>
-                {limitsLoading ? (
-                  <LimitsSkeleton lines={2} />
-                ) : (
-                  <Box
-                    sx={{
-                      display: "flex",
-                      flexWrap: "wrap",
-                      gap: 2,
-                    }}
-                  >
-                    {threshold?.temperature?.min != null && (
-                      <Typography variant="body2">
-                        🌡 Min teplota: {threshold.temperature.min} °C
-                      </Typography>
-                    )}
-                    {threshold?.temperature?.max != null && (
-                      <Typography variant="body2">
-                        🌡 Max teplota: {threshold.temperature.max} °C
-                      </Typography>
-                    )}
-                    {threshold?.humidity?.min != null && (
-                      <Typography variant="body2">
-                        💧 Min vlhkost: {threshold.humidity.min} %
-                      </Typography>
-                    )}
-                    {threshold?.humidity?.max != null && (
-                      <Typography variant="body2">
-                        💧 Max vlhkost: {threshold.humidity.max} %
-                      </Typography>
-                    )}
-                  </Box>
-                )}
-              </Box>
-            )}
-
             <Card
               elevation={2}
               sx={{
@@ -396,9 +385,31 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
               }}
             >
               <CardContent sx={{ pb: 2 }}>
-                <Typography variant="subtitle1" sx={{ mb: 1 }}>
-                  🌡️ Teplota (°C)
-                </Typography>
+                <Box
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="space-between"
+                  flexWrap="wrap"
+                  gap={1}
+                  sx={{ mb: 1 }}
+                >
+                  <Typography variant="subtitle1">🌡️ Teplota (°C)</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Aktuální teplota:{" "}
+                    {latest?.temperature != null
+                      ? `${latest.temperature} °C`
+                      : "-"}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Limity:{" "}
+                    {threshold?.temperature?.min != null ||
+                    threshold?.temperature?.max != null
+                      ? `${threshold?.temperature?.min ?? "—"}–${
+                          threshold?.temperature?.max ?? "—"
+                        } °C`
+                      : "—"}
+                  </Typography>
+                </Box>
                 <Box sx={{ width: "100%", height: isMobile ? 260 : 300 }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart
@@ -412,11 +423,11 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
                         domain={["dataMin", "dataMax"]}
                         padding={{ left: 8, right: 16 }}
                         tickFormatter={formatAxisTime}
-                        interval={tickInterval}
-                        tick={{ fontSize: isMobile ? 10 : 12 }}
-                        minTickGap={isMobile ? 20 : 8}
-                        height={isMobile ? 30 : 50}
-                      />
+                    interval={tickInterval}
+                    tick={{ fontSize: isMobile ? 10 : 12 }}
+                    minTickGap={isMobile ? 8 : 8}
+                    height={isMobile ? 30 : 50}
+                  />
                       <YAxis
                         domain={[temperatureDomain.min, temperatureDomain.max]}
                         tickFormatter={(v) => `${Math.round(v)}°`}
@@ -489,15 +500,6 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
                         dot={!isMobile}
                         connectNulls={true}
                       />
-                      <Brush
-                        key={`temp-brush-${zoomResetKey}-${defaultBrushWindow.startIndex}-${defaultBrushWindow.endIndex}`}
-                        dataKey="ts"
-                        height={isMobile ? 24 : 28}
-                        travellerWidth={10}
-                        tickFormatter={formatAxisTime}
-                        startIndex={defaultBrushWindow.startIndex}
-                        endIndex={defaultBrushWindow.endIndex}
-                      />
                     </LineChart>
                   </ResponsiveContainer>
                 </Box>
@@ -514,9 +516,29 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
               }}
             >
               <CardContent sx={{ pb: 2 }}>
-                <Typography variant="subtitle1" sx={{ mb: 1 }}>
-                  💧 Vlhkost (%)
-                </Typography>
+                <Box
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="space-between"
+                  flexWrap="wrap"
+                  gap={1}
+                  sx={{ mb: 1 }}
+                >
+                  <Typography variant="subtitle1">💧 Vlhkost (%)</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Aktuální vlhkost:{" "}
+                    {latest?.humidity != null ? `${latest.humidity} %` : "-"}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Limity:{" "}
+                    {threshold?.humidity?.min != null ||
+                    threshold?.humidity?.max != null
+                      ? `${threshold?.humidity?.min ?? "—"}–${
+                          threshold?.humidity?.max ?? "—"
+                        } %`
+                      : "—"}
+                  </Typography>
+                </Box>
                 <Box sx={{ width: "100%", height: isMobile ? 260 : 300 }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart
@@ -530,11 +552,11 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
                         domain={["dataMin", "dataMax"]}
                         padding={{ left: 8, right: 16 }}
                         tickFormatter={formatAxisTime}
-                        interval={tickInterval}
-                        tick={{ fontSize: isMobile ? 10 : 12 }}
-                        minTickGap={isMobile ? 20 : 8}
-                        height={isMobile ? 30 : 50}
-                      />
+                    interval={tickInterval}
+                    tick={{ fontSize: isMobile ? 10 : 12 }}
+                    minTickGap={isMobile ? 8 : 8}
+                    height={isMobile ? 30 : 50}
+                  />
                       <YAxis
                         domain={[0, 100]}
                         tickFormatter={(v) => `${v}%`}
