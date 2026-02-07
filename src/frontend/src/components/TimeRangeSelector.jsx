@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import { Box, TextField, MenuItem, useMediaQuery } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -21,12 +21,17 @@ export default function TimeRangeSelector({
   onDateRangeChange,
   onQuickRange,
   label = "Zobrazit",
+  selectedValue = "",
 }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const [quickRange, setQuickRange] = useState("");
+  const [quickRange, setQuickRange] = useState(selectedValue);
   const [showCustomRange, setShowCustomRange] = useState(false);
   const [calendarOpenKey, setCalendarOpenKey] = useState(0);
+
+  React.useEffect(() => {
+    setQuickRange(selectedValue ?? "");
+  }, [selectedValue]);
 
   return (
     <Box
@@ -67,7 +72,7 @@ export default function TimeRangeSelector({
               {r.label}
             </MenuItem>
           ))}
-          <MenuItem value="custom">Od–do</MenuItem>
+          <MenuItem value="custom">Od-do</MenuItem>
         </TextField>
       </Box>
 
@@ -77,7 +82,7 @@ export default function TimeRangeSelector({
             <DateRangeSingleCalendar
               value={dateRange}
               onChange={onDateRangeChange}
-              label="Od–do"
+              label="Od-do"
               size="small"
               fullWidth={isMobile}
               autoOpenKey={calendarOpenKey}

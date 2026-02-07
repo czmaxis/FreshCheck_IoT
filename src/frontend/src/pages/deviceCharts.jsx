@@ -7,6 +7,7 @@ import {
   Collapse,
   Card,
   CardContent,
+  Slider,
   useTheme,
   useMediaQuery,
 } from "@mui/material";
@@ -30,7 +31,6 @@ import {
   Tooltip,
   Legend,
   ReferenceArea,
-  Brush,
 } from "recharts";
 import { useAuth } from "../context/AuthContext.jsx";
 import { getSensorData } from "../services/sensorDataService.js";
@@ -66,8 +66,7 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [expanded, setExpanded] = useState(true);
-  const [zoomResetKey, setZoomResetKey] = useState(0);
-  const [brushWindow, setBrushWindow] = useState(null);
+  const [zoomRange, setZoomRange] = useState(null);
 
   const sorted = [...rawData].sort((a, b) => a.ts - b.ts);
   const latest = sorted.length > 0 ? sorted[sorted.length - 1] : null;
@@ -164,6 +163,55 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
     });
   }, [filteredData, fromDate, toDate]);
 
+  const dataBounds = useMemo(() => {
+    const len = dateFilteredData.length;
+    if (!len) return null;
+    return { minTs: dateFilteredData[0].ts, maxTs: dateFilteredData[len - 1].ts };
+  }, [dateFilteredData]);
+
+  useEffect(() => {
+    // Changing the displayed time range/date filter should reset zoom.
+    setZoomRange(null);
+  }, [deviceId, range, fromDate, toDate]);
+
+  useEffect(() => {
+    if (!zoomRange || !dataBounds) return;
+
+    let [startTs, endTs] = zoomRange;
+    if (!Number.isFinite(startTs) || !Number.isFinite(endTs)) {
+      setZoomRange(null);
+      return;
+    }
+
+    if (startTs > endTs) [startTs, endTs] = [endTs, startTs];
+    const minTs = dataBounds.minTs;
+    const maxTs = dataBounds.maxTs;
+    const spanMs = Math.max(0, endTs - startTs);
+
+    if (startTs < minTs) {
+      startTs = minTs;
+      endTs = Math.min(minTs + spanMs, maxTs);
+    }
+    if (endTs > maxTs) {
+      endTs = maxTs;
+      startTs = Math.max(maxTs - spanMs, minTs);
+    }
+
+    startTs = Math.max(startTs, minTs);
+    endTs = Math.min(endTs, maxTs);
+
+    if (startTs !== zoomRange[0] || endTs !== zoomRange[1]) {
+      setZoomRange([startTs, endTs]);
+    }
+  }, [zoomRange, dataBounds]);
+
+  const chartData = useMemo(() => {
+    if (!zoomRange) return dateFilteredData;
+    const start = Math.min(zoomRange[0], zoomRange[1]);
+    const end = Math.max(zoomRange[0], zoomRange[1]);
+    return dateFilteredData.filter((d) => d.ts >= start && d.ts <= end);
+  }, [dateFilteredData, zoomRange]);
+
   const filteredAlertTimes = useMemo(() => {
     if (alertTimes.length === 0) return [];
     if (range === "all") return alertTimes;
@@ -187,7 +235,7 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
     });
   }, [alertTimes, range, fromDate, toDate]);
 
-  const visibleData = dateFilteredData;
+  const visibleData = chartData;
 
   const temperatureDomain = useMemo(() => {
     const temps = visibleData
@@ -220,16 +268,16 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
 
   // dynamic label interval based on density
   const tickInterval =
-    dateFilteredData.length > (isMobile ? 20 : 30)
-      ? Math.ceil(dateFilteredData.length / (isMobile ? 6 : 10))
+    chartData.length > (isMobile ? 20 : 30)
+      ? Math.ceil(chartData.length / (isMobile ? 6 : 10))
       : 0;
 
   const timeSpanMs = useMemo(() => {
-    if (dateFilteredData.length === 0) return 0;
-    const minTs = dateFilteredData[0].ts;
-    const maxTs = dateFilteredData[dateFilteredData.length - 1].ts;
+    if (chartData.length === 0) return 0;
+    const minTs = chartData[0].ts;
+    const maxTs = chartData[chartData.length - 1].ts;
     return Math.max(0, maxTs - minTs);
-  }, [dateFilteredData]);
+  }, [chartData]);
 
   const formatAxisTime = (v) => {
     const d = new Date(v);
@@ -252,71 +300,27 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
     // Default: hour:minute
     return `${hours}:${minutes}`;
   };
-  const defaultBrushWindow = useMemo(() => {
-    const len = dateFilteredData.length;
-    if (len === 0) return { startIndex: 0, endIndex: 0 };
-    if (range === "all" && len > 120) {
-      return { startIndex: len - 120, endIndex: len - 1 };
-    }
-    return { startIndex: 0, endIndex: len - 1 };
-  }, [dateFilteredData.length, range]);
-
-  useEffect(() => {
-    setBrushWindow(defaultBrushWindow);
-  }, [defaultBrushWindow, zoomResetKey]);
-
   const resetZoom = () => {
-    setZoomResetKey((k) => k + 1);
+    setZoomRange(null);
   };
 
-  const findClosestIndexByTs = (targetTs) => {
-    const data = dateFilteredData;
-    if (!data.length) return 0;
-    let lo = 0;
-    let hi = data.length - 1;
-    while (lo <= hi) {
-      const mid = Math.floor((lo + hi) / 2);
-      const ts = data[mid].ts;
-      if (ts === targetTs) return mid;
-      if (ts < targetTs) lo = mid + 1;
-      else hi = mid - 1;
+  const sliderSpanMs = useMemo(() => {
+    if (!dataBounds) return 0;
+    return Math.max(0, dataBounds.maxTs - dataBounds.minTs);
+  }, [dataBounds]);
+
+  const formatSliderTime = (v) => {
+    if (!Number.isFinite(v)) return "-";
+    const d = new Date(v);
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const hours = String(d.getHours()).padStart(2, "0");
+    const minutes = String(d.getMinutes()).padStart(2, "0");
+
+    if (sliderSpanMs >= 24 * 60 * 60 * 1000) {
+      return `${day}.${month} ${hours}:${minutes}`;
     }
-    if (lo >= data.length) return data.length - 1;
-    if (lo <= 0) return 0;
-    const prev = data[lo - 1].ts;
-    const next = data[lo].ts;
-    return Math.abs(prev - targetTs) <= Math.abs(next - targetTs) ? lo - 1 : lo;
-  };
-
-  const handleBrushChange = (next) => {
-    if (!next) return;
-    const { startIndex, endIndex } = next;
-    if (startIndex == null || endIndex == null) return;
-    const data = dateFilteredData;
-    if (!data.length) return;
-
-    const startTs = data[startIndex]?.ts;
-    const endTs = data[endIndex]?.ts;
-    if (!startTs || !endTs) return;
-
-    const startHour = dayjs(startTs).startOf("hour").valueOf();
-    const endHour = dayjs(endTs).endOf("hour").valueOf();
-
-    const snappedStart = findClosestIndexByTs(startHour);
-    const snappedEnd = findClosestIndexByTs(endHour);
-
-    const nextWindow = {
-      startIndex: Math.min(snappedStart, snappedEnd),
-      endIndex: Math.max(snappedStart, snappedEnd),
-    };
-
-    if (
-      !brushWindow ||
-      brushWindow.startIndex !== nextWindow.startIndex ||
-      brushWindow.endIndex !== nextWindow.endIndex
-    ) {
-      setBrushWindow(nextWindow);
-    }
+    return `${hours}:${minutes}`;
   };
 
   return (
@@ -346,6 +350,7 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
             onDateRangeChange={setDateRange}
             onQuickRange={applyQuickRange}
             label="Zobrazit"
+            selectedValue={range}
           />
 
           <Button
@@ -376,7 +381,7 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
         </Typography>
       )}
 
-      {dateFilteredData.length > 0 && (
+      {dateFilteredData.length > 0 && dataBounds && (
         <Box sx={{ mt: 1.5, pb: 0.5 }}>
           <Typography
             variant="caption"
@@ -385,23 +390,39 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
           >
             Posuň výběr pro přiblížení/oddálení časového úseku grafů.
           </Typography>
-          <ResponsiveContainer width="100%" height={isMobile ? 36 : 40}>
-            <LineChart data={dateFilteredData} syncId="deviceChartsSync">
-              <XAxis dataKey="ts" hide />
-              <Brush
-                key={`temp-brush-${zoomResetKey}-${defaultBrushWindow.startIndex}-${defaultBrushWindow.endIndex}`}
-                dataKey="ts"
-                height={isMobile ? 28 : 32}
-                travellerWidth={10}
-                tickFormatter={formatAxisTime}
-                startIndex={
-                  brushWindow?.startIndex ?? defaultBrushWindow.startIndex
-                }
-                endIndex={brushWindow?.endIndex ?? defaultBrushWindow.endIndex}
-                onChange={handleBrushChange}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+
+          <Slider
+            value={zoomRange ?? [dataBounds.minTs, dataBounds.maxTs]}
+            min={dataBounds.minTs}
+            max={dataBounds.maxTs}
+            step={60 * 1000}
+            disableSwap
+            valueLabelDisplay="auto"
+            valueLabelFormat={formatSliderTime}
+            onChange={(_, value) => {
+              if (!Array.isArray(value) || value.length !== 2) return;
+              const start = Math.min(value[0], value[1]);
+              const end = Math.max(value[0], value[1]);
+              setZoomRange([start, end]);
+            }}
+            disabled={dataBounds.minTs === dataBounds.maxTs}
+            sx={{ px: 1, mt: 0.5 }}
+          />
+
+          <Box
+            display="flex"
+            alignItems="center"
+            justifyContent="space-between"
+            sx={{ mt: 0.5 }}
+          >
+            <Typography variant="caption" color="text.secondary">
+              Od: {formatSliderTime((zoomRange ?? [dataBounds.minTs, dataBounds.maxTs])[0])}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Do:{" "}
+              {formatSliderTime((zoomRange ?? [dataBounds.minTs, dataBounds.maxTs])[1])}
+            </Typography>
+          </Box>
         </Box>
       )}
 
@@ -451,10 +472,7 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
                 </Box>
                 <Box sx={{ width: "100%", height: isMobile ? 260 : 300 }}>
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart
-                      data={dateFilteredData}
-                      syncId="deviceChartsSync"
-                    >
+                    <LineChart data={chartData} syncId="deviceChartsSync">
                       <CartesianGrid strokeDasharray="3 3" vertical={false} />
                       <XAxis
                         dataKey="ts"
@@ -574,10 +592,7 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
                 </Box>
                 <Box sx={{ width: "100%", height: isMobile ? 260 : 300 }}>
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart
-                      data={dateFilteredData}
-                      syncId="deviceChartsSync"
-                    >
+                    <LineChart data={chartData} syncId="deviceChartsSync">
                       <CartesianGrid strokeDasharray="3 3" vertical={false} />
                       <XAxis
                         dataKey="ts"
