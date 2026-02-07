@@ -46,6 +46,7 @@ export default function TimeRangeSelector({
           select
           size="small"
           label={label}
+          color="primary"
           value={quickRange}
           onChange={(e) => {
             const value = e.target.value;

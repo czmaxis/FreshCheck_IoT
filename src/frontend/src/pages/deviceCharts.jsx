@@ -15,6 +15,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import "dayjs/locale/cs";
 import dayjs from "dayjs";
 import DateRangeSingleCalendar from "../components/DateRangeSingleCalendar.jsx";
+import TimeRangeSelector from "../components/TimeRangeSelector.jsx";
 import LimitsSkeleton from "../components/LimitsSkeleton.jsx";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
@@ -38,13 +39,6 @@ import { getSensorData } from "../services/sensorDataService.js";
 import { getAlerts } from "../services/alertService.js";
 import { getDevice } from "../services/deviceService.js";
 
-const RANGES = [
-  { label: "1h", value: "1h" },
-  { label: "6h", value: "6h" },
-  { label: "24h", value: "24h" },
-  { label: "7d", value: "7d" },
-  { label: "Vše", value: "all" },
-];
 function parseTimestamp(ts) {
   const d = new Date(ts);
   d.setHours(d.getHours() + 1); // +1 hour to temporarily fix timezone issue in CZ
@@ -224,6 +218,11 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
 
   const toggle = () => setExpanded((v) => !v);
 
+  const applyQuickRange = (value) => {
+    if (!value) return;
+    setRange(value);
+  };
+
   // dynamic label interval based on density
   const tickInterval =
     dateFilteredData.length > (isMobile ? 20 : 30)
@@ -293,38 +292,12 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
           flexWrap="wrap"
           sx={{ width: { xs: "100%", sm: "auto" } }}
         >
-          <Box
-            sx={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 1,
-              width: { xs: "100%", sm: "auto" },
-            }}
-          >
-            {RANGES.map((r) => (
-              <Button
-                key={r.value}
-                size="small"
-                variant={range === r.value ? "contained" : "outlined"}
-                onClick={() => setRange(r.value)}
-                sx={{ flex: { xs: "1 1 auto", sm: "0 0 auto" } }}
-              >
-                {r.label}
-              </Button>
-            ))}
-          </Box>
-
-          <Box sx={{ width: { xs: "100%", sm: "auto" } }}>
-            <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="cs">
-              <DateRangeSingleCalendar
-                value={dateRange}
-                onChange={setDateRange}
-                label="Od–do"
-                size="small"
-                fullWidth={isMobile}
-              />
-            </LocalizationProvider>
-          </Box>
+          <TimeRangeSelector
+            dateRange={dateRange}
+            onDateRangeChange={setDateRange}
+            onQuickRange={applyQuickRange}
+            label="Zobrazit"
+          />
 
           <Button
             size="small"

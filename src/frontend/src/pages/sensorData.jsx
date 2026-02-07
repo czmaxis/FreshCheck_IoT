@@ -364,6 +364,7 @@ export default function SensorData({ deviceId, refreshKey }) {
                 select
                 size="small"
                 label="Smazat"
+                color="primary"
                 value=""
                 onChange={(e) => {
                   const value = e.target.value;
@@ -443,6 +444,7 @@ export default function SensorData({ deviceId, refreshKey }) {
               select
               size="small"
               value={pageSize}
+              color="primary"
               onChange={(e) => {
                 setPageSize(Number(e.target.value));
                 setPage(1);
