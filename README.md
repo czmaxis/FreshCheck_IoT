@@ -1,7 +1,7 @@
 # FreshCheck (Smart Fridge Monitor)
 
 IoT app for monitoring fridge **temperature**, **humidity**, and **door state** (via light detection).
-Built with HARDWARIO Climate Monitor Kit + Radio Dongle.
+Built for HARDWARIO Climate Monitor Kit + Radio Dongle.
 
 ## Features
 - Live temperature & humidity
@@ -10,11 +10,8 @@ Built with HARDWARIO Climate Monitor Kit + Radio Dongle.
 - Alerts thresholds
 
 ## Stack
-- HARDWARIO (radio/firmware)
-- Web app (React + JavaScript)
+- frontend (React + JavaScript)
+- backend (Nette + PHP)
 
-## Quick start
 
-npm install
-npm start
 
