@@ -31,7 +31,7 @@ export default function Login() {
       console.error(err);
       setError(
         err.response?.data?.message ||
-          "Přihlášení se nezdařilo. Zkuste to znovu."
+          "Přihlášení se nezdařilo. Zkuste to znovu.",
       );
     } finally {
       setLoading(false);
@@ -47,9 +47,7 @@ export default function Login() {
       minHeight="100vh"
     >
       <Typography variant="h4" mb={3}>
-        Přihlášení "email": "test@example.com", "password": "123456"
-        <p></p>
-        reálný senzor: Novakovi_testing@seznam.cz password: 12345
+        Přihlášení "email": "nette@example.com", "password": "123456"
       </Typography>
 
       <Box component="form" onSubmit={handleSubmit} width="300px">
