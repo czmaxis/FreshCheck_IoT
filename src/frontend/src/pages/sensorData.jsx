@@ -5,12 +5,17 @@ import {
   CircularProgress,
   Stack,
   Chip,
+  Checkbox,
   IconButton,
   Collapse,
   MenuItem,
   Pagination,
   Button,
   TextField,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -22,7 +27,7 @@ import OpacityIcon from "@mui/icons-material/Opacity";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import { useAuth } from "../context/AuthContext.jsx";
-import { getSensorData } from "../services/sensorDataService.js";
+import { getSensorData, deleteSensorData } from "../services/sensorDataService.js";
 import DoorFrontIcon from "@mui/icons-material/DoorFront";
 import { useTheme, useMediaQuery } from "@mui/material";
 
@@ -57,6 +62,10 @@ export default function SensorData({ deviceId, refreshKey }) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [deleteMode, setDeleteMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState(() => new Set());
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [confirmDeleteScope, setConfirmDeleteScope] = useState(null);
 
   // single collapse/expand state for the whole block
   const [expanded, setExpanded] = useState(true);
@@ -78,11 +87,21 @@ export default function SensorData({ deviceId, refreshKey }) {
     { label: "7d", value: "7d" },
     { label: "Vše", value: "all" },
   ];
+  const DELETE_OPTIONS = [
+    { label: "Smazat za poslední hodinu", value: "1h" },
+    { label: "Smazat za posledních 6 hodin", value: "6h" },
+    { label: "Smazat za posledních 24 hodin", value: "24h" },
+    { label: "Smazat za poslední týden", value: "7d" },
+    { label: "Smazat vše", value: "all" },
+    { label: "Označit a smazat", value: "select" },
+  ];
 
   useEffect(() => {
     // reset paging and expanded state when device changes
     setPage(1);
     setExpanded(true);
+    setDeleteMode(false);
+    setSelectedIds(new Set());
   }, [deviceId]);
 
   useEffect(() => {
@@ -213,6 +232,78 @@ export default function SensorData({ deviceId, refreshKey }) {
     setExpanded((v) => !v);
   };
 
+  const handleDeleteSelection = async (ids) => {
+    if (!deviceId || ids.length === 0) return;
+    try {
+      setDeleteLoading(true);
+      await Promise.all(ids.map((id) => deleteSensorData(id, token)));
+      setData((prev) => prev.filter((item) => !ids.includes(item._id)));
+      setSelectedIds(new Set());
+      setDeleteMode(false);
+    } catch (err) {
+      console.error("Chyba při mazání dat:", err);
+      setError(
+        err.response?.data?.message ||
+          err.message ||
+          "Nepodařilo se smazat data.",
+      );
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const handleDeleteRange = async (value) => {
+    if (value === "select") {
+      setDeleteMode(true);
+      return;
+    }
+
+    if (!deviceId) return;
+
+    let from = null;
+    const now = new Date();
+    if (value === "1h") {
+      from = new Date(now.getTime() - 60 * 60 * 1000);
+    } else if (value === "6h") {
+      from = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+    } else if (value === "24h") {
+      from = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    } else if (value === "7d") {
+      from = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    } else if (value === "all") {
+      from = null;
+    }
+
+    const fromTs = from ? from.getTime() : null;
+    const idsToDelete = data
+      .filter((item) => {
+        const ts = item.timestamp ? new Date(item.timestamp).getTime() : null;
+        if (!ts) return false;
+        if (fromTs != null && ts < fromTs) return false;
+        return true;
+      })
+      .map((item) => item._id)
+      .filter(Boolean);
+
+    setConfirmDeleteScope({ type: "range", value, ids: idsToDelete });
+  };
+
+  const requestDeleteSelected = () => {
+    setConfirmDeleteScope({
+      type: "selected",
+      ids: [...selectedIds],
+    });
+  };
+
+  const confirmDelete = async () => {
+    if (!confirmDeleteScope?.ids?.length) {
+      setConfirmDeleteScope(null);
+      return;
+    }
+    await handleDeleteSelection(confirmDeleteScope.ids);
+    setConfirmDeleteScope(null);
+  };
+
   return (
     <Box
       p={{ xs: 1.5, sm: 3 }}
@@ -234,6 +325,63 @@ export default function SensorData({ deviceId, refreshKey }) {
           flexWrap="wrap"
           sx={{ width: { xs: "100%", sm: "auto" } }}
         >
+          <Box
+            display="flex"
+            alignItems="center"
+            gap={1}
+            sx={{ width: { xs: "100%", sm: "auto" } }}
+          >
+            {!deleteMode ? (
+              <TextField
+                select
+                size="small"
+                label="Smazat"
+                value=""
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (!value) return;
+                  handleDeleteRange(value);
+                }}
+                sx={{ minWidth: 180, width: { xs: "100%", sm: 200 } }}
+              >
+                {DELETE_OPTIONS.map((opt) => (
+                  <MenuItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </MenuItem>
+                ))}
+              </TextField>
+            ) : (
+              <Box
+                display="flex"
+                alignItems="center"
+                gap={1}
+                sx={{ width: { xs: "100%", sm: "auto" } }}
+              >
+                <Button
+                  variant="contained"
+                  color="error"
+                  size="small"
+                  onClick={requestDeleteSelected}
+                  disabled={selectedIds.size === 0 || deleteLoading}
+                  sx={{ width: { xs: "100%", sm: "auto" } }}
+                >
+                  Smazat
+                </Button>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => {
+                    setDeleteMode(false);
+                    setSelectedIds(new Set());
+                  }}
+                  sx={{ width: { xs: "100%", sm: "auto" } }}
+                >
+                  Zrušit
+                </Button>
+              </Box>
+            )}
+          </Box>
+
           <Box
             sx={{
               display: "flex",
@@ -328,82 +476,112 @@ export default function SensorData({ deviceId, refreshKey }) {
                     backgroundColor: "background.paper",
                   }}
                 >
-                  <Stack
-                    direction={isMobile ? "column" : "row"}
+                  <Box
+                    display="flex"
                     alignItems={isMobile ? "flex-start" : "center"}
-                    justifyContent="space-between"
-                    spacing={isMobile ? 1 : 0}
+                    gap={deleteMode ? 1 : 0}
                   >
-                    <Box>
-                      <Typography variant={isMobile ? "body2" : "body1"}>
-                        <strong>Čas:</strong> {formatTimestamp(item.timestamp)}
-                      </Typography>
-                    </Box>
-
-                    <Stack
-                      direction="row"
-                      spacing={1}
-                      alignItems="center"
-                      sx={{
-                        mt: isMobile ? 1 : 0,
-                        width: isMobile ? "100%" : "auto",
-                        flexWrap: "wrap",
-                        rowGap: 1,
-                      }}
-                    >
-                      <Chip
-                        icon={
-                          <DeviceThermostatIcon />
-                        }
-                        label={`${
-                          item.temperature != null
-                            ? item.temperature
-                            : "-"
-                        }${item.temperature != null ? " °C" : ""}`}
-                        variant="outlined"
+                    {deleteMode && (
+                      <Box
                         sx={{
-                          "& .MuiChip-icon": { color: "error.main" },
+                          display: "flex",
+                          alignItems: "center",
+                          flexShrink: 0,
                         }}
-                      />
+                      >
+                        <Checkbox
+                          checked={selectedIds.has(item._id)}
+                          onChange={(e) => {
+                            setSelectedIds((prev) => {
+                              const next = new Set(prev);
+                              if (e.target.checked) {
+                                next.add(item._id);
+                              } else {
+                                next.delete(item._id);
+                              }
+                              return next;
+                            });
+                          }}
+                        />
+                      </Box>
+                    )}
 
-                      <Chip
-                        icon={<OpacityIcon />}
-                        label={`${
-                          item.humidity != null ? item.humidity : "-"
-                        }${item.humidity != null ? " %" : ""}`}
-                        variant="outlined"
-                        sx={{
-                          "& .MuiChip-icon": { color: "info.main" },
-                        }}
-                      />
+                    <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                      <Stack
+                        direction={isMobile ? "column" : "row"}
+                        alignItems={isMobile ? "flex-start" : "center"}
+                        justifyContent="space-between"
+                        spacing={isMobile ? 1 : 0}
+                      >
+                        <Box>
+                          <Typography variant={isMobile ? "body2" : "body1"}>
+                            <strong>Čas:</strong>{" "}
+                            {formatTimestamp(item.timestamp)}
+                          </Typography>
+                        </Box>
 
-                      {(() => {
-                        const door = getDoorState(item.illuminance);
-                        return (
+                        <Stack
+                          direction="row"
+                          spacing={1}
+                          alignItems="center"
+                          sx={{
+                            mt: isMobile ? 1 : 0,
+                            width: isMobile ? "100%" : "auto",
+                            flexWrap: "wrap",
+                            rowGap: 1,
+                          }}
+                        >
                           <Chip
-                            icon={
-                              <DoorFrontIcon />
-                            }
-                            label={
-                              isMobile ? undefined : `Dveře: ${door.label}`
-                            }
-                            color={door.color}
+                            icon={<DeviceThermostatIcon />}
+                            label={`${
+                              item.temperature != null
+                                ? item.temperature
+                                : "-"
+                            }${item.temperature != null ? " °C" : ""}`}
                             variant="outlined"
                             sx={{
-                              "& .MuiChip-icon": {
-                                color:
-                                  door.color === "success"
-                                    ? "success.main"
-                                    : door.color === "warning"
-                                      ? "warning.main"
-                                      : "text.secondary",
-                              },
+                              "& .MuiChip-icon": { color: "error.main" },
                             }}
                           />
-                        );
-                      })()}
-                    </Stack>
-                  </Stack>
+
+                          <Chip
+                            icon={<OpacityIcon />}
+                            label={`${
+                              item.humidity != null ? item.humidity : "-"
+                            }${item.humidity != null ? " %" : ""}`}
+                            variant="outlined"
+                            sx={{
+                              "& .MuiChip-icon": { color: "info.main" },
+                            }}
+                          />
+
+                          {(() => {
+                            const door = getDoorState(item.illuminance);
+                            return (
+                              <Chip
+                                icon={<DoorFrontIcon />}
+                                label={
+                                  isMobile ? undefined : `Dveře: ${door.label}`
+                                }
+                                color={door.color}
+                                variant="outlined"
+                                sx={{
+                                  "& .MuiChip-icon": {
+                                    color:
+                                      door.color === "success"
+                                        ? "success.main"
+                                        : door.color === "warning"
+                                          ? "warning.main"
+                                          : "text.secondary",
+                                  },
+                                }}
+                              />
+                            );
+                          })()}
+                        </Stack>
+                      </Stack>
+                    </Box>
+                  </Box>
                 </Box>
               ))
             : !loading && (
@@ -461,6 +639,33 @@ export default function SensorData({ deviceId, refreshKey }) {
           </Box>
         )}
       </Collapse>
+
+      <Dialog
+        open={Boolean(confirmDeleteScope)}
+        onClose={() => setConfirmDeleteScope(null)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>Smazat naměřená data?</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2">
+            {confirmDeleteScope?.type === "selected"
+              ? `Opravdu chcete smazat vybrané záznamy? (${confirmDeleteScope.ids.length})`
+              : `Opravdu chcete smazat záznamy pro zvolený rozsah? (${confirmDeleteScope?.ids?.length ?? 0})`}
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmDeleteScope(null)}>Zrušit</Button>
+          <Button
+            color="error"
+            variant="contained"
+            onClick={confirmDelete}
+            disabled={deleteLoading}
+          >
+            Smazat
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
