@@ -28,7 +28,10 @@ import OpacityIcon from "@mui/icons-material/Opacity";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import { useAuth } from "../context/AuthContext.jsx";
-import { getSensorData, deleteSensorData } from "../services/sensorDataService.js";
+import {
+  getSensorData,
+  deleteSensorData,
+} from "../services/sensorDataService.js";
 import DoorFrontIcon from "@mui/icons-material/DoorFront";
 import { useTheme, useMediaQuery } from "@mui/material";
 
@@ -56,6 +59,27 @@ function getDoorState(illuminance) {
   return { label: "Otevřeno", color: "warning" };
 }
 
+function parseDoorState(item) {
+  if (item?.doors === true || item?.doors === 1 || item?.doors === "1") {
+    return 1;
+  }
+  if (item?.doors === false || item?.doors === 0 || item?.doors === "0") {
+    return 0;
+  }
+
+  const illuminance = item?.illuminance;
+  if (illuminance === undefined || illuminance === null) return null;
+  if (Number.isNaN(Number(illuminance))) return null;
+  return Number(illuminance) > 0 ? 1 : 0;
+}
+
+function getDoorStateFromItem(item) {
+  const state = parseDoorState(item);
+  if (state == null) return { label: "—", color: "default" };
+  if (state === 0) return { label: "Zavřeno", color: "success" };
+  return { label: "Otevřeno", color: "warning" };
+}
+
 export default function SensorData({ deviceId, refreshKey }) {
   const { token } = useAuth();
   const theme = useTheme();
@@ -73,6 +97,9 @@ export default function SensorData({ deviceId, refreshKey }) {
 
   // single collapse/expand state for the whole block
   const [expanded, setExpanded] = useState(true);
+
+  // filter by data type
+  const [typeFilter, setTypeFilter] = useState("all"); // all | temperature | humidity | doorOpen | doorClosed
 
   // pagination
   const [page, setPage] = useState(1);
@@ -141,7 +168,7 @@ export default function SensorData({ deviceId, refreshKey }) {
 
   useEffect(() => {
     setPage(1);
-  }, [fromDate, toDate]);
+  }, [fromDate, toDate, typeFilter]);
 
   const applyQuickRange = (value) => {
     const now = new Date();
@@ -170,7 +197,15 @@ export default function SensorData({ deviceId, refreshKey }) {
       const y = new Date(now);
       y.setDate(y.getDate() - 1);
       from = new Date(y.getFullYear(), y.getMonth(), y.getDate(), 0, 0, 0, 0);
-      to = new Date(y.getFullYear(), y.getMonth(), y.getDate(), 23, 59, 59, 999);
+      to = new Date(
+        y.getFullYear(),
+        y.getMonth(),
+        y.getDate(),
+        23,
+        59,
+        59,
+        999,
+      );
     } else if (value === "thisWeek") {
       const day = now.getDay() === 0 ? 7 : now.getDay();
       const start = new Date(now);
@@ -197,19 +232,35 @@ export default function SensorData({ deviceId, refreshKey }) {
     ]);
   };
 
-  const filteredData = data.filter((d) => {
-    const ts = d.timestamp ? new Date(d.timestamp).getTime() : null;
-    if (!ts) return false;
-    if (fromDate) {
-      const fromTs = new Date(fromDate).setHours(0, 0, 0, 0);
-      if (ts < fromTs) return false;
-    }
-    if (toDate) {
-      const toTs = new Date(toDate).setHours(23, 59, 59, 999);
-      if (ts > toTs) return false;
-    }
-    return true;
-  });
+  const filteredData = useMemo(() => {
+    return data.filter((d) => {
+      const ts = d.timestamp ? new Date(d.timestamp).getTime() : null;
+      if (!ts) return false;
+      if (fromDate) {
+        const fromTs = new Date(fromDate).setHours(0, 0, 0, 0);
+        if (ts < fromTs) return false;
+      }
+      if (toDate) {
+        const toTs = new Date(toDate).setHours(23, 59, 59, 999);
+        if (ts > toTs) return false;
+      }
+
+      if (typeFilter === "all") return true;
+      if (typeFilter === "temperature") {
+        return d.temperature != null && !Number.isNaN(Number(d.temperature));
+      }
+      if (typeFilter === "humidity") {
+        return d.humidity != null && !Number.isNaN(Number(d.humidity));
+      }
+      if (typeFilter === "doorOpen") {
+        return parseDoorState(d) === 1;
+      }
+      if (typeFilter === "doorClosed") {
+        return parseDoorState(d) === 0;
+      }
+      return true;
+    });
+  }, [data, fromDate, toDate, typeFilter]);
 
   // pagination calculations
   const totalItems = filteredData.length;
@@ -413,7 +464,10 @@ export default function SensorData({ deviceId, refreshKey }) {
 
           {showDeleteCustomRange && !deleteMode && (
             <Box sx={{ width: { xs: "100%", sm: "auto" } }}>
-              <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="cs">
+              <LocalizationProvider
+                dateAdapter={AdapterDayjs}
+                adapterLocale="cs"
+              >
                 <DateRangeSingleCalendar
                   value={deleteDateRange}
                   onChange={setDeleteDateRange}
@@ -432,6 +486,21 @@ export default function SensorData({ deviceId, refreshKey }) {
             onQuickRange={applyQuickRange}
             label="Zobrazit"
           />
+
+          <TextField
+            select
+            size="small"
+            label="Druh dat"
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+            sx={{ minWidth: 180, width: { xs: "100%", sm: 200 } }}
+          >
+            <MenuItem value="all">Vše</MenuItem>
+            <MenuItem value="temperature">Teplota</MenuItem>
+            <MenuItem value="humidity">Vlhkost</MenuItem>
+            <MenuItem value="doorOpen">Dveře otevřeno</MenuItem>
+            <MenuItem value="doorClosed">Dveře zavřeno</MenuItem>
+          </TextField>
 
           <Box
             display="flex"
@@ -553,9 +622,7 @@ export default function SensorData({ deviceId, refreshKey }) {
                           <Chip
                             icon={<DeviceThermostatIcon />}
                             label={`${
-                              item.temperature != null
-                                ? item.temperature
-                                : "-"
+                              item.temperature != null ? item.temperature : "-"
                             }${item.temperature != null ? " °C" : ""}`}
                             variant="outlined"
                             sx={{
@@ -575,7 +642,7 @@ export default function SensorData({ deviceId, refreshKey }) {
                           />
 
                           {(() => {
-                            const door = getDoorState(item.illuminance);
+                            const door = getDoorStateFromItem(item);
                             return (
                               <Chip
                                 icon={<DoorFrontIcon />}
