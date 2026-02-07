@@ -6,6 +6,8 @@ import {
   Button,
   Collapse,
   ButtonGroup,
+  useTheme,
+  useMediaQuery,
 } from "@mui/material";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -25,6 +27,7 @@ import {
   Tooltip,
   Legend,
   ReferenceLine,
+  Brush,
 } from "recharts";
 import { useAuth } from "../context/AuthContext.jsx";
 import { getSensorData } from "../services/sensorDataService.js";
@@ -55,6 +58,8 @@ function formatTime(d) {
 
 export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
   const { token } = useAuth();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [rawData, setRawData] = useState([]);
   const [threshold, setThreshold] = useState(null);
   const [alertTimes, setAlertTimes] = useState([]);
@@ -65,6 +70,7 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [expanded, setExpanded] = useState(true);
+  const [zoomResetKey, setZoomResetKey] = useState(0);
 
   const sorted = [...rawData].sort((a, b) => a.ts - b.ts);
   useEffect(() => {
@@ -187,7 +193,32 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
 
   // dynamic label interval based on density
   const tickInterval =
-    dateFilteredData.length > 30 ? Math.ceil(dateFilteredData.length / 10) : 0;
+    dateFilteredData.length > (isMobile ? 10 : 30)
+      ? Math.ceil(dateFilteredData.length / (isMobile ? 4 : 10))
+      : 0;
+
+  const formatAxisTime = (v) => {
+    const d = new Date(v);
+    if (isMobile) {
+      const hours = String(d.getHours()).padStart(2, "0");
+      const minutes = String(d.getMinutes()).padStart(2, "0");
+      return `${hours}:${minutes}`;
+    }
+    return formatTime(d);
+  };
+  const mobileChartWidth = Math.max(360, dateFilteredData.length * 60);
+  const defaultBrushWindow = useMemo(() => {
+    const len = dateFilteredData.length;
+    if (len === 0) return { startIndex: 0, endIndex: 0 };
+    if (range === "all" && len > 120) {
+      return { startIndex: len - 120, endIndex: len - 1 };
+    }
+    return { startIndex: 0, endIndex: len - 1 };
+  }, [dateFilteredData.length, range]);
+
+  const resetZoom = () => {
+    setZoomResetKey((k) => k + 1);
+  };
 
   return (
     <Box p={3} mt={4}>
@@ -229,6 +260,9 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
             startIcon={expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
           >
             {expanded ? "Skrýt" : "Zobrazit"}
+          </Button>
+          <Button size="small" variant="outlined" onClick={resetZoom}>
+            Reset zoom
           </Button>
         </Box>
       </Box>
@@ -297,29 +331,48 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
               </Box>
             )}
 
-            <Box sx={{ width: "100%", height: 300, mt: 1 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={dateFilteredData}>
+            <Box
+              sx={{
+                width: "100%",
+                mt: 1,
+                overflowX: isMobile ? "auto" : "visible",
+              }}
+            >
+              <Box
+                sx={{
+                  width: isMobile ? `${mobileChartWidth}px` : "100%",
+                  height: isMobile ? 260 : 300,
+                }}
+              >
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={dateFilteredData} syncId="deviceChartsSync">
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis
                     dataKey="ts"
                     type="number"
                     domain={["dataMin", "dataMax"]}
-                    tickFormatter={(v) => formatTime(new Date(v))}
+                    padding={{ left: 8, right: 16 }}
+                    tickFormatter={formatAxisTime}
                     interval={tickInterval}
-                    tick={{ fontSize: 12 }}
-                    height={50}
+                    tick={{ fontSize: isMobile ? 10 : 12 }}
+                    minTickGap={isMobile ? 20 : 8}
+                    height={isMobile ? 30 : 50}
                   />
                   <YAxis
                     domain={["auto", "auto"]}
                     tickFormatter={(v) => `${v}°`}
                     axisLine={{ stroke: "#ff5722" }}
                     tickLine={{ stroke: "#ff5722" }}
-                    label={{
-                      value: "🌡 Teplota (°C)",
-                      angle: -90,
-                      position: "insideLeft",
-                    }}
+                    width={isMobile ? 36 : 60}
+                    label={
+                      isMobile
+                        ? undefined
+                        : {
+                            value: "🌡 Teplota (°C)",
+                            angle: -90,
+                            position: "insideLeft",
+                          }
+                    }
                   />
                   <Tooltip
                     labelFormatter={(v) => formatTime(new Date(v))}
@@ -329,7 +382,7 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
                       return [value, name];
                     }}
                   />
-                  <Legend />
+                  {!isMobile && <Legend />}
 
                   {threshold?.temperature?.max != null && (
                     <ReferenceLine
@@ -360,36 +413,65 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
                     dataKey="temperature"
                     name="Teplota (°C)"
                     stroke="#ff5722"
-                    dot={true}
+                    dot={!isMobile}
                     connectNulls={true}
                   />
-                </LineChart>
-              </ResponsiveContainer>
+                  <Brush
+                    key={`temp-brush-${zoomResetKey}-${defaultBrushWindow.startIndex}-${defaultBrushWindow.endIndex}`}
+                    dataKey="ts"
+                    height={isMobile ? 24 : 28}
+                    travellerWidth={10}
+                    tickFormatter={formatAxisTime}
+                    startIndex={defaultBrushWindow.startIndex}
+                    endIndex={defaultBrushWindow.endIndex}
+                  />
+                  </LineChart>
+                </ResponsiveContainer>
+              </Box>
             </Box>
 
-            <Box sx={{ width: "100%", height: 300, mt: 3 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={dateFilteredData}>
+            <Box
+              sx={{
+                width: "100%",
+                mt: 3,
+                overflowX: isMobile ? "auto" : "visible",
+              }}
+            >
+              <Box
+                sx={{
+                  width: isMobile ? `${mobileChartWidth}px` : "100%",
+                  height: isMobile ? 260 : 300,
+                }}
+              >
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={dateFilteredData} syncId="deviceChartsSync">
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis
                     dataKey="ts"
                     type="number"
                     domain={["dataMin", "dataMax"]}
-                    tickFormatter={(v) => formatTime(new Date(v))}
+                    padding={{ left: 8, right: 16 }}
+                    tickFormatter={formatAxisTime}
                     interval={tickInterval}
-                    tick={{ fontSize: 12 }}
-                    height={50}
+                    tick={{ fontSize: isMobile ? 10 : 12 }}
+                    minTickGap={isMobile ? 20 : 8}
+                    height={isMobile ? 30 : 50}
                   />
                   <YAxis
                     domain={[0, 100]}
                     tickFormatter={(v) => `${v}%`}
                     axisLine={{ stroke: "#2196f3" }}
                     tickLine={{ stroke: "#2196f3" }}
-                    label={{
-                      value: "💧 Vlhkost (%)",
-                      angle: -90,
-                      position: "insideLeft",
-                    }}
+                    width={isMobile ? 36 : 60}
+                    label={
+                      isMobile
+                        ? undefined
+                        : {
+                            value: "💧 Vlhkost (%)",
+                            angle: -90,
+                            position: "insideLeft",
+                          }
+                    }
                   />
                   <Tooltip
                     labelFormatter={(v) => formatTime(new Date(v))}
@@ -398,7 +480,7 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
                       return [value, name];
                     }}
                   />
-                  <Legend />
+                  {!isMobile && <Legend />}
 
                   {threshold?.humidity?.max != null && (
                     <ReferenceLine
@@ -429,11 +511,12 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
                     dataKey="humidity"
                     name="Vlhkost (%)"
                     stroke="#2196f3"
-                    dot={true}
+                    dot={!isMobile}
                     connectNulls={true}
                   />
-                </LineChart>
-              </ResponsiveContainer>
+                  </LineChart>
+                </ResponsiveContainer>
+              </Box>
             </Box>
           </>
         ) : (

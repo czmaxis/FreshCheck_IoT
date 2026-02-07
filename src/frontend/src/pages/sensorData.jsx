@@ -315,18 +315,18 @@ export default function SensorData({ deviceId }) {
                       <Chip
                         icon={<DeviceThermostatIcon />}
                         label={`${
-                          item.temperature !== undefined
+                          item.temperature != null
                             ? item.temperature
-                            : "—"
-                        }${item.temperature !== undefined ? " °C" : ""}`}
+                            : "-"
+                        }${item.temperature != null ? " °C" : ""}`}
                         variant="outlined"
                       />
 
                       <Chip
                         icon={<OpacityIcon />}
                         label={`${
-                          item.humidity !== undefined ? item.humidity : "—"
-                        }${item.humidity !== undefined ? " %" : ""}`}
+                          item.humidity != null ? item.humidity : "-"
+                        }${item.humidity != null ? " %" : ""}`}
                         variant="outlined"
                       />
 
