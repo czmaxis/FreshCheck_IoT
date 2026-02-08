@@ -3,8 +3,6 @@ import {
   Box,
   Typography,
   Button,
-  MenuItem,
-  TextField,
   Checkbox,
   useMediaQuery,
   Dialog,
@@ -24,6 +22,7 @@ import AlertActions from "../components/AlertActions.jsx";
 import ConfirmDeleteDialog from "../components/ConfirmDeleteDialog.jsx";
 import AlertCardSkeleton from "../components/AlertCardSkeleton.jsx";
 import ActionSelector from "../components/ActionSelector.jsx";
+import PerPageSelector from "../components/PerPageSelector.jsx";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import {
@@ -538,28 +537,11 @@ export default function Alerts({ deviceId, refreshKey, onAlertsChanged }) {
             onQuickRange={applyQuickRange}
           />
 
-          <Box
-            display="flex"
-            alignItems="center"
-            gap={1}
-            sx={{ width: { xs: "100%", sm: "auto" } }}
-          >
-            <Typography variant="body2">Na stránce</Typography>
-            <TextField
-              select
-              size="small"
-              value={perPage}
-              color="primary"
-              onChange={(e) => setPerPage(Number(e.target.value))}
-              sx={{ minWidth: 60, width: { xs: "100%", sm: 80 } }}
-            >
-              {[1, 5, 10, 20].map((n) => (
-                <MenuItem key={n} value={n}>
-                  {n}
-                </MenuItem>
-              ))}
-            </TextField>
-          </Box>
+          <PerPageSelector
+            value={perPage}
+            onChange={setPerPage}
+            options={[1, 5, 10, 20]}
+          />
 
           <Button
             size="small"

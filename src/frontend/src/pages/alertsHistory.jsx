@@ -36,6 +36,7 @@ import AlertActions from "../components/AlertActions.jsx";
 import ConfirmDeleteDialog from "../components/ConfirmDeleteDialog.jsx";
 import DateRangeSingleCalendar from "../components/DateRangeSingleCalendar.jsx";
 import ActionSelector from "../components/ActionSelector.jsx";
+import PerPageSelector from "../components/PerPageSelector.jsx";
 import { useTheme } from "@mui/material/styles";
 
 export default function AlertsHistory() {
@@ -675,25 +676,11 @@ export default function AlertsHistory() {
               Reset filtrů
             </Button>
             {/* PER PAGE */}
-            <Box display="flex" alignItems="center" gap={1}>
-              <Typography variant="body2" whiteSpace="nowrap">
-                Na stránce
-              </Typography>
-
-              <TextField
-                select
-                size="small"
-                value={perPage}
-                onChange={(e) => setPerPage(Number(e.target.value))}
-                sx={{ minWidth: 80 }}
-              >
-                {[1, 5, 10, 20, 50].map((n) => (
-                  <MenuItem key={n} value={n}>
-                    {n}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </Box>
+            <PerPageSelector
+              value={perPage}
+              onChange={setPerPage}
+              options={[1, 5, 10, 20, 50]}
+            />
           </Box>
         </Box>
 

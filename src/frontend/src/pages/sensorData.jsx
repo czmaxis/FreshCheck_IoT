@@ -21,6 +21,7 @@ import dayjs from "dayjs";
 import DateRangeSingleCalendar from "../components/DateRangeSingleCalendar.jsx";
 import TimeRangeSelector from "../components/TimeRangeSelector.jsx";
 import ActionSelector from "../components/ActionSelector.jsx";
+import PerPageSelector from "../components/PerPageSelector.jsx";
 import SensorDataCard from "../components/SensorDataCard.jsx";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
@@ -413,34 +414,14 @@ export default function SensorData({ deviceId, refreshKey }) {
             <MenuItem value="doorClosed">Dveře zavřeno</MenuItem>
           </TextField>
 
-          <Box
-            display="flex"
-            alignItems="center"
-            gap={1}
-            sx={{ width: { xs: "100%", sm: "auto" } }}
-          >
-            <Typography variant="body2">Na stránce</Typography>
-            <TextField
-              select
-              size="small"
-              value={pageSize}
-              color="primary"
-              onChange={(e) => {
-                setPageSize(Number(e.target.value));
-                setPage(1);
-              }}
-              sx={{
-                minWidth: 60,
-                width: { xs: "100%", sm: 80 },
-              }}
-            >
-              {[1, 5, 10, 20].map((n) => (
-                <MenuItem key={n} value={n}>
-                  {n}
-                </MenuItem>
-              ))}
-            </TextField>
-          </Box>
+          <PerPageSelector
+            value={pageSize}
+            onChange={(value) => {
+              setPageSize(value);
+              setPage(1);
+            }}
+            options={[1, 5, 10, 20]}
+          />
 
           <Button
             onClick={toggleExpandAll}
