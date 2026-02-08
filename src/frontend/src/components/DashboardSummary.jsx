@@ -6,6 +6,8 @@ import {
   TextField,
   MenuItem,
   Button,
+  Chip,
+  Divider,
 } from "@mui/material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
@@ -223,18 +225,12 @@ export default function DashboardSummary({
     return `před ${diffDays} dny`;
   };
 
-  const renderRow = (icon, text) => (
-    <Box display="flex" alignItems="center" gap={1}>
-      {icon}
-      <Typography>{text}</Typography>
-    </Box>
-  );
-
+  const statusColor = summary.activeAlerts > 0 ? "#ff9800" : "#66bb6a";
   const statusIcon =
     summary.activeAlerts > 0 ? (
-      <WarningAmberIcon fontSize="small" color="warning" />
+      <WarningAmberIcon fontSize="small" sx={{ color: statusColor }} />
     ) : (
-      <CheckCircleIcon fontSize="small" color="success" />
+      <CheckCircleIcon fontSize="small" sx={{ color: statusColor }} />
     );
 
   return (
@@ -243,36 +239,61 @@ export default function DashboardSummary({
       maxWidth="900px"
       mt={2}
       mb={2}
-      p={{ xs: 1.5, sm: 2 }}
-      borderRadius={2}
+      p={{ xs: 2, sm: 3 }}
+      borderRadius={3}
       sx={{
-        backgroundColor: "#f7f7f7",
-        border: "1px solid #e0e0e0",
+        backgroundColor: "background.paper",
+        boxShadow: "0 2px 12px rgba(0,0,0,0.1)",
         overflowX: "hidden",
         boxSizing: "border-box",
+        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+        "&:hover": {
+          boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+        },
       }}
     >
+      {/* Header */}
       <Box
         display="flex"
         alignItems={{ xs: "stretch", sm: "center" }}
         justifyContent="space-between"
         flexDirection={{ xs: "column", sm: "row" }}
-        gap={{ xs: 1, sm: 0 }}
+        gap={{ xs: 2, sm: 0 }}
+        mb={3}
       >
-        <Typography variant="subtitle1">Přehled posledních dat</Typography>
+        <Box display="flex" alignItems="center" gap={1.5}>
+          <Box
+            sx={{
+              width: 40,
+              height: 40,
+              borderRadius: "50%",
+              backgroundColor: `${statusColor}15`,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            {statusIcon}
+          </Box>
+          <Typography variant="h6" fontWeight={600}>
+            Přehled posledních dat
+          </Typography>
+        </Box>
         <Box
           display="flex"
           alignItems="center"
           gap={1}
           sx={{ width: { xs: "100%", sm: "auto" } }}
         >
-          <Typography variant="body2">Průměry za</Typography>
+          <Typography variant="body2" color="text.secondary">
+            Průměry za
+          </Typography>
           <TextField
             select
             size="small"
             value={range}
             onChange={(e) => setRange(e.target.value)}
-            sx={{ minWidth: 90, width: { xs: "100%", sm: 90 } }}
+            sx={{ minWidth: 100, width: { xs: "100%", sm: 100 } }}
           >
             {RANGES.map((r) => (
               <MenuItem key={r.value} value={r.value}>
@@ -283,55 +304,144 @@ export default function DashboardSummary({
         </Box>
       </Box>
 
-      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, mt: 1 }}>
-        <Stack spacing={0.75} sx={{ minWidth: { xs: 0, sm: 260 }, flex: 1 }}>
-          {renderRow(
-            statusIcon,
-            `Stav zařízení: ${summary.activeAlerts > 0 ? "Pozor" : "OK"}`,
-          )}
-          {renderRow(statusIcon, `Aktivní výstrahy: ${summary.activeAlerts}`)}
-          {renderRow(
-            <ThermostatIcon fontSize="small" color="error" />,
-            `Aktuální teplota: ${summary.latest?.temperature ?? "-"} °C`,
-          )}
-          {renderRow(
-            <OpacityIcon fontSize="small" color="info" />,
-            `Aktuální vlhkost: ${summary.latest?.humidity ?? "-"} %`,
-          )}
-          {renderRow(
-            <AccessTimeIcon fontSize="small" color="action" />,
-            `Poslední data: ${summary.latest?.timestamp ? formatRelativeTime(summary.latest.timestamp) : "-"}`,
-          )}
+      {/* Status a Aktuální hodnoty */}
+      <Box sx={{ mb: 3 }}>
+        <Typography
+          variant="subtitle2"
+          color="text.secondary"
+          sx={{ mb: 1.5, fontWeight: 600, textTransform: "uppercase", fontSize: "0.75rem" }}
+        >
+          Stav zařízení
+        </Typography>
+        <Stack direction="row" spacing={1.5} flexWrap="wrap" sx={{ rowGap: 1.5 }}>
+          <Chip
+            icon={statusIcon}
+            label={`${summary.activeAlerts > 0 ? "Pozor" : "OK"}`}
+            sx={{
+              backgroundColor: `${statusColor}15`,
+              border: `1px solid ${statusColor}30`,
+              fontWeight: 600,
+              "& .MuiChip-icon": { color: statusColor },
+              "& .MuiChip-label": { color: statusColor },
+            }}
+          />
+          <Chip
+            icon={<WarningAmberIcon />}
+            label={`${summary.activeAlerts} aktivních výstrah`}
+            sx={{
+              backgroundColor: summary.activeAlerts > 0 ? "#ff980015" : "#9e9e9e15",
+              border: summary.activeAlerts > 0 ? "1px solid #ff980030" : "1px solid #9e9e9e30",
+              fontWeight: 600,
+              "& .MuiChip-icon": { color: summary.activeAlerts > 0 ? "#ff9800" : "#9e9e9e" },
+              "& .MuiChip-label": { color: summary.activeAlerts > 0 ? "#ff9800" : "#9e9e9e" },
+            }}
+          />
         </Stack>
+      </Box>
 
-        <Stack spacing={0.75} sx={{ minWidth: { xs: 0, sm: 260 }, flex: 1 }}>
-          <Typography variant="subtitle2">Průměry</Typography>
-          {renderRow(
-            <EqualizerIcon fontSize="small" color="action" />,
-            `Průměrná teplota: ${averages.avgTemp != null ? `${averages.avgTemp.toFixed(1)} °C` : "-"}`,
-          )}
-          {renderRow(
-            <EqualizerIcon fontSize="small" color="action" />,
-            `Průměrná vlhkost: ${averages.avgHumidity != null ? `${averages.avgHumidity.toFixed(1)} %` : "-"}`,
-          )}
-          {renderRow(
-            <DoorFrontIcon fontSize="small" color="action" />,
-            `Počet otevření dveří: ${averages.doorOpenings}`,
-          )}
+      <Box sx={{ mb: 3 }}>
+        <Typography
+          variant="subtitle2"
+          color="text.secondary"
+          sx={{ mb: 1.5, fontWeight: 600, textTransform: "uppercase", fontSize: "0.75rem" }}
+        >
+          Aktuální hodnoty
+        </Typography>
+        <Stack direction="row" spacing={1.5} flexWrap="wrap" sx={{ rowGap: 1.5 }}>
+          <Chip
+            icon={<ThermostatIcon />}
+            label={`${summary.latest?.temperature ?? "-"} °C`}
+            sx={{
+              backgroundColor: "#ef535015",
+              border: "1px solid #ef535030",
+              fontWeight: 600,
+              "& .MuiChip-icon": { color: "#ef5350" },
+              "& .MuiChip-label": { color: "#ef5350" },
+            }}
+          />
+          <Chip
+            icon={<OpacityIcon />}
+            label={`${summary.latest?.humidity ?? "-"} %`}
+            sx={{
+              backgroundColor: "#42a5f515",
+              border: "1px solid #42a5f530",
+              fontWeight: 600,
+              "& .MuiChip-icon": { color: "#42a5f5" },
+              "& .MuiChip-label": { color: "#42a5f5" },
+            }}
+          />
+          <Chip
+            icon={<AccessTimeIcon />}
+            label={summary.latest?.timestamp ? formatRelativeTime(summary.latest.timestamp) : "-"}
+            size="small"
+            sx={{
+              backgroundColor: "#9e9e9e15",
+              border: "1px solid #9e9e9e30",
+              "& .MuiChip-icon": { color: "#9e9e9e" },
+              "& .MuiChip-label": { color: "#9e9e9e" },
+            }}
+          />
+        </Stack>
+      </Box>
+
+      <Divider sx={{ my: 2 }} />
+
+      {/* Průměry */}
+      <Box sx={{ mb: 3 }}>
+        <Typography
+          variant="subtitle2"
+          color="text.secondary"
+          sx={{ mb: 1.5, fontWeight: 600, textTransform: "uppercase", fontSize: "0.75rem" }}
+        >
+          Průměrné hodnoty
+        </Typography>
+        <Stack direction="row" spacing={1.5} flexWrap="wrap" sx={{ rowGap: 1.5 }}>
+          <Chip
+            icon={<EqualizerIcon />}
+            label={`Teplota: ${averages.avgTemp != null ? `${averages.avgTemp.toFixed(1)} °C` : "-"}`}
+            sx={{
+              backgroundColor: "#ef535015",
+              border: "1px solid #ef535030",
+              fontWeight: 600,
+              "& .MuiChip-icon": { color: "#ef5350" },
+              "& .MuiChip-label": { color: "#ef5350" },
+            }}
+          />
+          <Chip
+            icon={<EqualizerIcon />}
+            label={`Vlhkost: ${averages.avgHumidity != null ? `${averages.avgHumidity.toFixed(1)} %` : "-"}`}
+            sx={{
+              backgroundColor: "#42a5f515",
+              border: "1px solid #42a5f530",
+              fontWeight: 600,
+              "& .MuiChip-icon": { color: "#42a5f5" },
+              "& .MuiChip-label": { color: "#42a5f5" },
+            }}
+          />
+          <Chip
+            icon={<DoorFrontIcon />}
+            label={`Dveře: ${averages.doorOpenings}×`}
+            sx={{
+              backgroundColor: "#ff980015",
+              border: "1px solid #ff980030",
+              fontWeight: 600,
+              "& .MuiChip-icon": { color: "#ff9800" },
+              "& .MuiChip-label": { color: "#ff9800" },
+            }}
+          />
         </Stack>
       </Box>
 
       {summary.loading && (
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           Načítám přehled…
         </Typography>
       )}
 
+      {/* Limity */}
+      <Divider sx={{ my: 2 }} />
       <Box
         sx={{
-          mt: 1.5,
-          pt: 1,
-          borderTop: "1px dashed #ddd",
           display: "flex",
           alignItems: { xs: "stretch", sm: "center" },
           justifyContent: "space-between",
@@ -342,16 +452,24 @@ export default function DashboardSummary({
         {limitsLoading ? (
           <LimitsSkeleton lines={1} />
         ) : (
-          <Typography variant="body2" color="text.secondary">
-            Limity: {limitsText}
-          </Typography>
+          <Box display="flex" alignItems="center" gap={1.5}>
+            <Typography variant="body2" color="text.secondary" fontWeight={600}>
+              Limity:
+            </Typography>
+            <Typography variant="body2" color="text.primary">
+              {limitsText}
+            </Typography>
+          </Box>
         )}
         <Button
-          size="small"
-          variant="outlined"
+          variant="contained"
           onClick={onOpenLimits}
           disabled={!deviceId}
-          sx={{ width: { xs: "100%", sm: "auto" } }}
+          sx={{
+            width: { xs: "100%", sm: "auto" },
+            textTransform: "none",
+            fontWeight: 600,
+          }}
         >
           Nastavit limity
         </Button>
