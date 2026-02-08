@@ -68,6 +68,7 @@ export default function Dashboard() {
   const [limitsVersion, setLimitsVersion] = useState(0);
   const [limitsSaving, setLimitsSaving] = useState(false);
   const [refreshTick, setRefreshTick] = useState(0);
+  const [alertsRefreshKey, setAlertsRefreshKey] = useState(0);
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -126,6 +127,10 @@ export default function Dashboard() {
 
   const handleSelectDevice = (deviceId) => {
     setSelectedDeviceId(deviceId);
+  };
+
+  const handleAlertsChanged = () => {
+    setAlertsRefreshKey((v) => v + 1);
   };
 
   // settings menu handlers
@@ -409,7 +414,7 @@ export default function Dashboard() {
           deviceId={selectedDeviceId}
           token={token}
           onOpenLimits={openLimitsDialog}
-          refreshKey={limitsVersion + refreshTick}
+          refreshKey={limitsVersion + refreshTick + alertsRefreshKey}
           limitsLoading={limitsSaving}
         />
         <p />
@@ -417,6 +422,7 @@ export default function Dashboard() {
           <Alerts
             deviceId={selectedDeviceId}
             refreshKey={refreshTick}
+            onAlertsChanged={handleAlertsChanged}
             sx={{ mb: 2, mt: 2 }}
           />
         )}

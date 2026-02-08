@@ -34,7 +34,7 @@ import {
 import { useAuth } from "../context/AuthContext.jsx";
 import { useTheme } from "@mui/material/styles";
 
-export default function Alerts({ deviceId, refreshKey }) {
+export default function Alerts({ deviceId, refreshKey, onAlertsChanged }) {
   const { token } = useAuth();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -184,6 +184,7 @@ export default function Alerts({ deviceId, refreshKey }) {
       setPendingIds((prev) => [...prev, alertId]);
       await resolveAlert(alertId, token);
       setAlerts((prev) => prev.filter((a) => a._id !== alertId));
+      if (onAlertsChanged) onAlertsChanged();
     } catch (err) {
       setError(
         err.response?.data?.message || "Nepodařilo se vyřešit výstrahu.",
@@ -199,6 +200,7 @@ export default function Alerts({ deviceId, refreshKey }) {
       await deleteAlert(alertId, token);
       setAlerts((prev) => prev.filter((a) => a._id !== alertId));
       setConfirmDeleteId(null);
+      if (onAlertsChanged) onAlertsChanged();
     } catch (err) {
       setError(err.response?.data?.message || "Nepodařilo se smazat výstrahu.");
     } finally {
@@ -214,6 +216,7 @@ export default function Alerts({ deviceId, refreshKey }) {
       setAlerts((prev) => prev.filter((a) => !ids.includes(a._id)));
       setSelectedIds(new Set());
       setDeleteMode(false);
+      if (onAlertsChanged) onAlertsChanged();
     } catch (err) {
       setError(err.response?.data?.message || "Nepodařilo se smazat výstrahy.");
     } finally {
@@ -229,6 +232,7 @@ export default function Alerts({ deviceId, refreshKey }) {
       setAlerts((prev) => prev.filter((a) => !ids.includes(a._id)));
       setSelectedConfirmIds(new Set());
       setConfirmMode(false);
+      if (onAlertsChanged) onAlertsChanged();
     } catch (err) {
       setError(
         err.response?.data?.message || "Nepodařilo se potvrdit výstrahy.",
