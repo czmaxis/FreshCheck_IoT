@@ -5,11 +5,20 @@ import {
   Button,
   MenuItem,
   TextField,
+  Checkbox,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
   FormControl,
   InputLabel,
   Select,
+  useMediaQuery,
 } from "@mui/material";
 import dayjs from "dayjs";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import "dayjs/locale/cs";
 import NavBar from "./navBar.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { getDevices } from "../services/deviceService.js";
@@ -25,9 +34,13 @@ import AlertFilters from "../components/AlertFilters.jsx";
 import AlertPagination from "../components/AlertPagination.jsx";
 import AlertActions from "../components/AlertActions.jsx";
 import ConfirmDeleteDialog from "../components/ConfirmDeleteDialog.jsx";
+import DateRangeSingleCalendar from "../components/DateRangeSingleCalendar.jsx";
+import { useTheme } from "@mui/material/styles";
 
 export default function AlertsHistory() {
   const { token } = useAuth();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   /* =====================
      DEVICES
@@ -43,6 +56,41 @@ export default function AlertsHistory() {
   const [error, setError] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [pendingIds, setPendingIds] = useState([]);
+
+  const [deleteMode, setDeleteMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState(() => new Set());
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [confirmDeleteScope, setConfirmDeleteScope] = useState(null);
+  const [deleteDateRange, setDeleteDateRange] = useState([null, null]);
+  const [showDeleteCustomRange, setShowDeleteCustomRange] = useState(false);
+  const [deleteCalendarOpenKey, setDeleteCalendarOpenKey] = useState(0);
+
+  const DELETE_OPTIONS = [
+    { label: "Smazat za poslední hodinu", value: "1h" },
+    { label: "Smazat za posledních 6 hodin", value: "6h" },
+    { label: "Smazat za posledních 24 hodin", value: "24h" },
+    { label: "Smazat za poslední týden", value: "7d" },
+    { label: "Smazat vše", value: "all" },
+    { label: "Označit a smazat", value: "select" },
+    { label: "Od–do", value: "custom" },
+  ];
+  const RESOLVE_OPTIONS = [
+    { label: "Potvrdit za poslední hodinu", value: "1h" },
+    { label: "Potvrdit za posledních 6 hodin", value: "6h" },
+    { label: "Potvrdit za posledních 24 hodin", value: "24h" },
+    { label: "Potvrdit za poslední týden", value: "7d" },
+    { label: "Potvrdit vše", value: "all" },
+    { label: "Označit a potvrdit", value: "select" },
+    { label: "Od–do", value: "custom" },
+  ];
+
+  const [confirmMode, setConfirmMode] = useState(false);
+  const [selectedConfirmIds, setSelectedConfirmIds] = useState(() => new Set());
+  const [confirmLoading, setConfirmLoading] = useState(false);
+  const [confirmConfirmScope, setConfirmConfirmScope] = useState(null);
+  const [confirmDateRange, setConfirmDateRange] = useState([null, null]);
+  const [showConfirmCustomRange, setShowConfirmCustomRange] = useState(false);
+  const [confirmCalendarOpenKey, setConfirmCalendarOpenKey] = useState(0);
 
   /* =====================
      FILTERS
@@ -110,6 +158,17 @@ export default function AlertsHistory() {
       cancelled = true;
     };
   }, [selectedDeviceId, token]);
+
+  useEffect(() => {
+    setDeleteMode(false);
+    setSelectedIds(new Set());
+    setDeleteDateRange([null, null]);
+    setShowDeleteCustomRange(false);
+    setConfirmMode(false);
+    setSelectedConfirmIds(new Set());
+    setConfirmDateRange([null, null]);
+    setShowConfirmCustomRange(false);
+  }, [selectedDeviceId]);
 
   /* =====================
      RESET PAGE ON FILTER CHANGE
@@ -188,8 +247,8 @@ export default function AlertsHistory() {
   const handleResolve = async (alertId) => {
     try {
       setPendingIds((prev) => [...prev, alertId]);
-      await resolveAlert(alertId, token);
-      setAlerts((prev) => prev.filter((a) => a._id !== alertId));
+      const resolved = await resolveAlert(alertId, token);
+      setAlerts((prev) => prev.map((a) => (a._id === alertId ? resolved : a)));
     } catch (err) {
       setError(
         err.response?.data?.message || "Nepodařilo se vyřešit výstrahu.",
@@ -197,6 +256,213 @@ export default function AlertsHistory() {
     } finally {
       setPendingIds((prev) => prev.filter((id) => id !== alertId));
     }
+  };
+
+  const handleDeleteSelection = async (ids) => {
+    if (!ids.length) return;
+    try {
+      setDeleteLoading(true);
+      setPendingIds((prev) => [...new Set([...prev, ...ids])]);
+      await Promise.all(ids.map((id) => deleteAlert(id, token)));
+      setAlerts((prev) => prev.filter((a) => !ids.includes(a._id)));
+      setSelectedIds(new Set());
+      setDeleteMode(false);
+    } catch (err) {
+      setError(err.response?.data?.message || "Nepodařilo se smazat výstrahy.");
+    } finally {
+      setPendingIds((prev) => prev.filter((id) => !ids.includes(id)));
+      setDeleteLoading(false);
+    }
+  };
+
+  const handleResolveSelection = async (ids) => {
+    if (!ids.length) return;
+    try {
+      setConfirmLoading(true);
+      setPendingIds((prev) => [...new Set([...prev, ...ids])]);
+      const resolvedAlerts = await Promise.all(
+        ids.map((id) => resolveAlert(id, token)),
+      );
+      const byId = new Map(resolvedAlerts.map((a) => [a?._id, a]));
+      setAlerts((prev) => prev.map((a) => byId.get(a._id) ?? a));
+      setSelectedConfirmIds(new Set());
+      setConfirmMode(false);
+    } catch (err) {
+      setError(
+        err.response?.data?.message || "Nepodařilo se potvrdit výstrahy.",
+      );
+    } finally {
+      setPendingIds((prev) => prev.filter((id) => !ids.includes(id)));
+      setConfirmLoading(false);
+    }
+  };
+
+  const handleResolveRange = (value) => {
+    if (value === "select") {
+      setConfirmMode(true);
+      return;
+    }
+
+    if (value === "custom") {
+      setShowConfirmCustomRange(true);
+      setConfirmCalendarOpenKey((k) => k + 1);
+      return;
+    }
+
+    setShowConfirmCustomRange(false);
+
+    const now = new Date();
+    let from = null;
+    if (value === "1h") {
+      from = new Date(now.getTime() - 60 * 60 * 1000);
+    } else if (value === "6h") {
+      from = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+    } else if (value === "24h") {
+      from = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    } else if (value === "7d") {
+      from = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    } else if (value === "all") {
+      from = null;
+    }
+
+    const fromTs = from ? from.getTime() : null;
+    const idsToResolve = alerts
+      .filter((a) => Boolean(a.active))
+      .filter((a) => {
+        const ts = a.timestamp ? new Date(a.timestamp).getTime() : null;
+        if (!ts) return false;
+        if (fromTs != null && ts < fromTs) return false;
+        return true;
+      })
+      .map((a) => a._id)
+      .filter(Boolean);
+
+    setConfirmConfirmScope({ type: "range", value, ids: idsToResolve });
+  };
+
+  const requestResolveSelected = () => {
+    const ids = [...selectedConfirmIds].filter(Boolean);
+    setConfirmConfirmScope({
+      type: "selected",
+      ids,
+    });
+  };
+
+  const confirmResolve = async () => {
+    if (!confirmConfirmScope?.ids?.length) {
+      setConfirmConfirmScope(null);
+      return;
+    }
+    await handleResolveSelection(confirmConfirmScope.ids);
+    setConfirmConfirmScope(null);
+  };
+
+  const handleDeleteRange = (value) => {
+    if (value === "select") {
+      setDeleteMode(true);
+      return;
+    }
+
+    if (value === "custom") {
+      setShowDeleteCustomRange(true);
+      setDeleteCalendarOpenKey((k) => k + 1);
+      return;
+    }
+
+    setShowDeleteCustomRange(false);
+
+    const now = new Date();
+    let from = null;
+    if (value === "1h") {
+      from = new Date(now.getTime() - 60 * 60 * 1000);
+    } else if (value === "6h") {
+      from = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+    } else if (value === "24h") {
+      from = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    } else if (value === "7d") {
+      from = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    } else if (value === "all") {
+      from = null;
+    }
+
+    const fromTs = from ? from.getTime() : null;
+    const idsToDelete = alerts
+      .filter((a) => {
+        const ts = a.timestamp ? new Date(a.timestamp).getTime() : null;
+        if (!ts) return false;
+        if (fromTs != null && ts < fromTs) return false;
+        return true;
+      })
+      .map((a) => a._id)
+      .filter(Boolean);
+
+    setConfirmDeleteScope({ type: "range", value, ids: idsToDelete });
+  };
+
+  useEffect(() => {
+    if (!showDeleteCustomRange) return;
+    const [start, end] = deleteDateRange;
+    if (!start || !end) return;
+
+    const fromTs = dayjs(start).startOf("day").valueOf();
+    const toTs = dayjs(end).endOf("day").valueOf();
+
+    const idsToDelete = alerts
+      .filter((a) => {
+        const ts = a.timestamp ? new Date(a.timestamp).getTime() : null;
+        if (!ts) return false;
+        if (ts < fromTs) return false;
+        if (ts > toTs) return false;
+        return true;
+      })
+      .map((a) => a._id)
+      .filter(Boolean);
+
+    setConfirmDeleteScope({ type: "range", value: "custom", ids: idsToDelete });
+  }, [deleteDateRange, showDeleteCustomRange, alerts]);
+
+  useEffect(() => {
+    if (!showConfirmCustomRange) return;
+    const [start, end] = confirmDateRange;
+    if (!start || !end) return;
+
+    const fromTs = dayjs(start).startOf("day").valueOf();
+    const toTs = dayjs(end).endOf("day").valueOf();
+
+    const idsToResolve = alerts
+      .filter((a) => Boolean(a.active))
+      .filter((a) => {
+        const ts = a.timestamp ? new Date(a.timestamp).getTime() : null;
+        if (!ts) return false;
+        if (ts < fromTs) return false;
+        if (ts > toTs) return false;
+        return true;
+      })
+      .map((a) => a._id)
+      .filter(Boolean);
+
+    setConfirmConfirmScope({
+      type: "range",
+      value: "custom",
+      ids: idsToResolve,
+    });
+  }, [confirmDateRange, showConfirmCustomRange, alerts]);
+
+  const requestDeleteSelected = () => {
+    const ids = [...selectedIds].filter(Boolean);
+    setConfirmDeleteScope({
+      type: "selected",
+      ids,
+    });
+  };
+
+  const confirmDelete = async () => {
+    if (!confirmDeleteScope?.ids?.length) {
+      setConfirmDeleteScope(null);
+      return;
+    }
+    await handleDeleteSelection(confirmDeleteScope.ids);
+    setConfirmDeleteScope(null);
   };
 
   const handleDelete = async (alertId) => {
@@ -310,6 +576,167 @@ export default function AlertsHistory() {
                 )}
               </Select>
             </FormControl>
+
+            <Box
+              display="flex"
+              alignItems="center"
+              gap={1}
+              flexWrap="wrap"
+              sx={{ width: { xs: "100%", sm: "auto" } }}
+            >
+              <Box
+                display="flex"
+                alignItems="center"
+                gap={1}
+                sx={{ width: { xs: "100%", sm: "auto" } }}
+              >
+                {!confirmMode ? (
+                  <TextField
+                    select
+                    size="small"
+                    label="Potvrdit"
+                    color="primary"
+                    value=""
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (!value) return;
+                      handleResolveRange(value);
+                    }}
+                    sx={{ minWidth: 180, width: { xs: "100%", sm: 200 } }}
+                  >
+                    {RESOLVE_OPTIONS.map((opt) => (
+                      <MenuItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                ) : (
+                  <Box
+                    display="flex"
+                    alignItems="center"
+                    gap={1}
+                    sx={{ width: { xs: "100%", sm: "auto" } }}
+                  >
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      size="small"
+                      onClick={requestResolveSelected}
+                      disabled={selectedConfirmIds.size === 0 || confirmLoading}
+                      sx={{ width: { xs: "100%", sm: "auto" } }}
+                    >
+                      Potvrdit
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => {
+                        setConfirmMode(false);
+                        setSelectedConfirmIds(new Set());
+                      }}
+                      sx={{ width: { xs: "100%", sm: "auto" } }}
+                    >
+                      Zrušit
+                    </Button>
+                  </Box>
+                )}
+              </Box>
+
+              <Box
+                display="flex"
+                alignItems="center"
+                gap={1}
+                sx={{ width: { xs: "100%", sm: "auto" } }}
+              >
+                {!deleteMode ? (
+                  <TextField
+                    select
+                    size="small"
+                    label="Smazat"
+                    color="primary"
+                    value=""
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (!value) return;
+                      handleDeleteRange(value);
+                    }}
+                    sx={{ minWidth: 180, width: { xs: "100%", sm: 200 } }}
+                  >
+                    {DELETE_OPTIONS.map((opt) => (
+                      <MenuItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                ) : (
+                  <Box
+                    display="flex"
+                    alignItems="center"
+                    gap={1}
+                    sx={{ width: { xs: "100%", sm: "auto" } }}
+                  >
+                    <Button
+                      variant="contained"
+                      color="error"
+                      size="small"
+                      onClick={requestDeleteSelected}
+                      disabled={selectedIds.size === 0 || deleteLoading}
+                      sx={{ width: { xs: "100%", sm: "auto" } }}
+                    >
+                      Smazat
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => {
+                        setDeleteMode(false);
+                        setSelectedIds(new Set());
+                      }}
+                      sx={{ width: { xs: "100%", sm: "auto" } }}
+                    >
+                      Zrušit
+                    </Button>
+                  </Box>
+                )}
+              </Box>
+
+              {showConfirmCustomRange && !confirmMode && (
+                <Box sx={{ width: { xs: "100%", sm: "auto" } }}>
+                  <LocalizationProvider
+                    dateAdapter={AdapterDayjs}
+                    adapterLocale="cs"
+                  >
+                    <DateRangeSingleCalendar
+                      value={confirmDateRange}
+                      onChange={setConfirmDateRange}
+                      label="Od–do"
+                      size="small"
+                      fullWidth={isMobile}
+                      autoOpenKey={confirmCalendarOpenKey}
+                    />
+                  </LocalizationProvider>
+                </Box>
+              )}
+
+              {showDeleteCustomRange && !deleteMode && (
+                <Box sx={{ width: { xs: "100%", sm: "auto" } }}>
+                  <LocalizationProvider
+                    dateAdapter={AdapterDayjs}
+                    adapterLocale="cs"
+                  >
+                    <DateRangeSingleCalendar
+                      value={deleteDateRange}
+                      onChange={setDeleteDateRange}
+                      label="Od–do"
+                      size="small"
+                      fullWidth={isMobile}
+                      autoOpenKey={deleteCalendarOpenKey}
+                    />
+                  </LocalizationProvider>
+                </Box>
+              )}
+            </Box>
+
             <AlertFilters
               dateRange={dateRange}
               onDateRangeChange={setDateRange}
@@ -393,23 +820,89 @@ export default function AlertsHistory() {
         ) : pagedAlerts.length === 0 ? (
           <Typography>Žádné výstrahy pro zvolené filtry.</Typography>
         ) : (
-          <Box px={3}>
+          <Box
+            px={3}
+            sx={{
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "1fr",
+                md: "repeat(auto-fill, minmax(320px, 1fr))",
+              },
+              gap: 2,
+            }}
+          >
             {pagedAlerts.map((alert) => (
-              <Box key={alert._id}>
+              <Box
+                key={alert._id}
+                display="flex"
+                alignItems="flex-start"
+                gap={1}
+                sx={{ minWidth: 0 }}
+              >
+                {deleteMode && (
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      flexShrink: 0,
+                      pt: 1,
+                    }}
+                  >
+                    <Checkbox
+                      checked={selectedIds.has(alert._id)}
+                      onChange={(e) => {
+                        setSelectedIds((prev) => {
+                          const next = new Set(prev);
+                          if (e.target.checked) next.add(alert._id);
+                          else next.delete(alert._id);
+                          return next;
+                        });
+                      }}
+                    />
+                  </Box>
+                )}
+                {confirmMode && (
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      flexShrink: 0,
+                      pt: 1,
+                    }}
+                  >
+                    <Checkbox
+                      disabled={!alert.active}
+                      checked={selectedConfirmIds.has(alert._id)}
+                      onChange={(e) => {
+                        if (!alert.active) return;
+                        setSelectedConfirmIds((prev) => {
+                          const next = new Set(prev);
+                          if (e.target.checked) next.add(alert._id);
+                          else next.delete(alert._id);
+                          return next;
+                        });
+                      }}
+                    />
+                  </Box>
+                )}
                 {pendingIds.includes(alert._id) ? (
-                  <AlertCardSkeleton count={1} />
+                  <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                    <AlertCardSkeleton count={1} />
+                  </Box>
                 ) : (
-                  <AlertCard
-                    alert={alert}
-                    actions={
-                      <AlertActions
-                        isResolved={!alert.active}
-                        onResolve={() => handleResolve(alert._id)}
-                        onRestore={() => handleRestore(alert._id)}
-                        onDelete={() => openDeleteConfirm(alert._id)}
-                      />
-                    }
-                  />
+                  <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                    <AlertCard
+                      alert={alert}
+                      actions={
+                        <AlertActions
+                          isResolved={!alert.active}
+                          onResolve={() => handleResolve(alert._id)}
+                          onRestore={() => handleRestore(alert._id)}
+                          onDelete={() => openDeleteConfirm(alert._id)}
+                        />
+                      }
+                    />
+                  </Box>
                 )}
               </Box>
             ))}
@@ -429,6 +922,60 @@ export default function AlertsHistory() {
           onClose={closeDeleteConfirm}
           onConfirm={() => handleDelete(confirmDeleteId)}
         />
+
+        <Dialog
+          open={Boolean(confirmDeleteScope)}
+          onClose={() => setConfirmDeleteScope(null)}
+          maxWidth="xs"
+          fullWidth
+        >
+          <DialogTitle>Smazat výstrahy?</DialogTitle>
+          <DialogContent>
+            <Typography variant="body2">
+              {confirmDeleteScope?.type === "selected"
+                ? `Opravdu chcete smazat vybrané výstrahy? Po smazání se výstrahy nezobrazí v historii výstrah! (${confirmDeleteScope.ids.length})`
+                : `Opravdu chcete smazat výstrahy pro zvolený rozsah? Po smazání se výstrahy nezobrazí v historii výstrah!(${confirmDeleteScope?.ids?.length ?? 0})`}
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setConfirmDeleteScope(null)}>Zrušit</Button>
+            <Button
+              color="error"
+              variant="contained"
+              onClick={confirmDelete}
+              disabled={deleteLoading}
+            >
+              Smazat
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        <Dialog
+          open={Boolean(confirmConfirmScope)}
+          onClose={() => setConfirmConfirmScope(null)}
+          maxWidth="xs"
+          fullWidth
+        >
+          <DialogTitle>Potvrdit výstrahy?</DialogTitle>
+          <DialogContent>
+            <Typography variant="body2">
+              {confirmConfirmScope?.type === "selected"
+                ? `Opravdu chcete potvrdit vybrané výstrahy? (${confirmConfirmScope.ids.length})`
+                : `Opravdu chcete potvrdit výstrahy pro zvolený rozsah? (${confirmConfirmScope?.ids?.length ?? 0})`}
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setConfirmConfirmScope(null)}>Zrušit</Button>
+            <Button
+              color="primary"
+              variant="contained"
+              onClick={confirmResolve}
+              disabled={confirmLoading}
+            >
+              Potvrdit
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Box>
     </>
   );
