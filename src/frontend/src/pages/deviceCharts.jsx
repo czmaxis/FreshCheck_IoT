@@ -8,6 +8,7 @@ import {
   Card,
   CardContent,
   Slider,
+  Chip,
   useTheme,
   useMediaQuery,
 } from "@mui/material";
@@ -325,18 +326,49 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
 
   return (
     <Box
-      p={{ xs: 1.5, sm: 3 }}
+      p={{ xs: 2, sm: 3 }}
       mt={{ xs: 2, sm: 4 }}
-      sx={{ maxWidth: "100%", overflowX: "hidden", boxSizing: "border-box" }}
+      borderRadius={3}
+      sx={{
+        maxWidth: "100%",
+        overflowX: "hidden",
+        boxSizing: "border-box",
+        backgroundColor: "background.paper",
+        boxShadow: "0 2px 12px rgba(0,0,0,0.1)",
+        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+        "&:hover": {
+          boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+        },
+      }}
     >
+      {/* Header */}
       <Box
         display="flex"
         alignItems={{ xs: "stretch", sm: "center" }}
         justifyContent="space-between"
         flexDirection={{ xs: "column", sm: "row" }}
         gap={2}
+        mb={2}
       >
-        <Typography variant="h5">Grafy (teplota / vlhkost)</Typography>
+        <Box display="flex" alignItems="center" gap={1.5}>
+          <Box
+            sx={{
+              width: 40,
+              height: 40,
+              borderRadius: "50%",
+              background: "linear-gradient(135deg, #ef5350 0%, #42a5f5 100%)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              opacity: 0.9,
+            }}
+          >
+            <DeviceThermostatIcon sx={{ color: "white", fontSize: 20 }} />
+          </Box>
+          <Typography variant="h6" fontWeight={600}>
+            Grafy (teplota / vlhkost)
+          </Typography>
+        </Box>
 
         <Box
           display="flex"
@@ -364,9 +396,12 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
           </Button>
           <Button
             size="small"
-            variant="outlined"
+            variant="contained"
             onClick={resetZoom}
-            sx={{ width: { xs: "calc(50% - 4px)", sm: "auto" } }}
+            sx={{
+              width: { xs: "calc(50% - 4px)", sm: "auto" },
+              textTransform: "none",
+            }}
           >
             {isMobile ? "Reset" : "Reset zoom"}
           </Button>
@@ -382,13 +417,22 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
       )}
 
       {dateFilteredData.length > 0 && dataBounds && (
-        <Box sx={{ mt: 1.5, pb: 0.5 }}>
+        <Box
+          sx={{
+            mt: 2,
+            p: 2,
+            borderRadius: 2,
+            backgroundColor: "#f5f5f5",
+            border: "1px solid #e0e0e0",
+          }}
+        >
           <Typography
-            variant="caption"
+            variant="body2"
             color="text.secondary"
-            sx={{ mb: 0.5, display: "block" }}
+            fontWeight={500}
+            sx={{ mb: 1.5 }}
           >
-            Posuň výběr pro přiblížení/oddálení časového úseku grafů.
+            📊 Posuň výběr pro přiblížení/oddálení časového úseku grafů
           </Typography>
 
           <Slider
@@ -406,22 +450,39 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
               setZoomRange([start, end]);
             }}
             disabled={dataBounds.minTs === dataBounds.maxTs}
-            sx={{ px: 1, mt: 0.5 }}
+            sx={{
+              px: 1,
+              mt: 0.5,
+              "& .MuiSlider-thumb": {
+                boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+              },
+            }}
           />
 
           <Box
             display="flex"
             alignItems="center"
             justifyContent="space-between"
-            sx={{ mt: 0.5 }}
+            sx={{ mt: 1 }}
           >
-            <Typography variant="caption" color="text.secondary">
-              Od: {formatSliderTime((zoomRange ?? [dataBounds.minTs, dataBounds.maxTs])[0])}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Do:{" "}
-              {formatSliderTime((zoomRange ?? [dataBounds.minTs, dataBounds.maxTs])[1])}
-            </Typography>
+            <Chip
+              label={`Od: ${formatSliderTime((zoomRange ?? [dataBounds.minTs, dataBounds.maxTs])[0])}`}
+              size="small"
+              sx={{
+                backgroundColor: "white",
+                fontWeight: 500,
+                fontSize: "0.75rem",
+              }}
+            />
+            <Chip
+              label={`Do: ${formatSliderTime((zoomRange ?? [dataBounds.minTs, dataBounds.maxTs])[1])}`}
+              size="small"
+              sx={{
+                backgroundColor: "white",
+                fontWeight: 500,
+                fontSize: "0.75rem",
+              }}
+            />
           </Box>
         </Box>
       )}
@@ -430,12 +491,16 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
         {dateFilteredData.length > 0 ? (
           <>
             <Card
-              elevation={2}
+              elevation={0}
               sx={{
-                mt: 2,
-                backgroundColor: "#f7efe7",
-                borderRadius: 2,
-                boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+                mt: 3,
+                borderRadius: 3,
+                borderLeft: "4px solid #ef5350",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                transition: "all 0.3s ease",
+                "&:hover": {
+                  boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
+                },
               }}
             >
               <CardContent sx={{ pb: 2 }}>
@@ -444,31 +509,63 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
                   alignItems="center"
                   justifyContent="space-between"
                   flexWrap="wrap"
-                  gap={1}
-                  sx={{ mb: 1 }}
+                  gap={1.5}
+                  sx={{ mb: 2 }}
                 >
-                  <Box display="flex" alignItems="center" gap={1}>
-                    <DeviceThermostatIcon
-                      fontSize="small"
-                      sx={{ color: "#ff5a3c" }}
-                    />
-                    <Typography variant="subtitle1">Teplota (°C)</Typography>
+                  <Box display="flex" alignItems="center" gap={1.5}>
+                    <Box
+                      sx={{
+                        width: 36,
+                        height: 36,
+                        borderRadius: "50%",
+                        backgroundColor: "#ef535015",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <DeviceThermostatIcon
+                        fontSize="small"
+                        sx={{ color: "#ef5350" }}
+                      />
+                    </Box>
+                    <Typography variant="h6" fontWeight={600}>
+                      Teplota (°C)
+                    </Typography>
                   </Box>
-                  <Typography variant="body2" color="text.secondary">
-                    Aktuální teplota:{" "}
-                    {latest?.temperature != null
-                      ? `${latest.temperature} °C`
-                      : "-"}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Limity:{" "}
-                    {threshold?.temperature?.min != null ||
-                    threshold?.temperature?.max != null
-                      ? `${threshold?.temperature?.min ?? "—"}–${
-                          threshold?.temperature?.max ?? "—"
-                        } °C`
-                      : "—"}
-                  </Typography>
+                  <Box display="flex" gap={1} flexWrap="wrap">
+                    <Chip
+                      icon={<DeviceThermostatIcon />}
+                      label={
+                        latest?.temperature != null
+                          ? `${latest.temperature} °C`
+                          : "-"
+                      }
+                      sx={{
+                        backgroundColor: "#ef535015",
+                        border: "1px solid #ef535030",
+                        fontWeight: 600,
+                        "& .MuiChip-icon": { color: "#ef5350" },
+                        "& .MuiChip-label": { color: "#ef5350" },
+                      }}
+                    />
+                    <Chip
+                      label={
+                        threshold?.temperature?.min != null ||
+                        threshold?.temperature?.max != null
+                          ? `Limity: ${threshold?.temperature?.min ?? "—"}–${
+                              threshold?.temperature?.max ?? "—"
+                            } °C`
+                          : "Limity: —"
+                      }
+                      size="small"
+                      sx={{
+                        backgroundColor: "#9e9e9e15",
+                        fontWeight: 500,
+                        "& .MuiChip-label": { color: "#9e9e9e" },
+                      }}
+                    />
+                  </Box>
                 </Box>
                 <Box sx={{ width: "100%", height: isMobile ? 260 : 300 }}>
                   <ResponsiveContainer width="100%" height="100%">
@@ -555,12 +652,16 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
             </Card>
 
             <Card
-              elevation={2}
+              elevation={0}
               sx={{
                 mt: 3,
-                backgroundColor: "#eaf5f8",
-                borderRadius: 2,
-                boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+                borderRadius: 3,
+                borderLeft: "4px solid #42a5f5",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                transition: "all 0.3s ease",
+                "&:hover": {
+                  boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
+                },
               }}
             >
               <CardContent sx={{ pb: 2 }}>
@@ -569,26 +670,58 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
                   alignItems="center"
                   justifyContent="space-between"
                   flexWrap="wrap"
-                  gap={1}
-                  sx={{ mb: 1 }}
+                  gap={1.5}
+                  sx={{ mb: 2 }}
                 >
-                  <Box display="flex" alignItems="center" gap={1}>
-                    <OpacityIcon fontSize="small" sx={{ color: "#1aa6c8" }} />
-                    <Typography variant="subtitle1">Vlhkost (%)</Typography>
+                  <Box display="flex" alignItems="center" gap={1.5}>
+                    <Box
+                      sx={{
+                        width: 36,
+                        height: 36,
+                        borderRadius: "50%",
+                        backgroundColor: "#42a5f515",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <OpacityIcon fontSize="small" sx={{ color: "#42a5f5" }} />
+                    </Box>
+                    <Typography variant="h6" fontWeight={600}>
+                      Vlhkost (%)
+                    </Typography>
                   </Box>
-                  <Typography variant="body2" color="text.secondary">
-                    Aktuální vlhkost:{" "}
-                    {latest?.humidity != null ? `${latest.humidity} %` : "-"}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Limity:{" "}
-                    {threshold?.humidity?.min != null ||
-                    threshold?.humidity?.max != null
-                      ? `${threshold?.humidity?.min ?? "—"}–${
-                          threshold?.humidity?.max ?? "—"
-                        } %`
-                      : "—"}
-                  </Typography>
+                  <Box display="flex" gap={1} flexWrap="wrap">
+                    <Chip
+                      icon={<OpacityIcon />}
+                      label={
+                        latest?.humidity != null ? `${latest.humidity} %` : "-"
+                      }
+                      sx={{
+                        backgroundColor: "#42a5f515",
+                        border: "1px solid #42a5f530",
+                        fontWeight: 600,
+                        "& .MuiChip-icon": { color: "#42a5f5" },
+                        "& .MuiChip-label": { color: "#42a5f5" },
+                      }}
+                    />
+                    <Chip
+                      label={
+                        threshold?.humidity?.min != null ||
+                        threshold?.humidity?.max != null
+                          ? `Limity: ${threshold?.humidity?.min ?? "—"}–${
+                              threshold?.humidity?.max ?? "—"
+                            } %`
+                          : "Limity: —"
+                      }
+                      size="small"
+                      sx={{
+                        backgroundColor: "#9e9e9e15",
+                        fontWeight: 500,
+                        "& .MuiChip-label": { color: "#9e9e9e" },
+                      }}
+                    />
+                  </Box>
                 </Box>
                 <Box sx={{ width: "100%", height: isMobile ? 260 : 300 }}>
                   <ResponsiveContainer width="100%" height="100%">
