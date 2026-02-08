@@ -3,10 +3,7 @@ import {
   Box,
   Typography,
   CircularProgress,
-  Stack,
-  Chip,
   Checkbox,
-  IconButton,
   Collapse,
   MenuItem,
   Pagination,
@@ -24,8 +21,7 @@ import dayjs from "dayjs";
 import DateRangeSingleCalendar from "../components/DateRangeSingleCalendar.jsx";
 import TimeRangeSelector from "../components/TimeRangeSelector.jsx";
 import ActionSelector from "../components/ActionSelector.jsx";
-import DeviceThermostatIcon from "@mui/icons-material/DeviceThermostat";
-import OpacityIcon from "@mui/icons-material/Opacity";
+import SensorDataCard from "../components/SensorDataCard.jsx";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import { useAuth } from "../context/AuthContext.jsx";
@@ -33,32 +29,7 @@ import {
   getSensorData,
   deleteSensorData,
 } from "../services/sensorDataService.js";
-import DoorFrontIcon from "@mui/icons-material/DoorFront";
 import { useTheme, useMediaQuery } from "@mui/material";
-
-function formatTimestamp(ts) {
-  if (!ts) return "-";
-  const d = new Date(ts);
-  const day = String(d.getDate()).padStart(2, "0");
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const year = d.getFullYear();
-  const hours = String(d.getHours() + 1).padStart(2, "0"); // +1 to temporary fix timezone issue in CZ
-  const minutes = String(d.getMinutes()).padStart(2, "0");
-  const seconds = String(d.getSeconds()).padStart(2, "0");
-  return `${day}.${month}.${year} ${hours}:${minutes}:${seconds}`;
-}
-
-function getDoorState(illuminance) {
-  if (illuminance === undefined || illuminance === null) {
-    return { label: "—", color: "default" };
-  }
-
-  if (Number(illuminance) === 0) {
-    return { label: "Zavřeno", color: "success" };
-  }
-
-  return { label: "Otevřeno", color: "warning" };
-}
 
 function parseDoorState(item) {
   if (item?.doors === true || item?.doors === 1 || item?.doors === "1") {
@@ -72,13 +43,6 @@ function parseDoorState(item) {
   if (illuminance === undefined || illuminance === null) return null;
   if (Number.isNaN(Number(illuminance))) return null;
   return Number(illuminance) > 0 ? 1 : 0;
-}
-
-function getDoorStateFromItem(item) {
-  const state = parseDoorState(item);
-  if (state == null) return { label: "—", color: "default" };
-  if (state === 0) return { label: "Zavřeno", color: "success" };
-  return { label: "Otevřeno", color: "warning" };
 }
 
 export default function SensorData({ deviceId, refreshKey }) {
@@ -503,117 +467,38 @@ export default function SensorData({ deviceId, refreshKey }) {
             ? pagedData.map((item) => (
                 <Box
                   key={item._id}
-                  sx={{
-                    mb: 1,
-                    p: 2,
-                    border: "1px solid #eee",
-                    borderRadius: 1,
-                    backgroundColor: "background.paper",
-                  }}
+                  display="flex"
+                  alignItems="flex-start"
+                  gap={deleteMode ? 1.5 : 0}
                 >
-                  <Box
-                    display="flex"
-                    alignItems={isMobile ? "flex-start" : "center"}
-                    gap={deleteMode ? 1 : 0}
-                  >
-                    {deleteMode && (
-                      <Box
-                        sx={{
-                          display: "flex",
-                          alignItems: "center",
-                          flexShrink: 0,
+                  {deleteMode && (
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        flexShrink: 0,
+                        pt: 1,
+                      }}
+                    >
+                      <Checkbox
+                        checked={selectedIds.has(item._id)}
+                        onChange={(e) => {
+                          setSelectedIds((prev) => {
+                            const next = new Set(prev);
+                            if (e.target.checked) {
+                              next.add(item._id);
+                            } else {
+                              next.delete(item._id);
+                            }
+                            return next;
+                          });
                         }}
-                      >
-                        <Checkbox
-                          checked={selectedIds.has(item._id)}
-                          onChange={(e) => {
-                            setSelectedIds((prev) => {
-                              const next = new Set(prev);
-                              if (e.target.checked) {
-                                next.add(item._id);
-                              } else {
-                                next.delete(item._id);
-                              }
-                              return next;
-                            });
-                          }}
-                        />
-                      </Box>
-                    )}
-
-                    <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                      <Stack
-                        direction={isMobile ? "column" : "row"}
-                        alignItems={isMobile ? "flex-start" : "center"}
-                        justifyContent="space-between"
-                        spacing={isMobile ? 1 : 0}
-                      >
-                        <Box>
-                          <Typography variant={isMobile ? "body2" : "body1"}>
-                            <strong>Čas:</strong>{" "}
-                            {formatTimestamp(item.timestamp)}
-                          </Typography>
-                        </Box>
-
-                        <Stack
-                          direction="row"
-                          spacing={1}
-                          alignItems="center"
-                          sx={{
-                            mt: isMobile ? 1 : 0,
-                            width: isMobile ? "100%" : "auto",
-                            flexWrap: "wrap",
-                            rowGap: 1,
-                          }}
-                        >
-                          <Chip
-                            icon={<DeviceThermostatIcon />}
-                            label={`${
-                              item.temperature != null ? item.temperature : "-"
-                            }${item.temperature != null ? " °C" : ""}`}
-                            variant="outlined"
-                            sx={{
-                              "& .MuiChip-icon": { color: "error.main" },
-                            }}
-                          />
-
-                          <Chip
-                            icon={<OpacityIcon />}
-                            label={`${
-                              item.humidity != null ? item.humidity : "-"
-                            }${item.humidity != null ? " %" : ""}`}
-                            variant="outlined"
-                            sx={{
-                              "& .MuiChip-icon": { color: "info.main" },
-                            }}
-                          />
-
-                          {(() => {
-                            const door = getDoorStateFromItem(item);
-                            return (
-                              <Chip
-                                icon={<DoorFrontIcon />}
-                                label={
-                                  isMobile ? undefined : `Dveře: ${door.label}`
-                                }
-                                color={door.color}
-                                variant="outlined"
-                                sx={{
-                                  "& .MuiChip-icon": {
-                                    color:
-                                      door.color === "success"
-                                        ? "success.main"
-                                        : door.color === "warning"
-                                          ? "warning.main"
-                                          : "text.secondary",
-                                  },
-                                }}
-                              />
-                            );
-                          })()}
-                        </Stack>
-                      </Stack>
+                      />
                     </Box>
+                  )}
+
+                  <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                    <SensorDataCard item={item} isMobile={isMobile} />
                   </Box>
                 </Box>
               ))

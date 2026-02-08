@@ -1,25 +1,9 @@
-﻿import React from "react";
-import { Box, Typography, Chip } from "@mui/material";
+﻿import { Box, Typography, Chip } from "@mui/material";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import ThermostatIcon from "@mui/icons-material/Thermostat";
 import WaterDropIcon from "@mui/icons-material/WaterDrop";
 import DoorFrontIcon from "@mui/icons-material/DoorFront";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
-
-function getTypeLabel(alert) {
-  switch (alert.type) {
-    case "humidity":
-      return "Vlhkost";
-    case "temperature":
-      return "Teplota";
-    case "door":
-      return "Dveře";
-    case "doorOpen":
-      return "Otevřené dveře";
-    default:
-      return alert.type || "Výstraha";
-  }
-}
 
 function getTitle(alert) {
   const value = alert.value;
@@ -58,32 +42,63 @@ function getTitle(alert) {
 function renderValue(alert) {
   if (alert.type === "humidity") {
     return (
-      <Box display="flex" alignItems="center" gap={1}>
-        <WaterDropIcon fontSize="small" color="info" />
-        <Typography>{`${alert.value ?? "-"} %`}</Typography>
-      </Box>
+      <Chip
+        icon={<WaterDropIcon />}
+        label={`${alert.value ?? "-"} %`}
+        sx={{
+          backgroundColor: "#42a5f515",
+          border: "1px solid #42a5f530",
+          fontWeight: 600,
+          fontSize: "0.95rem",
+          "& .MuiChip-icon": { color: "#42a5f5" },
+          "& .MuiChip-label": { color: "#42a5f5" },
+        }}
+      />
     );
   }
   if (alert.type === "temperature") {
     return (
-      <Box display="flex" alignItems="center" gap={1}>
-        <ThermostatIcon fontSize="small" color="error" />
-        <Typography>{`${alert.value ?? "-"} °C`}</Typography>
-      </Box>
+      <Chip
+        icon={<ThermostatIcon />}
+        label={`${alert.value ?? "-"} °C`}
+        sx={{
+          backgroundColor: "#ef535015",
+          border: "1px solid #ef535030",
+          fontWeight: 600,
+          fontSize: "0.95rem",
+          "& .MuiChip-icon": { color: "#ef5350" },
+          "& .MuiChip-label": { color: "#ef5350" },
+        }}
+      />
     );
   }
   if (alert.type === "door" || alert.type === "doorOpen") {
     return (
-      <Box display="flex" alignItems="center" gap={1}>
-        <DoorFrontIcon fontSize="small" color="action" />
-        <Typography>{`${alert.value ?? "-"} s`}</Typography>
-      </Box>
+      <Chip
+        icon={<DoorFrontIcon />}
+        label={`${alert.value ?? "-"} s`}
+        sx={{
+          backgroundColor: "#ff980015",
+          border: "1px solid #ff980030",
+          fontWeight: 600,
+          fontSize: "0.95rem",
+          "& .MuiChip-icon": { color: "#ff9800" },
+          "& .MuiChip-label": { color: "#ff9800" },
+        }}
+      />
     );
   }
   return (
-    <Box display="flex" alignItems="center" gap={1}>
-      <Typography>{`${alert.value ?? "-"}`}</Typography>
-    </Box>
+    <Chip
+      label={`${alert.value ?? "-"}`}
+      sx={{
+        backgroundColor: "#9e9e9e15",
+        border: "1px solid #9e9e9e30",
+        fontWeight: 600,
+        fontSize: "0.95rem",
+        "& .MuiChip-label": { color: "#9e9e9e" },
+      }}
+    />
   );
 }
 
@@ -112,56 +127,94 @@ function formatAlertTreshold(alert) {
   return null;
 }
 
+function getAccentColor(alert) {
+  if (!alert.active) return "#66bb6a"; // zelená pro vyřešené
+
+  switch (alert.type) {
+    case "temperature":
+      return "#ef5350"; // červená
+    case "humidity":
+      return "#42a5f5"; // modrá
+    case "door":
+    case "doorOpen":
+      return "#ff9800"; // oranžová
+    default:
+      return "#9e9e9e"; // šedá
+  }
+}
+
 export default function AlertCard({ alert, actions }) {
   const isActive = Boolean(alert.active);
   const alertTresholdText = formatAlertTreshold(alert);
+  const accentColor = getAccentColor(alert);
 
   return (
     <Box
       sx={{
         mb: 2,
-        p: 2,
-        borderRadius: 2,
-        border: isActive ? "1px solid #f2c2a2" : "1px solid #e0e0e0",
-        backgroundColor: isActive ? "#fff7f0" : "#f7f7f7",
+        p: 2.5,
+        borderRadius: 3,
+        borderLeft: `4px solid ${accentColor}`,
+        backgroundColor: "background.paper",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+        "&:hover": {
+          boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
+          transform: "translateY(-2px) scale(1.005)",
+        },
       }}
     >
-      <Box display="flex" alignItems="center" gap={1} mb={1}>
-        <Typography variant="subtitle1" fontWeight={600}>
-          <Box display="flex" alignItems="center" gap={1}>
-            <WarningAmberIcon fontSize="small" color="warning" />
-            {getTitle(alert)}
+      <Box display="flex" alignItems="center" justifyContent="space-between" mb={1.5}>
+        <Box display="flex" alignItems="center" gap={1.5}>
+          <Box
+            sx={{
+              width: 36,
+              height: 36,
+              borderRadius: "50%",
+              backgroundColor: `${accentColor}15`,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <WarningAmberIcon fontSize="small" sx={{ color: accentColor }} />
           </Box>
-        </Typography>
+          <Typography variant="subtitle1" fontWeight={600}>
+            {getTitle(alert)}
+          </Typography>
+        </Box>
 
         {!isActive && (
           <Chip
             size="small"
             label="Vyřešená"
             sx={{
-              backgroundColor: "#e0e0e0",
-              color: "#424242",
+              backgroundColor: "#66bb6a20",
+              color: "#66bb6a",
               fontWeight: 600,
+              border: "1px solid #66bb6a40",
             }}
           />
         )}
       </Box>
 
-      <Box sx={{ mb: 0.5 }}>{renderValue(alert)}</Box>
-      <Box display="flex" alignItems="center" gap={1}>
-        <AccessTimeIcon fontSize="small" color="action" />
+      <Box sx={{ mb: 1.5, ml: 0.5 }}>{renderValue(alert)}</Box>
+
+      <Box display="flex" alignItems="center" gap={1} ml={0.5}>
+        <AccessTimeIcon fontSize="small" sx={{ color: "text.secondary" }} />
         <Typography variant="body2" color="text.secondary">
           {new Date(alert.timestamp).toLocaleString("cs-CZ")}
         </Typography>
       </Box>
+
       {alertTresholdText && (
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, ml: 0.5 }}>
           {alertTresholdText}
         </Typography>
       )}
 
       {actions ? (
-        <Box display="flex" gap={1.5} mt={1.5}>
+        <Box display="flex" gap={1.5} mt={2}>
           {actions}
         </Box>
       ) : null}
