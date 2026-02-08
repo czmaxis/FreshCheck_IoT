@@ -35,6 +35,7 @@ import AlertPagination from "../components/AlertPagination.jsx";
 import AlertActions from "../components/AlertActions.jsx";
 import ConfirmDeleteDialog from "../components/ConfirmDeleteDialog.jsx";
 import DateRangeSingleCalendar from "../components/DateRangeSingleCalendar.jsx";
+import ActionSelector from "../components/ActionSelector.jsx";
 import { useTheme } from "@mui/material/styles";
 
 export default function AlertsHistory() {
@@ -64,25 +65,6 @@ export default function AlertsHistory() {
   const [deleteDateRange, setDeleteDateRange] = useState([null, null]);
   const [showDeleteCustomRange, setShowDeleteCustomRange] = useState(false);
   const [deleteCalendarOpenKey, setDeleteCalendarOpenKey] = useState(0);
-
-  const DELETE_OPTIONS = [
-    { label: "Smazat za poslední hodinu", value: "1h" },
-    { label: "Smazat za posledních 6 hodin", value: "6h" },
-    { label: "Smazat za posledních 24 hodin", value: "24h" },
-    { label: "Smazat za poslední týden", value: "7d" },
-    { label: "Smazat vše", value: "all" },
-    { label: "Označit a smazat", value: "select" },
-    { label: "Od–do", value: "custom" },
-  ];
-  const RESOLVE_OPTIONS = [
-    { label: "Potvrdit za poslední hodinu", value: "1h" },
-    { label: "Potvrdit za posledních 6 hodin", value: "6h" },
-    { label: "Potvrdit za posledních 24 hodin", value: "24h" },
-    { label: "Potvrdit za poslední týden", value: "7d" },
-    { label: "Potvrdit vše", value: "all" },
-    { label: "Označit a potvrdit", value: "select" },
-    { label: "Od–do", value: "custom" },
-  ];
 
   const [confirmMode, setConfirmMode] = useState(false);
   const [selectedConfirmIds, setSelectedConfirmIds] = useState(() => new Set());
@@ -584,121 +566,31 @@ export default function AlertsHistory() {
               flexWrap="wrap"
               sx={{ width: { xs: "100%", sm: "auto" } }}
             >
-              <Box
-                display="flex"
-                alignItems="center"
-                gap={1}
-                sx={{ width: { xs: "100%", sm: "auto" } }}
-              >
-                {!confirmMode ? (
-                  <TextField
-                    select
-                    size="small"
-                    label="Potvrdit"
-                    color="primary"
-                    value=""
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      if (!value) return;
-                      handleResolveRange(value);
-                    }}
-                    sx={{ minWidth: 180, width: { xs: "100%", sm: 200 } }}
-                  >
-                    {RESOLVE_OPTIONS.map((opt) => (
-                      <MenuItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                ) : (
-                  <Box
-                    display="flex"
-                    alignItems="center"
-                    gap={1}
-                    sx={{ width: { xs: "100%", sm: "auto" } }}
-                  >
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      size="small"
-                      onClick={requestResolveSelected}
-                      disabled={selectedConfirmIds.size === 0 || confirmLoading}
-                      sx={{ width: { xs: "100%", sm: "auto" } }}
-                    >
-                      Potvrdit
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() => {
-                        setConfirmMode(false);
-                        setSelectedConfirmIds(new Set());
-                      }}
-                      sx={{ width: { xs: "100%", sm: "auto" } }}
-                    >
-                      Zrušit
-                    </Button>
-                  </Box>
-                )}
-              </Box>
+              <ActionSelector
+                type="resolve"
+                selectionMode={confirmMode}
+                selectedIds={selectedConfirmIds}
+                loading={confirmLoading}
+                onRangeSelect={handleResolveRange}
+                onConfirmSelection={requestResolveSelected}
+                onCancelSelection={() => {
+                  setConfirmMode(false);
+                  setSelectedConfirmIds(new Set());
+                }}
+              />
 
-              <Box
-                display="flex"
-                alignItems="center"
-                gap={1}
-                sx={{ width: { xs: "100%", sm: "auto" } }}
-              >
-                {!deleteMode ? (
-                  <TextField
-                    select
-                    size="small"
-                    label="Smazat"
-                    color="primary"
-                    value=""
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      if (!value) return;
-                      handleDeleteRange(value);
-                    }}
-                    sx={{ minWidth: 180, width: { xs: "100%", sm: 200 } }}
-                  >
-                    {DELETE_OPTIONS.map((opt) => (
-                      <MenuItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                ) : (
-                  <Box
-                    display="flex"
-                    alignItems="center"
-                    gap={1}
-                    sx={{ width: { xs: "100%", sm: "auto" } }}
-                  >
-                    <Button
-                      variant="contained"
-                      color="error"
-                      size="small"
-                      onClick={requestDeleteSelected}
-                      disabled={selectedIds.size === 0 || deleteLoading}
-                      sx={{ width: { xs: "100%", sm: "auto" } }}
-                    >
-                      Smazat
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() => {
-                        setDeleteMode(false);
-                        setSelectedIds(new Set());
-                      }}
-                      sx={{ width: { xs: "100%", sm: "auto" } }}
-                    >
-                      Zrušit
-                    </Button>
-                  </Box>
-                )}
-              </Box>
+              <ActionSelector
+                type="delete"
+                selectionMode={deleteMode}
+                selectedIds={selectedIds}
+                loading={deleteLoading}
+                onRangeSelect={handleDeleteRange}
+                onConfirmSelection={requestDeleteSelected}
+                onCancelSelection={() => {
+                  setDeleteMode(false);
+                  setSelectedIds(new Set());
+                }}
+              />
 
               {showConfirmCustomRange && !confirmMode && (
                 <Box sx={{ width: { xs: "100%", sm: "auto" } }}>

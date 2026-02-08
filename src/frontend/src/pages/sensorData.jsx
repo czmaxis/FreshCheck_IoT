@@ -23,6 +23,7 @@ import "dayjs/locale/cs";
 import dayjs from "dayjs";
 import DateRangeSingleCalendar from "../components/DateRangeSingleCalendar.jsx";
 import TimeRangeSelector from "../components/TimeRangeSelector.jsx";
+import ActionSelector from "../components/ActionSelector.jsx";
 import DeviceThermostatIcon from "@mui/icons-material/DeviceThermostat";
 import OpacityIcon from "@mui/icons-material/Opacity";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
@@ -109,15 +110,6 @@ export default function SensorData({ deviceId, refreshKey }) {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [dateRange, setDateRange] = useState([null, null]);
-  const DELETE_OPTIONS = [
-    { label: "Smazat za poslední hodinu", value: "1h" },
-    { label: "Smazat za posledních 6 hodin", value: "6h" },
-    { label: "Smazat za posledních 24 hodin", value: "24h" },
-    { label: "Smazat za poslední týden", value: "7d" },
-    { label: "Smazat vše", value: "all" },
-    { label: "Označit a smazat", value: "select" },
-    { label: "Od–do", value: "custom" },
-  ];
 
   useEffect(() => {
     // reset paging and expanded state when device changes
@@ -404,63 +396,18 @@ export default function SensorData({ deviceId, refreshKey }) {
           flexWrap="wrap"
           sx={{ width: { xs: "100%", sm: "auto" } }}
         >
-          <Box
-            display="flex"
-            alignItems="center"
-            gap={1}
-            sx={{ width: { xs: "100%", sm: "auto" } }}
-          >
-            {!deleteMode ? (
-              <TextField
-                select
-                size="small"
-                label="Smazat"
-                color="primary"
-                value=""
-                onChange={(e) => {
-                  const value = e.target.value;
-                  if (!value) return;
-                  handleDeleteRange(value);
-                }}
-                sx={{ minWidth: 180, width: { xs: "100%", sm: 200 } }}
-              >
-                {DELETE_OPTIONS.map((opt) => (
-                  <MenuItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </MenuItem>
-                ))}
-              </TextField>
-            ) : (
-              <Box
-                display="flex"
-                alignItems="center"
-                gap={1}
-                sx={{ width: { xs: "100%", sm: "auto" } }}
-              >
-                <Button
-                  variant="contained"
-                  color="error"
-                  size="small"
-                  onClick={requestDeleteSelected}
-                  disabled={selectedIds.size === 0 || deleteLoading}
-                  sx={{ width: { xs: "100%", sm: "auto" } }}
-                >
-                  Smazat
-                </Button>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={() => {
-                    setDeleteMode(false);
-                    setSelectedIds(new Set());
-                  }}
-                  sx={{ width: { xs: "100%", sm: "auto" } }}
-                >
-                  Zrušit
-                </Button>
-              </Box>
-            )}
-          </Box>
+          <ActionSelector
+            type="delete"
+            selectionMode={deleteMode}
+            selectedIds={selectedIds}
+            loading={deleteLoading}
+            onRangeSelect={handleDeleteRange}
+            onConfirmSelection={requestDeleteSelected}
+            onCancelSelection={() => {
+              setDeleteMode(false);
+              setSelectedIds(new Set());
+            }}
+          />
 
           {showDeleteCustomRange && !deleteMode && (
             <Box sx={{ width: { xs: "100%", sm: "auto" } }}>
