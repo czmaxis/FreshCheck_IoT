@@ -353,41 +353,90 @@ export default function Dashboard() {
           mt={3}
           display="flex"
           alignItems="center"
-          gap={1}
+          gap={2}
           flexWrap="wrap"
-          sx={{ width: "100%", maxWidth: 800 }}
+          sx={{ width: "100%", maxWidth: 900 }}
         >
-          <FormControl
-            variant="standard"
-            sx={{ minWidth: { xs: 0, sm: 220 }, width: { xs: "100%", sm: "auto" }, flex: 1 }}
+          <Box
+            sx={{
+              flex: 1,
+              minWidth: { xs: "100%", sm: 280 },
+              p: 2,
+              borderRadius: 3,
+              backgroundColor: "background.paper",
+              boxShadow: "0 2px 12px rgba(0,0,0,0.1)",
+              transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+              "&:hover": {
+                boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+              },
+            }}
           >
-            <InputLabel id="device-select-label">Vyber zařízení</InputLabel>
-            <Select
-              labelId="device-select-label"
-              value={selectedDeviceId ?? ""}
-              label="Vyber zařízení"
-              onChange={(e) => handleSelectDevice(e.target.value)}
+            <FormControl
+              variant="standard"
+              fullWidth
+              sx={{
+                "& .MuiInputLabel-root": {
+                  fontSize: "0.875rem",
+                  fontWeight: 600,
+                  color: "text.secondary",
+                  "&.Mui-focused": {
+                    color: "primary.main",
+                  },
+                },
+                "& .MuiInput-root": {
+                  fontSize: "1rem",
+                  fontWeight: 500,
+                  "&:before": {
+                    borderBottom: "none",
+                  },
+                  "&:after": {
+                    borderBottom: "2px solid",
+                    borderColor: "primary.main",
+                  },
+                  "&:hover:not(.Mui-disabled):before": {
+                    borderBottom: "none",
+                  },
+                },
+              }}
             >
-              {devices && devices.length > 0 ? (
-                devices.map((d) => (
-                  <MenuItem key={d._id} value={d._id}>
-                    {d.name} — {d.location}
+              <InputLabel id="device-select-label">Vyber zařízení</InputLabel>
+              <Select
+                labelId="device-select-label"
+                value={selectedDeviceId ?? ""}
+                label="Vyber zařízení"
+                onChange={(e) => handleSelectDevice(e.target.value)}
+              >
+                {devices && devices.length > 0 ? (
+                  devices.map((d) => (
+                    <MenuItem key={d._id} value={d._id}>
+                      {d.name} — {d.location}
+                    </MenuItem>
+                  ))
+                ) : (
+                  <MenuItem disabled value="">
+                    Žádná zařízení
                   </MenuItem>
-                ))
-              ) : (
-                <MenuItem disabled value="">
-                  Žádná zařízení
-                </MenuItem>
-              )}
-            </Select>
-          </FormControl>
+                )}
+              </Select>
+            </FormControl>
+          </Box>
 
           {/* gear icon next to device selector */}
           <IconButton
             aria-label="nastavení zařízení"
             onClick={handleOpenSettings}
-            size="small"
-            sx={{ ml: { xs: "auto", sm: 0 } }}
+            sx={{
+              width: 48,
+              height: 48,
+              backgroundColor: "background.paper",
+              boxShadow: "0 2px 12px rgba(0,0,0,0.1)",
+              transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+              "&:hover": {
+                backgroundColor: "background.paper",
+                boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+                transform: "scale(1.05)",
+              },
+            }}
           >
             <SettingsIcon />
           </IconButton>
@@ -453,8 +502,24 @@ export default function Dashboard() {
           onClose={handleLimitsCancel}
           maxWidth="xs"
           fullWidth
+          slotProps={{
+            paper: {
+              sx: {
+                borderRadius: 3,
+                boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+              },
+            },
+          }}
         >
-          <DialogTitle>Nastavit limity pro zařízení</DialogTitle>
+          <DialogTitle
+            sx={{
+              fontWeight: 600,
+              fontSize: "1.25rem",
+              pb: 1,
+            }}
+          >
+            Nastavit limity pro zařízení
+          </DialogTitle>
           <DialogContent>
             {limitsError && (
               <Typography color="error" sx={{ mb: 1 }}>
@@ -466,12 +531,14 @@ export default function Dashboard() {
                 <LimitsSkeleton lines={5} />
               </Stack>
             ) : (
-              <Stack spacing={2} sx={{ mt: 1 }}>
+              <Stack spacing={2.5} sx={{ mt: 1 }}>
                 <TextField
                   label="Minimální teplota (°C)"
                   type="number"
                   value={minTemp}
                   onChange={(e) => setMinTemp(e.target.value)}
+                  variant="outlined"
+                  fullWidth
                 />
 
                 <TextField
@@ -479,6 +546,8 @@ export default function Dashboard() {
                   type="number"
                   value={maxTemp}
                   onChange={(e) => setMaxTemp(e.target.value)}
+                  variant="outlined"
+                  fullWidth
                 />
 
                 <TextField
@@ -486,6 +555,8 @@ export default function Dashboard() {
                   type="number"
                   value={minHumidity}
                   onChange={(e) => setMinHumidity(e.target.value)}
+                  variant="outlined"
+                  fullWidth
                 />
 
                 <TextField
@@ -493,23 +564,39 @@ export default function Dashboard() {
                   type="number"
                   value={maxHumidity}
                   onChange={(e) => setMaxHumidity(e.target.value)}
+                  variant="outlined"
+                  fullWidth
                 />
 
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
                   Aplikují se limity pro zařízení:{" "}
-                  {devices.find((d) => d._id === selectedDeviceId)?.name || "-"}
+                  <strong>
+                    {devices.find((d) => d._id === selectedDeviceId)?.name || "-"}
+                  </strong>
                 </Typography>
               </Stack>
             )}
           </DialogContent>
-          <DialogActions>
-            <Button onClick={handleLimitsCancel} disabled={limitsSaving}>
+          <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+            <Button
+              onClick={handleLimitsCancel}
+              disabled={limitsSaving}
+              sx={{
+                textTransform: "none",
+                fontWeight: 600,
+              }}
+            >
               Zrušit
             </Button>
             <Button
               variant="contained"
               onClick={handleLimitsConfirm}
               disabled={limitsSaving}
+              sx={{
+                textTransform: "none",
+                fontWeight: 600,
+                boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+              }}
             >
               Potvrdit
             </Button>
@@ -520,27 +607,61 @@ export default function Dashboard() {
           onClose={handleAddCancel}
           maxWidth="xs"
           fullWidth
+          slotProps={{
+            paper: {
+              sx: {
+                borderRadius: 3,
+                boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+              },
+            },
+          }}
         >
-          <DialogTitle>Přidat nové zařízení</DialogTitle>
+          <DialogTitle
+            sx={{
+              fontWeight: 600,
+              fontSize: "1.25rem",
+              pb: 1,
+            }}
+          >
+            Přidat nové zařízení
+          </DialogTitle>
           <DialogContent>
-            <Stack spacing={2} sx={{ mt: 1 }}>
+            <Stack spacing={2.5} sx={{ mt: 1 }}>
               <TextField
                 label="Název zařízení"
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
+                variant="outlined"
                 fullWidth
               />
               <TextField
                 label="Lokace"
                 value={newLocation}
                 onChange={(e) => setNewLocation(e.target.value)}
+                variant="outlined"
                 fullWidth
               />
             </Stack>
           </DialogContent>
-          <DialogActions>
-            <Button onClick={handleAddCancel}>Zrušit</Button>
-            <Button variant="contained" onClick={handleAddConfirm}>
+          <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+            <Button
+              onClick={handleAddCancel}
+              sx={{
+                textTransform: "none",
+                fontWeight: 600,
+              }}
+            >
+              Zrušit
+            </Button>
+            <Button
+              variant="contained"
+              onClick={handleAddConfirm}
+              sx={{
+                textTransform: "none",
+                fontWeight: 600,
+                boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+              }}
+            >
               Přidat
             </Button>
           </DialogActions>
@@ -550,27 +671,61 @@ export default function Dashboard() {
           onClose={handleEditCancel}
           maxWidth="xs"
           fullWidth
+          slotProps={{
+            paper: {
+              sx: {
+                borderRadius: 3,
+                boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+              },
+            },
+          }}
         >
-          <DialogTitle>Upravit zařízení</DialogTitle>
+          <DialogTitle
+            sx={{
+              fontWeight: 600,
+              fontSize: "1.25rem",
+              pb: 1,
+            }}
+          >
+            Upravit zařízení
+          </DialogTitle>
           <DialogContent>
-            <Stack spacing={2} sx={{ mt: 1 }}>
+            <Stack spacing={2.5} sx={{ mt: 1 }}>
               <TextField
                 label="Název zařízení"
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
+                variant="outlined"
                 fullWidth
               />
               <TextField
                 label="Lokace"
                 value={editLocation}
                 onChange={(e) => setEditLocation(e.target.value)}
+                variant="outlined"
                 fullWidth
               />
             </Stack>
           </DialogContent>
-          <DialogActions>
-            <Button onClick={handleEditCancel}>Zrušit</Button>
-            <Button variant="contained" onClick={handleEditConfirm}>
+          <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+            <Button
+              onClick={handleEditCancel}
+              sx={{
+                textTransform: "none",
+                fontWeight: 600,
+              }}
+            >
+              Zrušit
+            </Button>
+            <Button
+              variant="contained"
+              onClick={handleEditConfirm}
+              sx={{
+                textTransform: "none",
+                fontWeight: 600,
+                boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+              }}
+            >
               Uložit
             </Button>
           </DialogActions>
@@ -580,10 +735,27 @@ export default function Dashboard() {
           onClose={handleRemoveCancel}
           maxWidth="xs"
           fullWidth
+          slotProps={{
+            paper: {
+              sx: {
+                borderRadius: 3,
+                boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+              },
+            },
+          }}
         >
-          <DialogTitle>Odebrat zařízení</DialogTitle>
+          <DialogTitle
+            sx={{
+              fontWeight: 600,
+              fontSize: "1.25rem",
+              pb: 1,
+              color: "error.main",
+            }}
+          >
+            Odebrat zařízení
+          </DialogTitle>
           <DialogContent>
-            <Typography variant="body2" sx={{ mt: 1 }}>
+            <Typography variant="body1" sx={{ mt: 1, lineHeight: 1.6 }}>
               Opravdu chcete odebrat zařízení{" "}
               <strong>
                 {devices.find((d) => d._id === selectedDeviceId)?.name || "-"}
@@ -591,8 +763,15 @@ export default function Dashboard() {
               ?
             </Typography>
           </DialogContent>
-          <DialogActions>
-            <Button onClick={handleRemoveCancel} disabled={removeBusy}>
+          <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+            <Button
+              onClick={handleRemoveCancel}
+              disabled={removeBusy}
+              sx={{
+                textTransform: "none",
+                fontWeight: 600,
+              }}
+            >
               Zrušit
             </Button>
             <Button
@@ -600,6 +779,11 @@ export default function Dashboard() {
               color="error"
               onClick={handleRemoveConfirm}
               disabled={removeBusy}
+              sx={{
+                textTransform: "none",
+                fontWeight: 600,
+                boxShadow: "0 2px 8px rgba(239, 83, 80, 0.3)",
+              }}
             >
               Odebrat
             </Button>
