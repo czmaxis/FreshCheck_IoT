@@ -3,7 +3,6 @@ import {
   Box,
   Typography,
   Avatar,
-  Paper,
   TextField,
   Button,
   Stack,
@@ -12,7 +11,13 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Card,
+  CardContent,
+  Divider,
+  IconButton,
 } from "@mui/material";
+import EditIcon from "@mui/icons-material/Edit";
+import LockIcon from "@mui/icons-material/Lock";
 import { useAuth } from "../context/AuthContext.jsx";
 import NavBar from "./navBar.jsx";
 import { updateUser, changePassword } from "../services/authService.js";
@@ -68,7 +73,6 @@ export default function Profile() {
 
       const res = await updateUser(user._id, payload, token);
 
-      //  BEZPEČNÁ AKTUALIZACE USERA (nezávislá na tvaru response)
       const updatedUser = {
         ...user,
         ...payload,
@@ -80,7 +84,7 @@ export default function Profile() {
     } catch (err) {
       console.error("Profile update error:", err);
       setError(
-        err.response?.data?.message || "Nepodařilo se uložit změny profilu."
+        err.response?.data?.message || "Nepodařilo se uložit změny profilu.",
       );
     } finally {
       setLoading(false);
@@ -112,16 +116,11 @@ export default function Profile() {
     try {
       setPwdLoading(true);
       setPwdError("");
-      await changePassword(
-        { oldPassword: pwdOld, password: pwdNew },
-        token,
-      );
+      await changePassword({ oldPassword: pwdOld, password: pwdNew }, token);
       setPwdOpen(false);
     } catch (err) {
       console.error("Password change error:", err);
-      setPwdError(
-        err.response?.data?.message || "Nepodařilo se změnit heslo.",
-      );
+      setPwdError(err.response?.data?.message || "Nepodařilo se změnit heslo.");
     } finally {
       setPwdLoading(false);
     }
@@ -136,98 +135,336 @@ export default function Profile() {
         alignItems="center"
         justifyContent="flex-start"
         minHeight="100vh"
-        p={2}
+        p={{ xs: 2, sm: 3 }}
+        sx={{
+          background:
+            "linear-gradient(180deg, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0) 100%)",
+        }}
       >
-        <Paper elevation={3} sx={{ p: 4, maxWidth: 400, width: "100%" }}>
-          <Box
-            display="flex"
-            flexDirection="column"
-            alignItems="center"
-            gap={2}
+        <Box
+          sx={{
+            maxWidth: 800,
+            width: "100%",
+            mt: { xs: 2, sm: 4 },
+          }}
+        >
+          {/* Header Card */}
+          <Card
+            sx={{
+              mb: 3,
+              borderRadius: 3,
+              boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
+              transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+              "&:hover": {
+                boxShadow: "0 4px 20px rgba(0,0,0,0.12)",
+              },
+            }}
           >
-            <Avatar
-              sx={{ width: 80, height: 80 }}
-              alt={user.name}
-              src={user.avatar || ""}
-            />
+            <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
+              <Box
+                display="flex"
+                flexDirection="column"
+                alignItems="center"
+                gap={2}
+              >
+                <Avatar
+                  sx={{
+                    width: { xs: 96, sm: 120 },
+                    height: { xs: 96, sm: 120 },
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                    transition: "transform 0.3s ease",
+                    "&:hover": {
+                      transform: "scale(1.05)",
+                    },
+                  }}
+                  alt={user.name}
+                  src={user.avatar || ""}
+                />
 
-            {!editing ? (
-              <>
-                <Typography variant="h5">{user.name}</Typography>
-
-                <Typography variant="body1" color="text.secondary">
-                  Email: {user.email}
-                </Typography>
-
-                {user._id && (
-                  <Typography variant="body2" color="text.secondary">
-                    ID uživatele: {user._id}
+                <Box textAlign="center">
+                  <Typography
+                    variant="h4"
+                    sx={{
+                      fontWeight: 600,
+                      mb: 0.5,
+                      fontSize: { xs: "1.75rem", sm: "2.125rem" },
+                    }}
+                  >
+                    {user.name}
                   </Typography>
-                )}
-
-                <Stack direction="row" spacing={2}>
-                  <Button variant="outlined" onClick={handleEdit}>
-                    Editovat
-                  </Button>
-                  <Button variant="outlined" onClick={openPasswordDialog}>
-                    Změnit heslo
-                  </Button>
-                </Stack>
-              </>
-            ) : (
-              <>
-                <TextField
-                  label="Jméno"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  fullWidth
-                />
-
-                <TextField
-                  label="Email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  fullWidth
-                />
-
-                {error && (
-                  <Alert severity="error" sx={{ width: "100%" }}>
-                    {error}
-                  </Alert>
-                )}
-
-                <Stack direction="row" spacing={2}>
-                  <Button
-                    variant="contained"
-                    onClick={handleSave}
-                    disabled={loading}
+                  <Typography
+                    variant="body1"
+                    color="text.secondary"
+                    sx={{ fontSize: { xs: "0.9rem", sm: "1rem" } }}
                   >
-                    Uložit
-                  </Button>
-                  <Button
+                    {user.email}
+                  </Typography>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+
+          {/* Profile Info Card */}
+          <Card
+            sx={{
+              mb: 3,
+              borderRadius: 3,
+              boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
+              transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+              "&:hover": {
+                boxShadow: "0 4px 20px rgba(0,0,0,0.12)",
+              },
+            }}
+          >
+            <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
+              <Box
+                display="flex"
+                justifyContent="space-between"
+                alignItems="center"
+                mb={3}
+              >
+                <Typography
+                  variant="h6"
+                  sx={{
+                    fontWeight: 600,
+                    fontSize: { xs: "1.1rem", sm: "1.25rem" },
+                  }}
+                >
+                  Informace o profilu
+                </Typography>
+                {!editing && (
+                  <IconButton
+                    onClick={handleEdit}
+                    size="small"
+                    sx={{
+                      backgroundColor: "primary.main",
+                      color: "white",
+                      "&:hover": {
+                        backgroundColor: "primary.dark",
+                        transform: "scale(1.05)",
+                      },
+                      transition: "all 0.2s ease",
+                    }}
+                  >
+                    <EditIcon fontSize="small" />
+                  </IconButton>
+                )}
+              </Box>
+
+              <Divider sx={{ mb: 3 }} />
+
+              {!editing ? (
+                <Stack spacing={2.5}>
+                  <Box>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{
+                        fontWeight: 600,
+                        textTransform: "uppercase",
+                        letterSpacing: 0.5,
+                      }}
+                    >
+                      Jméno
+                    </Typography>
+                    <Typography
+                      variant="body1"
+                      sx={{ mt: 0.5, fontWeight: 500 }}
+                    >
+                      {user.name}
+                    </Typography>
+                  </Box>
+
+                  <Box>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{
+                        fontWeight: 600,
+                        textTransform: "uppercase",
+                        letterSpacing: 0.5,
+                      }}
+                    >
+                      Email
+                    </Typography>
+                    <Typography
+                      variant="body1"
+                      sx={{ mt: 0.5, fontWeight: 500 }}
+                    >
+                      {user.email}
+                    </Typography>
+                  </Box>
+
+                  {user._id && (
+                    <Box>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{
+                          fontWeight: 600,
+                          textTransform: "uppercase",
+                          letterSpacing: 0.5,
+                        }}
+                      >
+                        ID uživatele
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          mt: 0.5,
+                          fontFamily: "monospace",
+                          color: "text.secondary",
+                        }}
+                      >
+                        {user._id}
+                      </Typography>
+                    </Box>
+                  )}
+                </Stack>
+              ) : (
+                <Stack spacing={2.5}>
+                  <TextField
+                    label="Jméno"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    fullWidth
                     variant="outlined"
-                    onClick={handleCancel}
-                    disabled={loading}
-                  >
-                    Zrušit
-                  </Button>
+                  />
+
+                  <TextField
+                    label="Email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    fullWidth
+                    variant="outlined"
+                  />
+
+                  {error && (
+                    <Alert severity="error" sx={{ width: "100%" }}>
+                      {error}
+                    </Alert>
+                  )}
+
+                  <Stack direction="row" spacing={2} justifyContent="flex-end">
+                    <Button
+                      variant="outlined"
+                      onClick={handleCancel}
+                      disabled={loading}
+                      sx={{
+                        textTransform: "none",
+                        fontWeight: 600,
+                      }}
+                    >
+                      Zrušit
+                    </Button>
+                    <Button
+                      variant="contained"
+                      onClick={handleSave}
+                      disabled={loading}
+                      sx={{
+                        textTransform: "none",
+                        fontWeight: 600,
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                      }}
+                    >
+                      Uložit
+                    </Button>
+                  </Stack>
                 </Stack>
-              </>
-            )}
-          </Box>
-        </Paper>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Security Card */}
+          <Card
+            sx={{
+              borderRadius: 3,
+              boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
+              transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+              "&:hover": {
+                boxShadow: "0 4px 20px rgba(0,0,0,0.12)",
+              },
+            }}
+          >
+            <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
+              <Box
+                display="flex"
+                justifyContent="space-between"
+                alignItems="center"
+                mb={3}
+              >
+                <Typography
+                  variant="h6"
+                  sx={{
+                    fontWeight: 600,
+                    fontSize: { xs: "1.1rem", sm: "1.25rem" },
+                  }}
+                >
+                  Zabezpečení
+                </Typography>
+              </Box>
+
+              <Divider sx={{ mb: 3 }} />
+
+              <Box>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mb: 2, lineHeight: 1.6 }}
+                >
+                  Chraňte svůj účet změnou hesla pravidelně. Používejte silné
+                  heslo s kombinací písmen, čísel a speciálních znaků.
+                </Typography>
+                <Button
+                  variant="outlined"
+                  startIcon={<LockIcon />}
+                  onClick={openPasswordDialog}
+                  sx={{
+                    textTransform: "none",
+                    fontWeight: 600,
+                    borderRadius: 2,
+                  }}
+                >
+                  Změnit heslo
+                </Button>
+              </Box>
+            </CardContent>
+          </Card>
+        </Box>
       </Box>
-      <Dialog open={pwdOpen} onClose={closePasswordDialog} maxWidth="xs" fullWidth>
-        <DialogTitle>Změnit heslo</DialogTitle>
+      <Dialog
+        open={pwdOpen}
+        onClose={closePasswordDialog}
+        maxWidth="xs"
+        fullWidth
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: 3,
+              boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+            },
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            fontWeight: 600,
+            fontSize: "1.25rem",
+            pb: 1,
+          }}
+        >
+          Změnit heslo
+        </DialogTitle>
         <DialogContent>
-          <Stack spacing={2} sx={{ mt: 1 }}>
+          <Stack spacing={2.5} sx={{ mt: 1 }}>
             <TextField
               label="Staré heslo"
               type="password"
               value={pwdOld}
               onChange={(e) => setPwdOld(e.target.value)}
               fullWidth
+              variant="outlined"
             />
             <TextField
               label="Nové heslo"
@@ -235,6 +472,7 @@ export default function Profile() {
               value={pwdNew}
               onChange={(e) => setPwdNew(e.target.value)}
               fullWidth
+              variant="outlined"
             />
             <TextField
               label="Nové heslo znovu"
@@ -242,6 +480,7 @@ export default function Profile() {
               value={pwdNewConfirm}
               onChange={(e) => setPwdNewConfirm(e.target.value)}
               fullWidth
+              variant="outlined"
             />
             {pwdError && (
               <Alert severity="error" sx={{ width: "100%" }}>
@@ -250,14 +489,26 @@ export default function Profile() {
             )}
           </Stack>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={closePasswordDialog} disabled={pwdLoading}>
+        <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+          <Button
+            onClick={closePasswordDialog}
+            disabled={pwdLoading}
+            sx={{
+              textTransform: "none",
+              fontWeight: 600,
+            }}
+          >
             Zrušit
           </Button>
           <Button
             variant="contained"
             onClick={handleChangePassword}
             disabled={pwdLoading}
+            sx={{
+              textTransform: "none",
+              fontWeight: 600,
+              boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+            }}
           >
             Uložit
           </Button>
