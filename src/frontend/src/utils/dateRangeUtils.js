@@ -1,6 +1,7 @@
 import dayjs from "dayjs";
 
 export const PER_PAGE_OPTIONS_ACTIVE = [1, 5, 10, 20];
+export const PER_PAGE_OPTIONS_HISTORY = [1, 5, 10, 20, 50];
 
 export function computeQuickRange(value) {
   const now = new Date();
