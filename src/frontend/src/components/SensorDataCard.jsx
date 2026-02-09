@@ -4,6 +4,14 @@ import OpacityIcon from "@mui/icons-material/Opacity";
 import DoorFrontIcon from "@mui/icons-material/DoorFront";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import { getDoorStateFromItem } from "../utils/doorStateUtils.js";
+import {
+  COLOR_TEMPERATURE,
+  COLOR_HUMIDITY,
+  COLOR_DOOR_OPEN,
+  COLOR_DOOR_CLOSED,
+  COLOR_DEFAULT,
+  chipSx,
+} from "../constants/colors.js";
 
 function formatTimestamp(ts) {
   if (!ts) return "-";
@@ -27,12 +35,11 @@ function formatTimestamp(ts) {
 export default function SensorDataCard({ item, isMobile = false }) {
   const door = getDoorStateFromItem(item);
 
-  // Určení dominantní barvy podle hodnot
   const getAccentColor = () => {
-    if (item.temperature != null) return "#ef5350"; // červená
-    if (item.humidity != null) return "#42a5f5"; // modrá
-    if (door.color === "warning") return "#ff9800"; // oranžová
-    return "#9e9e9e"; // šedá
+    if (item.temperature != null) return COLOR_TEMPERATURE;
+    if (item.humidity != null) return COLOR_HUMIDITY;
+    if (door.color === "warning") return COLOR_DOOR_OPEN;
+    return COLOR_DEFAULT;
   };
 
   const accentColor = getAccentColor();
@@ -95,13 +102,7 @@ export default function SensorDataCard({ item, isMobile = false }) {
             <Chip
               icon={<DeviceThermostatIcon />}
               label={`${item.temperature} °C`}
-              sx={{
-                backgroundColor: "#ef535015",
-                border: "1px solid #ef535030",
-                fontWeight: 600,
-                "& .MuiChip-icon": { color: "#ef5350" },
-                "& .MuiChip-label": { color: "#ef5350" },
-              }}
+              sx={chipSx(COLOR_TEMPERATURE)}
             />
           )}
 
@@ -110,13 +111,7 @@ export default function SensorDataCard({ item, isMobile = false }) {
             <Chip
               icon={<OpacityIcon />}
               label={`${item.humidity} %`}
-              sx={{
-                backgroundColor: "#42a5f515",
-                border: "1px solid #42a5f530",
-                fontWeight: 600,
-                "& .MuiChip-icon": { color: "#42a5f5" },
-                "& .MuiChip-label": { color: "#42a5f5" },
-              }}
+              sx={chipSx(COLOR_HUMIDITY)}
             />
           )}
 
@@ -124,37 +119,13 @@ export default function SensorDataCard({ item, isMobile = false }) {
           <Chip
             icon={<DoorFrontIcon />}
             label={isMobile ? door.label : `Dveře: ${door.label}`}
-            sx={{
-              backgroundColor:
-                door.color === "success"
-                  ? "#66bb6a15"
-                  : door.color === "warning"
-                    ? "#ff980015"
-                    : "#9e9e9e15",
-              border:
-                door.color === "success"
-                  ? "1px solid #66bb6a30"
-                  : door.color === "warning"
-                    ? "1px solid #ff980030"
-                    : "1px solid #9e9e9e30",
-              fontWeight: 600,
-              "& .MuiChip-icon": {
-                color:
-                  door.color === "success"
-                    ? "#66bb6a"
-                    : door.color === "warning"
-                      ? "#ff9800"
-                      : "#9e9e9e",
-              },
-              "& .MuiChip-label": {
-                color:
-                  door.color === "success"
-                    ? "#66bb6a"
-                    : door.color === "warning"
-                      ? "#ff9800"
-                      : "#9e9e9e",
-              },
-            }}
+            sx={chipSx(
+              door.color === "success"
+                ? COLOR_DOOR_CLOSED
+                : door.color === "warning"
+                  ? COLOR_DOOR_OPEN
+                  : COLOR_DEFAULT,
+            )}
           />
         </Stack>
       </Stack>

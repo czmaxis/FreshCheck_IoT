@@ -20,6 +20,12 @@ import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import DeviceThermostatIcon from "@mui/icons-material/DeviceThermostat";
 import OpacityIcon from "@mui/icons-material/Opacity";
 import {
+  COLOR_TEMPERATURE,
+  COLOR_HUMIDITY,
+  COLOR_DEFAULT,
+  chipSx,
+} from "../constants/colors.js";
+import {
   ResponsiveContainer,
   LineChart,
   Line,
@@ -99,7 +105,7 @@ export default function DeviceCharts({ sensorData, allAlerts, device, deviceId, 
               width: 40,
               height: 40,
               borderRadius: "50%",
-              background: "linear-gradient(135deg, #ef5350 0%, #42a5f5 100%)",
+              background: `linear-gradient(135deg, ${COLOR_TEMPERATURE} 0%, ${COLOR_HUMIDITY} 100%)`,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -233,7 +239,7 @@ export default function DeviceCharts({ sensorData, allAlerts, device, deviceId, 
               sx={{
                 mt: 3,
                 borderRadius: 3,
-                borderLeft: "4px solid #ef5350",
+                borderLeft: `4px solid ${COLOR_TEMPERATURE}`,
                 boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
                 transition: "all 0.3s ease",
                 "&:hover": {
@@ -256,7 +262,7 @@ export default function DeviceCharts({ sensorData, allAlerts, device, deviceId, 
                         width: 36,
                         height: 36,
                         borderRadius: "50%",
-                        backgroundColor: "#ef535015",
+                        backgroundColor: `${COLOR_TEMPERATURE}15`,
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -264,7 +270,7 @@ export default function DeviceCharts({ sensorData, allAlerts, device, deviceId, 
                     >
                       <DeviceThermostatIcon
                         fontSize="small"
-                        sx={{ color: "#ef5350" }}
+                        sx={{ color: COLOR_TEMPERATURE }}
                       />
                     </Box>
                     <Typography variant="h6" fontWeight={600}>
@@ -279,13 +285,7 @@ export default function DeviceCharts({ sensorData, allAlerts, device, deviceId, 
                           ? `${latest.temperature} °C`
                           : "-"
                       }
-                      sx={{
-                        backgroundColor: "#ef535015",
-                        border: "1px solid #ef535030",
-                        fontWeight: 600,
-                        "& .MuiChip-icon": { color: "#ef5350" },
-                        "& .MuiChip-label": { color: "#ef5350" },
-                      }}
+                      sx={chipSx(COLOR_TEMPERATURE)}
                     />
                     <Chip
                       label={
@@ -298,9 +298,9 @@ export default function DeviceCharts({ sensorData, allAlerts, device, deviceId, 
                       }
                       size="small"
                       sx={{
-                        backgroundColor: "#9e9e9e15",
+                        backgroundColor: `${COLOR_DEFAULT}15`,
                         fontWeight: 500,
-                        "& .MuiChip-label": { color: "#9e9e9e" },
+                        "& .MuiChip-label": { color: COLOR_DEFAULT },
                       }}
                     />
                   </Box>
@@ -395,7 +395,7 @@ export default function DeviceCharts({ sensorData, allAlerts, device, deviceId, 
               sx={{
                 mt: 3,
                 borderRadius: 3,
-                borderLeft: "4px solid #42a5f5",
+                borderLeft: `4px solid ${COLOR_HUMIDITY}`,
                 boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
                 transition: "all 0.3s ease",
                 "&:hover": {
@@ -418,13 +418,13 @@ export default function DeviceCharts({ sensorData, allAlerts, device, deviceId, 
                         width: 36,
                         height: 36,
                         borderRadius: "50%",
-                        backgroundColor: "#42a5f515",
+                        backgroundColor: `${COLOR_HUMIDITY}15`,
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                       }}
                     >
-                      <OpacityIcon fontSize="small" sx={{ color: "#42a5f5" }} />
+                      <OpacityIcon fontSize="small" sx={{ color: COLOR_HUMIDITY }} />
                     </Box>
                     <Typography variant="h6" fontWeight={600}>
                       Vlhkost (%)
@@ -436,13 +436,7 @@ export default function DeviceCharts({ sensorData, allAlerts, device, deviceId, 
                       label={
                         latest?.humidity != null ? `${latest.humidity} %` : "-"
                       }
-                      sx={{
-                        backgroundColor: "#42a5f515",
-                        border: "1px solid #42a5f530",
-                        fontWeight: 600,
-                        "& .MuiChip-icon": { color: "#42a5f5" },
-                        "& .MuiChip-label": { color: "#42a5f5" },
-                      }}
+                      sx={chipSx(COLOR_HUMIDITY)}
                     />
                     <Chip
                       label={
@@ -455,9 +449,9 @@ export default function DeviceCharts({ sensorData, allAlerts, device, deviceId, 
                       }
                       size="small"
                       sx={{
-                        backgroundColor: "#9e9e9e15",
+                        backgroundColor: `${COLOR_DEFAULT}15`,
                         fontWeight: 500,
-                        "& .MuiChip-label": { color: "#9e9e9e" },
+                        "& .MuiChip-label": { color: COLOR_DEFAULT },
                       }}
                     />
                   </Box>

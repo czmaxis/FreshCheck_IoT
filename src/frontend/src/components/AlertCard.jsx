@@ -19,6 +19,14 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import RestoreIcon from "@mui/icons-material/Restore";
+import {
+  COLOR_TEMPERATURE,
+  COLOR_HUMIDITY,
+  COLOR_DOOR_OPEN,
+  COLOR_DOOR_CLOSED,
+  COLOR_DEFAULT,
+  chipSx,
+} from "../constants/colors.js";
 
 function getTitle(alert) {
   const value = alert.value;
@@ -60,14 +68,7 @@ function renderValue(alert) {
       <Chip
         icon={<WaterDropIcon />}
         label={`${alert.value ?? "-"} %`}
-        sx={{
-          backgroundColor: "#42a5f515",
-          border: "1px solid #42a5f530",
-          fontWeight: 600,
-          fontSize: "0.95rem",
-          "& .MuiChip-icon": { color: "#42a5f5" },
-          "& .MuiChip-label": { color: "#42a5f5" },
-        }}
+        sx={{ ...chipSx(COLOR_HUMIDITY), fontSize: "0.95rem" }}
       />
     );
   }
@@ -76,14 +77,7 @@ function renderValue(alert) {
       <Chip
         icon={<ThermostatIcon />}
         label={`${alert.value ?? "-"} °C`}
-        sx={{
-          backgroundColor: "#ef535015",
-          border: "1px solid #ef535030",
-          fontWeight: 600,
-          fontSize: "0.95rem",
-          "& .MuiChip-icon": { color: "#ef5350" },
-          "& .MuiChip-label": { color: "#ef5350" },
-        }}
+        sx={{ ...chipSx(COLOR_TEMPERATURE), fontSize: "0.95rem" }}
       />
     );
   }
@@ -92,27 +86,14 @@ function renderValue(alert) {
       <Chip
         icon={<DoorFrontIcon />}
         label={`${alert.value ?? "-"} s`}
-        sx={{
-          backgroundColor: "#ff980015",
-          border: "1px solid #ff980030",
-          fontWeight: 600,
-          fontSize: "0.95rem",
-          "& .MuiChip-icon": { color: "#ff9800" },
-          "& .MuiChip-label": { color: "#ff9800" },
-        }}
+        sx={{ ...chipSx(COLOR_DOOR_OPEN), fontSize: "0.95rem" }}
       />
     );
   }
   return (
     <Chip
       label={`${alert.value ?? "-"}`}
-      sx={{
-        backgroundColor: "#9e9e9e15",
-        border: "1px solid #9e9e9e30",
-        fontWeight: 600,
-        fontSize: "0.95rem",
-        "& .MuiChip-label": { color: "#9e9e9e" },
-      }}
+      sx={{ ...chipSx(COLOR_DEFAULT), fontSize: "0.95rem" }}
     />
   );
 }
@@ -143,18 +124,18 @@ function formatAlertTreshold(alert) {
 }
 
 function getAccentColor(alert) {
-  if (!alert.active) return "#66bb6a"; // zelená pro vyřešené
+  if (!alert.active) return COLOR_DOOR_CLOSED;
 
   switch (alert.type) {
     case "temperature":
-      return "#ef5350"; // červená
+      return COLOR_TEMPERATURE;
     case "humidity":
-      return "#42a5f5"; // modrá
+      return COLOR_HUMIDITY;
     case "door":
     case "doorOpen":
-      return "#ff9800"; // oranžová
+      return COLOR_DOOR_OPEN;
     default:
-      return "#9e9e9e"; // šedá
+      return COLOR_DEFAULT;
   }
 }
 
@@ -221,10 +202,10 @@ export default function AlertCard({
               size="small"
               label="Vyřešená"
               sx={{
-                backgroundColor: "#66bb6a20",
-                color: "#66bb6a",
+                backgroundColor: `${COLOR_DOOR_CLOSED}20`,
+                color: COLOR_DOOR_CLOSED,
                 fontWeight: 600,
-                border: "1px solid #66bb6a40",
+                border: `1px solid ${COLOR_DOOR_CLOSED}40`,
               }}
             />
           )}
@@ -278,7 +259,7 @@ export default function AlertCard({
                       <ListItemIcon>
                         <CheckCircleIcon
                           fontSize="small"
-                          sx={{ color: "#66bb6a" }}
+                          sx={{ color: COLOR_DOOR_CLOSED }}
                         />
                       </ListItemIcon>
                       <ListItemText>Potvrdit</ListItemText>
@@ -301,7 +282,7 @@ export default function AlertCard({
                       }}
                     >
                       <ListItemIcon>
-                        <RestoreIcon fontSize="small" sx={{ color: "#42a5f5" }} />
+                        <RestoreIcon fontSize="small" sx={{ color: COLOR_HUMIDITY }} />
                       </ListItemIcon>
                       <ListItemText>Vrátit do aktivního stavu</ListItemText>
                     </MenuItem>
@@ -325,10 +306,10 @@ export default function AlertCard({
                       <ListItemIcon>
                         <DeleteOutlineIcon
                           fontSize="small"
-                          sx={{ color: "#ef5350" }}
+                          sx={{ color: COLOR_TEMPERATURE }}
                         />
                       </ListItemIcon>
-                      <ListItemText sx={{ color: "#ef5350" }}>
+                      <ListItemText sx={{ color: COLOR_TEMPERATURE }}>
                         Smazat
                       </ListItemText>
                     </MenuItem>

@@ -11,7 +11,7 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 
 import AlertCard from "./AlertCard.jsx";
-import AlertFilters from "./AlertFilters.jsx";
+import TimeRangeSelector from "./TimeRangeSelector.jsx";
 import AlertPagination from "./AlertPagination.jsx";
 import ConfirmDeleteDialog from "./ConfirmDeleteDialog.jsx";
 import AlertCardSkeleton from "./AlertCardSkeleton.jsx";
@@ -102,10 +102,11 @@ export default function Alerts({ activeAlerts, setAllAlerts, deviceId }) {
             isMobile={isMobile}
           />
 
-          <AlertFilters
+          <TimeRangeSelector
             dateRange={dateRange}
             onDateRangeChange={setDateRange}
             onQuickRange={applyQuickRange}
+            label="Zobrazit"
           />
 
           <PerPageSelector

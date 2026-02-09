@@ -18,6 +18,14 @@ import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import EqualizerIcon from "@mui/icons-material/Equalizer";
 import DoorFrontIcon from "@mui/icons-material/DoorFront";
 import LimitsSkeleton from "./LimitsSkeleton.jsx";
+import {
+  COLOR_TEMPERATURE,
+  COLOR_HUMIDITY,
+  COLOR_DOOR_OPEN,
+  COLOR_DOOR_CLOSED,
+  COLOR_DEFAULT,
+  chipSx,
+} from "../constants/colors.js";
 
 const RANGES = [
   { label: "1h", value: "1h" },
@@ -134,7 +142,7 @@ export default function DashboardSummary({
     return `před ${diffDays} dny`;
   };
 
-  const statusColor = alertCount > 0 ? "#ff9800" : "#66bb6a";
+  const statusColor = alertCount > 0 ? COLOR_DOOR_OPEN : COLOR_DOOR_CLOSED;
   const statusIcon =
     alertCount > 0 ? (
       <WarningAmberIcon fontSize="small" sx={{ color: statusColor }} />
@@ -226,24 +234,12 @@ export default function DashboardSummary({
           <Chip
             icon={statusIcon}
             label={`${alertCount > 0 ? "Pozor" : "OK"}`}
-            sx={{
-              backgroundColor: `${statusColor}15`,
-              border: `1px solid ${statusColor}30`,
-              fontWeight: 600,
-              "& .MuiChip-icon": { color: statusColor },
-              "& .MuiChip-label": { color: statusColor },
-            }}
+            sx={chipSx(statusColor)}
           />
           <Chip
             icon={<WarningAmberIcon />}
             label={`${alertCount} aktivních výstrah`}
-            sx={{
-              backgroundColor: alertCount > 0 ? "#ff980015" : "#9e9e9e15",
-              border: alertCount > 0 ? "1px solid #ff980030" : "1px solid #9e9e9e30",
-              fontWeight: 600,
-              "& .MuiChip-icon": { color: alertCount > 0 ? "#ff9800" : "#9e9e9e" },
-              "& .MuiChip-label": { color: alertCount > 0 ? "#ff9800" : "#9e9e9e" },
-            }}
+            sx={chipSx(alertCount > 0 ? COLOR_DOOR_OPEN : COLOR_DEFAULT)}
           />
         </Stack>
       </Box>
@@ -260,35 +256,18 @@ export default function DashboardSummary({
           <Chip
             icon={<ThermostatIcon />}
             label={`${latest?.temperature ?? "-"} °C`}
-            sx={{
-              backgroundColor: "#ef535015",
-              border: "1px solid #ef535030",
-              fontWeight: 600,
-              "& .MuiChip-icon": { color: "#ef5350" },
-              "& .MuiChip-label": { color: "#ef5350" },
-            }}
+            sx={chipSx(COLOR_TEMPERATURE)}
           />
           <Chip
             icon={<OpacityIcon />}
             label={`${latest?.humidity ?? "-"} %`}
-            sx={{
-              backgroundColor: "#42a5f515",
-              border: "1px solid #42a5f530",
-              fontWeight: 600,
-              "& .MuiChip-icon": { color: "#42a5f5" },
-              "& .MuiChip-label": { color: "#42a5f5" },
-            }}
+            sx={chipSx(COLOR_HUMIDITY)}
           />
           <Chip
             icon={<AccessTimeIcon />}
             label={latest?.timestamp ? formatRelativeTime(latest.timestamp) : "-"}
             size="small"
-            sx={{
-              backgroundColor: "#9e9e9e15",
-              border: "1px solid #9e9e9e30",
-              "& .MuiChip-icon": { color: "#9e9e9e" },
-              "& .MuiChip-label": { color: "#9e9e9e" },
-            }}
+            sx={chipSx(COLOR_DEFAULT)}
           />
         </Stack>
       </Box>
@@ -308,35 +287,17 @@ export default function DashboardSummary({
           <Chip
             icon={<EqualizerIcon />}
             label={`Teplota: ${averages.avgTemp != null ? `${averages.avgTemp.toFixed(1)} °C` : "-"}`}
-            sx={{
-              backgroundColor: "#ef535015",
-              border: "1px solid #ef535030",
-              fontWeight: 600,
-              "& .MuiChip-icon": { color: "#ef5350" },
-              "& .MuiChip-label": { color: "#ef5350" },
-            }}
+            sx={chipSx(COLOR_TEMPERATURE)}
           />
           <Chip
             icon={<EqualizerIcon />}
             label={`Vlhkost: ${averages.avgHumidity != null ? `${averages.avgHumidity.toFixed(1)} %` : "-"}`}
-            sx={{
-              backgroundColor: "#42a5f515",
-              border: "1px solid #42a5f530",
-              fontWeight: 600,
-              "& .MuiChip-icon": { color: "#42a5f5" },
-              "& .MuiChip-label": { color: "#42a5f5" },
-            }}
+            sx={chipSx(COLOR_HUMIDITY)}
           />
           <Chip
             icon={<DoorFrontIcon />}
             label={`Dveře: ${averages.doorOpenings}×`}
-            sx={{
-              backgroundColor: "#ff980015",
-              border: "1px solid #ff980030",
-              fontWeight: 600,
-              "& .MuiChip-icon": { color: "#ff9800" },
-              "& .MuiChip-label": { color: "#ff9800" },
-            }}
+            sx={chipSx(COLOR_DOOR_OPEN)}
           />
         </Stack>
       </Box>

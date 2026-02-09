@@ -15,7 +15,7 @@ import { useTheme } from "@mui/material/styles";
 
 import AlertCard from "../components/AlertCard.jsx";
 import AlertCardSkeleton from "../components/AlertCardSkeleton.jsx";
-import AlertFilters from "../components/AlertFilters.jsx";
+import TimeRangeSelector from "../components/TimeRangeSelector.jsx";
 import AlertPagination from "../components/AlertPagination.jsx";
 import ConfirmDeleteDialog from "../components/ConfirmDeleteDialog.jsx";
 import PerPageSelector from "../components/PerPageSelector.jsx";
@@ -187,10 +187,11 @@ export default function AlertsHistory() {
               />
             </Box>
 
-            <AlertFilters
+            <TimeRangeSelector
               dateRange={dateRange}
               onDateRangeChange={setDateRange}
               onQuickRange={applyQuickRange}
+              label="Zobrazit"
             />
             {/* STATUS FILTER */}
             <TextField

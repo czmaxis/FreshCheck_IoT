@@ -1,4 +1,3 @@
-import React from "react";
 import { Box, Button, MenuItem, TextField } from "@mui/material";
 
 const DELETE_OPTIONS = [
@@ -104,5 +103,3 @@ export default function ActionSelector({
     </Box>
   );
 }
-
-export { DELETE_OPTIONS, RESOLVE_OPTIONS };
