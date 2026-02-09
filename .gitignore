@@ -13,9 +13,11 @@
 /src/backend_nette/temp/
 /src/backend_nette/log/
 
-# Local configs
+# Secrets & local configs
+.env
 .env.local
 .env.*.local
+src/backend_nette/.env
 
 # Tracy
 /tracy/

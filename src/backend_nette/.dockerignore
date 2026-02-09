@@ -1,0 +1,7 @@
+temp/
+log/
+.env
+.env.local
+.git
+.idea
+.vscode
