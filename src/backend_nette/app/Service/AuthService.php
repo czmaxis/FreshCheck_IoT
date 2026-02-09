@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\Repository\UserRepository;
-use Firebase\JWT\JWT;
-use Firebase\JWT\Key;
 
 final class AuthService
 {
@@ -20,11 +18,11 @@ final class AuthService
         $user = $this->users->findByEmail($email);
 
         if (!$user) {
-            throw new AuthenticationException('User not found');
+            throw new \RuntimeException('User not found');
         }
 
         if (!password_verify($password, $user['passwordHash'])) {
-            throw new AuthenticationException('Invalid credentials');
+            throw new \RuntimeException('Invalid credentials');
         }
 
         $token = $this->jwtService->createToken($user);
@@ -43,10 +41,7 @@ final class AuthService
 
     public function verify(string $token): array
     {
-        return (array) JWT::decode(
-            $token,
-            new Key($_ENV['JWT_SECRET'], 'HS256')
-        );
+        return (array) $this->jwtService->verify($token);
     }
 
     public function register(string $email, string $password, string $name): array

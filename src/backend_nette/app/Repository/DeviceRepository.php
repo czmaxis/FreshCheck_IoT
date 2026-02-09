@@ -79,10 +79,7 @@ if (!$doc) {
     return null;
 }
 
-// BSONDocument to array
-$device = $doc->getArrayCopy();
-
-return $doc ? $this->normalize($doc) : null;
+return $this->normalize($doc);
 }
 
 

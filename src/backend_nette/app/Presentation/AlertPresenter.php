@@ -18,6 +18,8 @@ final class AlertPresenter extends BaseApiPresenter
 
     public function actionDefault(string $deviceId): void
     {
+        $this->getUserIdFromJwt();
+
         $activeParam = $this->getParameter('active');
 
         $active = null;

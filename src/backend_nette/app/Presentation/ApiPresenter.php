@@ -18,7 +18,7 @@ final class ApiPresenter extends Presenter
     public function actionStatus(): void
     {
         $collections = iterator_to_array(
-            $this->mongo->db()->listCollections()
+            $this->mongo->getDatabase()->listCollections()
         );
 
         $this->sendJson([

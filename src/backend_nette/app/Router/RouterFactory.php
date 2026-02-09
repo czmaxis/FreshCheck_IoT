@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Router;
 
-use Nette\Application\Routers\Route;
 use Nette\Application\Routers\RouteList;
 
 final class RouterFactory
@@ -39,7 +38,6 @@ final class RouterFactory
         'action' => 'restore',
         ]); 
         $router->addRoute('alerts/<id>/delete', 'Alert:delete');
-        $router->addRoute('alerts', 'Alert:create');
         $router->addRoute('alerts/<deviceId>', 'Alert:default');
 
         return $router;

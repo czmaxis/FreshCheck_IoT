@@ -20,7 +20,7 @@ final class SensorDataService
 
 public function create(string $userId, array $data): array
 {
-    $this->sensorDataRepository->create($userId, $data);
+    $created = $this->sensorDataRepository->create($userId, $data);
 
     $device = $this->deviceRepository->findOneByUserAndId(
         $userId,
@@ -31,7 +31,7 @@ public function create(string $userId, array $data): array
         $this->alertService->evaluate($device, $data);
     }
 
-    return $data;
+    return $created;
 }
 
 
@@ -95,15 +95,4 @@ public function delete(string $userId, string $sensorDataId): bool
     return $this->sensorDataRepository->deleteById($sensorDataId);
 }
 
-public function ingest(array $sensorData): void
-{
-  
-    $this->sensorDataRepository->insert($sensorData);
-
-    $device = $this->deviceRepository->findById($sensorData['deviceId']);
-
-    if ($device) {
-        $this->alertService->evaluate($device, $sensorData);
-    }
-}
 }

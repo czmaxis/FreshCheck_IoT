@@ -7,9 +7,6 @@ use MongoDB\Database;
 use MongoDB\BSON\ObjectId;
 use MongoDB\Collection;
 use MongoDB\Model\BSONDocument;
-use MongoDB\BSON\UTCDateTime;
-
-
 final class AlertRepository
 {
     private Collection $collection;
@@ -32,7 +29,7 @@ final class AlertRepository
             'type'       => $type,
             'value'      => $value,
             'active'     => true,
-            'timestamp'  => new \DateTimeImmutable(),
+            'timestamp'  => (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))->format(\DATE_ATOM),
             'resolvedAt' => null,
         ];
         if ($alertTreshold !== null) {
@@ -123,9 +120,6 @@ public function deleteByUserId(string $userId): int
 
 public function insert(array $alert): void
     {
-        \Tracy\Debugger::log([
-    'alertInsert' => $alert,
-], 'alert');
         $this->collection->insertOne($alert);
     }
 

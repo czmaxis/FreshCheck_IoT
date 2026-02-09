@@ -6,7 +6,6 @@ namespace App\Repository;
 use MongoDB\Collection;
 use MongoDB\Database;
 use MongoDB\BSON\ObjectId;
-use MongoDB\BSON\UTCDateTime;
 
 final class SensorDataRepository
 {
@@ -33,7 +32,7 @@ final class SensorDataRepository
     }
 
     if (array_key_exists('humidity', $data)) {
-        $document['humidity'] = (int) $data['humidity'];
+        $document['humidity'] = (float) $data['humidity'];
     }
 
     if (array_key_exists('illuminance', $data)) {
