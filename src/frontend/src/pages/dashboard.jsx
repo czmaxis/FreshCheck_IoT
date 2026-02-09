@@ -448,9 +448,9 @@ export default function Dashboard() {
             anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
             transformOrigin={{ vertical: "top", horizontal: "right" }}
           >
-          <MenuItem onClick={() => handleSettingsSelect("edit")}>
-            Upravit zařízení
-          </MenuItem>
+            <MenuItem onClick={() => handleSettingsSelect("edit")}>
+              Upravit zařízení
+            </MenuItem>
             <MenuItem onClick={() => handleSettingsSelect("add")}>
               Přidat zařízení
             </MenuItem>
@@ -483,11 +483,14 @@ export default function Dashboard() {
         <Box width="100%" mt={4}>
           {selectedDeviceId ? (
             <>
-              <SensorData deviceId={selectedDeviceId} refreshKey={refreshTick} />
               <DeviceCharts
                 deviceId={selectedDeviceId}
                 refreshKey={limitsVersion + refreshTick}
                 limitsLoading={limitsSaving}
+              />
+              <SensorData
+                deviceId={selectedDeviceId}
+                refreshKey={refreshTick}
               />
             </>
           ) : (
@@ -568,10 +571,15 @@ export default function Dashboard() {
                   fullWidth
                 />
 
-                <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ fontWeight: 500 }}
+                >
                   Aplikují se limity pro zařízení:{" "}
                   <strong>
-                    {devices.find((d) => d._id === selectedDeviceId)?.name || "-"}
+                    {devices.find((d) => d._id === selectedDeviceId)?.name ||
+                      "-"}
                   </strong>
                 </Typography>
               </Stack>

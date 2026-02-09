@@ -60,7 +60,7 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
   const [rawData, setRawData] = useState([]);
   const [threshold, setThreshold] = useState(null);
   const [alertTimes, setAlertTimes] = useState([]);
-  const [range, setRange] = useState("24h");
+  const [range, setRange] = useState("7d");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [dateRange, setDateRange] = useState([null, null]);
@@ -267,18 +267,31 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
     setRange(value);
   };
 
-  // dynamic label interval based on density
-  const tickInterval =
-    chartData.length > (isMobile ? 20 : 30)
-      ? Math.ceil(chartData.length / (isMobile ? 6 : 10))
-      : 0;
-
   const timeSpanMs = useMemo(() => {
     if (chartData.length === 0) return 0;
     const minTs = chartData[0].ts;
     const maxTs = chartData[chartData.length - 1].ts;
     return Math.max(0, maxTs - minTs);
   }, [chartData]);
+
+  // Adaptive tick count based on time span for better visibility
+  const getTickCount = () => {
+    if (chartData.length === 0) return 5;
+
+    // Pro mobilní zařízení méně ticků
+    if (isMobile) return 6;
+
+    // Pro desktop - adaptivní počet podle časového rozsahu
+    const hours = timeSpanMs / (60 * 60 * 1000);
+
+    if (hours <= 2) return 12; // 2 hodiny nebo méně: 12 značek
+    if (hours <= 6) return 15; // 6 hodin: 15 značek
+    if (hours <= 24) return 18; // 24 hodin: 18 značek
+    if (hours <= 168) return 20; // 7 dní: 20 značek
+    return 25; // delší období: 25 značek
+  };
+
+  const tickCount = getTickCount();
 
   const formatAxisTime = (v) => {
     const d = new Date(v);
@@ -416,78 +429,78 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
         </Typography>
       )}
 
-      {dateFilteredData.length > 0 && dataBounds && (
-        <Box
-          sx={{
-            mt: 2,
-            p: 2,
-            borderRadius: 2,
-            backgroundColor: "#f5f5f5",
-            border: "1px solid #e0e0e0",
-          }}
-        >
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            fontWeight={500}
-            sx={{ mb: 1.5 }}
-          >
-            📊 Posuň výběr pro přiblížení/oddálení časového úseku grafů
-          </Typography>
-
-          <Slider
-            value={zoomRange ?? [dataBounds.minTs, dataBounds.maxTs]}
-            min={dataBounds.minTs}
-            max={dataBounds.maxTs}
-            step={60 * 1000}
-            disableSwap
-            valueLabelDisplay="auto"
-            valueLabelFormat={formatSliderTime}
-            onChange={(_, value) => {
-              if (!Array.isArray(value) || value.length !== 2) return;
-              const start = Math.min(value[0], value[1]);
-              const end = Math.max(value[0], value[1]);
-              setZoomRange([start, end]);
-            }}
-            disabled={dataBounds.minTs === dataBounds.maxTs}
-            sx={{
-              px: 1,
-              mt: 0.5,
-              "& .MuiSlider-thumb": {
-                boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-              },
-            }}
-          />
-
-          <Box
-            display="flex"
-            alignItems="center"
-            justifyContent="space-between"
-            sx={{ mt: 1 }}
-          >
-            <Chip
-              label={`Od: ${formatSliderTime((zoomRange ?? [dataBounds.minTs, dataBounds.maxTs])[0])}`}
-              size="small"
-              sx={{
-                backgroundColor: "white",
-                fontWeight: 500,
-                fontSize: "0.75rem",
-              }}
-            />
-            <Chip
-              label={`Do: ${formatSliderTime((zoomRange ?? [dataBounds.minTs, dataBounds.maxTs])[1])}`}
-              size="small"
-              sx={{
-                backgroundColor: "white",
-                fontWeight: 500,
-                fontSize: "0.75rem",
-              }}
-            />
-          </Box>
-        </Box>
-      )}
-
       <Collapse in={expanded}>
+        {dateFilteredData.length > 0 && dataBounds && (
+          <Box
+            sx={{
+              mt: 2,
+              p: 2,
+              borderRadius: 2,
+              backgroundColor: "#f5f5f5",
+              border: "1px solid #e0e0e0",
+            }}
+          >
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              fontWeight={500}
+              sx={{ mb: 1.5 }}
+            >
+              📊 Posuň výběr pro přiblížení/oddálení časového úseku grafů
+            </Typography>
+
+            <Slider
+              value={zoomRange ?? [dataBounds.minTs, dataBounds.maxTs]}
+              min={dataBounds.minTs}
+              max={dataBounds.maxTs}
+              step={60 * 1000}
+              disableSwap
+              valueLabelDisplay="auto"
+              valueLabelFormat={formatSliderTime}
+              onChange={(_, value) => {
+                if (!Array.isArray(value) || value.length !== 2) return;
+                const start = Math.min(value[0], value[1]);
+                const end = Math.max(value[0], value[1]);
+                setZoomRange([start, end]);
+              }}
+              disabled={dataBounds.minTs === dataBounds.maxTs}
+              sx={{
+                px: 1,
+                mt: 0.5,
+                "& .MuiSlider-thumb": {
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                },
+              }}
+            />
+
+            <Box
+              display="flex"
+              alignItems="center"
+              justifyContent="space-between"
+              sx={{ mt: 1 }}
+            >
+              <Chip
+                label={`Od: ${formatSliderTime((zoomRange ?? [dataBounds.minTs, dataBounds.maxTs])[0])}`}
+                size="small"
+                sx={{
+                  backgroundColor: "white",
+                  fontWeight: 500,
+                  fontSize: "0.75rem",
+                }}
+              />
+              <Chip
+                label={`Do: ${formatSliderTime((zoomRange ?? [dataBounds.minTs, dataBounds.maxTs])[1])}`}
+                size="small"
+                sx={{
+                  backgroundColor: "white",
+                  fontWeight: 500,
+                  fontSize: "0.75rem",
+                }}
+              />
+            </Box>
+          </Box>
+        )}
+
         {dateFilteredData.length > 0 ? (
           <>
             <Card
@@ -577,9 +590,9 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
                         domain={["dataMin", "dataMax"]}
                         padding={{ left: 8, right: 16 }}
                         tickFormatter={formatAxisTime}
-                        interval={tickInterval}
+                        tickCount={tickCount}
                         tick={{ fontSize: isMobile ? 10 : 12 }}
-                        minTickGap={isMobile ? 8 : 8}
+                        minTickGap={isMobile ? 20 : 30}
                         height={isMobile ? 30 : 50}
                       />
                       <YAxis
@@ -733,9 +746,9 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
                         domain={["dataMin", "dataMax"]}
                         padding={{ left: 8, right: 16 }}
                         tickFormatter={formatAxisTime}
-                        interval={tickInterval}
+                        tickCount={tickCount}
                         tick={{ fontSize: isMobile ? 10 : 12 }}
-                        minTickGap={isMobile ? 8 : 8}
+                        minTickGap={isMobile ? 20 : 30}
                         height={isMobile ? 30 : 50}
                       />
                       <YAxis
