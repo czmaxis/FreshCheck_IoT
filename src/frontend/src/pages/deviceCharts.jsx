@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from "react";
+﻿import React, { useMemo } from "react";
 import {
   Box,
   Typography,
@@ -12,9 +12,6 @@ import {
   useTheme,
   useMediaQuery,
 } from "@mui/material";
-
-import "dayjs/locale/cs";
-import dayjs from "dayjs";
 
 import TimeRangeSelector from "../components/TimeRangeSelector.jsx";
 
@@ -33,309 +30,44 @@ import {
   Legend,
   ReferenceArea,
 } from "recharts";
-import { useAuth } from "../context/AuthContext.jsx";
-import { getSensorData } from "../services/sensorDataService.js";
-import { getAlerts } from "../services/alertService.js";
-import { getDevice } from "../services/deviceService.js";
 
-function parseTimestamp(ts) {
-  const d = new Date(ts);
-  d.setHours(d.getHours());
-  return d;
-}
-
-function formatTime(d) {
-  const day = String(d.getDate()).padStart(2, "0");
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const hours = String(d.getHours()).padStart(2, "0");
-  const minutes = String(d.getMinutes()).padStart(2, "0");
-
-  return `${day}.${month}\n${hours}:${minutes}`;
-}
+import { useChartData } from "../hooks/useChartData.js";
+import {
+  formatTime,
+  createAxisFormatter,
+  createSliderFormatter,
+  getTickCount,
+} from "../utils/chartUtils.js";
 
 export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
-  const { token } = useAuth();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const [rawData, setRawData] = useState([]);
-  const [threshold, setThreshold] = useState(null);
-  const [alertTimes, setAlertTimes] = useState([]);
-  const [range, setRange] = useState("7d");
-  const [fromDate, setFromDate] = useState("");
-  const [toDate, setToDate] = useState("");
-  const [dateRange, setDateRange] = useState([null, null]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [expanded, setExpanded] = useState(true);
-  const [zoomRange, setZoomRange] = useState(null);
 
-  const sorted = [...rawData].sort((a, b) => a.ts - b.ts);
-  const latest = sorted.length > 0 ? sorted[sorted.length - 1] : null;
-  useEffect(() => {
-    if (!deviceId) return;
-    let cancelled = false;
+  const {
+    latest,
+    threshold,
+    range,
+    dateRange,
+    setDateRange,
+    loading,
+    error,
+    expanded,
+    toggle,
+    zoomRange,
+    setZoomRange,
+    dateFilteredData,
+    dataBounds,
+    chartData,
+    temperatureDomain,
+    timeSpanMs,
+    sliderSpanMs,
+    applyQuickRange,
+    resetZoom,
+  } = useChartData(deviceId, refreshKey);
 
-    async function load() {
-      setLoading(true);
-      setError("");
-
-      try {
-        const [data, alerts, device] = await Promise.all([
-          getSensorData(deviceId, token),
-          getAlerts(deviceId, {}, token),
-          getDevice(deviceId, token),
-        ]);
-        if (cancelled) return;
-
-        setRawData(
-          data.map((it) => ({
-            ts: parseTimestamp(it.timestamp).getTime(),
-            temperature: it.temperature != null ? Number(it.temperature) : null,
-            humidity: it.humidity != null ? Number(it.humidity) : null,
-          })),
-        );
-        setThreshold(device?.threshold ?? null);
-        const alertTs = Array.isArray(alerts)
-          ? alerts
-              .map((a) => parseTimestamp(a.timestamp).getTime())
-              .filter((t) => !Number.isNaN(t))
-          : [];
-        setAlertTimes(alertTs);
-      } catch (err) {
-        if (!cancelled) {
-          setError(
-            err.response?.data?.message ||
-              err.message ||
-              "Chyba při načítání dat",
-          );
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [deviceId, token, refreshKey]);
-
-  useEffect(() => {
-    const [start, end] = dateRange;
-    setFromDate(start ? dayjs(start).format("YYYY-MM-DD") : "");
-    setToDate(end ? dayjs(end).format("YYYY-MM-DD") : "");
-  }, [dateRange]);
-
-  const filteredData = useMemo(() => {
-    if (range === "all") {
-      return sorted.map((d) => ({
-        ...d,
-        time: formatTime(new Date(d.ts)),
-      }));
-    }
-
-    const now = Date.now();
-    const diffMap = {
-      "1h": 60 * 60 * 1000,
-      "6h": 6 * 60 * 60 * 1000,
-      "24h": 24 * 60 * 60 * 1000,
-      "7d": 7 * 24 * 60 * 60 * 1000,
-    };
-
-    const from = now - diffMap[range];
-
-    const byRange = sorted
-      .filter((d) => d.ts >= from)
-      .map((d) => ({
-        ...d,
-        time: formatTime(new Date(d.ts)),
-      }));
-    return byRange;
-  }, [sorted, range]);
-
-  const dateFilteredData = useMemo(() => {
-    if (!fromDate && !toDate) return filteredData;
-    const fromTs = fromDate ? new Date(fromDate).setHours(0, 0, 0, 0) : null;
-    const toTs = toDate ? new Date(toDate).setHours(23, 59, 59, 999) : null;
-    return filteredData.filter((d) => {
-      if (fromTs != null && d.ts < fromTs) return false;
-      if (toTs != null && d.ts > toTs) return false;
-      return true;
-    });
-  }, [filteredData, fromDate, toDate]);
-
-  const dataBounds = useMemo(() => {
-    const len = dateFilteredData.length;
-    if (!len) return null;
-    return { minTs: dateFilteredData[0].ts, maxTs: dateFilteredData[len - 1].ts };
-  }, [dateFilteredData]);
-
-  useEffect(() => {
-    // Changing the displayed time range/date filter should reset zoom.
-    setZoomRange(null);
-  }, [deviceId, range, fromDate, toDate]);
-
-  useEffect(() => {
-    if (!zoomRange || !dataBounds) return;
-
-    let [startTs, endTs] = zoomRange;
-    if (!Number.isFinite(startTs) || !Number.isFinite(endTs)) {
-      setZoomRange(null);
-      return;
-    }
-
-    if (startTs > endTs) [startTs, endTs] = [endTs, startTs];
-    const minTs = dataBounds.minTs;
-    const maxTs = dataBounds.maxTs;
-    const spanMs = Math.max(0, endTs - startTs);
-
-    if (startTs < minTs) {
-      startTs = minTs;
-      endTs = Math.min(minTs + spanMs, maxTs);
-    }
-    if (endTs > maxTs) {
-      endTs = maxTs;
-      startTs = Math.max(maxTs - spanMs, minTs);
-    }
-
-    startTs = Math.max(startTs, minTs);
-    endTs = Math.min(endTs, maxTs);
-
-    if (startTs !== zoomRange[0] || endTs !== zoomRange[1]) {
-      setZoomRange([startTs, endTs]);
-    }
-  }, [zoomRange, dataBounds]);
-
-  const chartData = useMemo(() => {
-    if (!zoomRange) return dateFilteredData;
-    const start = Math.min(zoomRange[0], zoomRange[1]);
-    const end = Math.max(zoomRange[0], zoomRange[1]);
-    return dateFilteredData.filter((d) => d.ts >= start && d.ts <= end);
-  }, [dateFilteredData, zoomRange]);
-
-  const filteredAlertTimes = useMemo(() => {
-    if (alertTimes.length === 0) return [];
-    if (range === "all") return alertTimes;
-
-    const now = Date.now();
-    const diffMap = {
-      "1h": 60 * 60 * 1000,
-      "6h": 6 * 60 * 60 * 1000,
-      "24h": 24 * 60 * 60 * 1000,
-      "7d": 7 * 24 * 60 * 60 * 1000,
-    };
-    const from = now - diffMap[range];
-    const byRange = alertTimes.filter((t) => t >= from);
-    if (!fromDate && !toDate) return byRange;
-    const fromTs = fromDate ? new Date(fromDate).setHours(0, 0, 0, 0) : null;
-    const toTs = toDate ? new Date(toDate).setHours(23, 59, 59, 999) : null;
-    return byRange.filter((t) => {
-      if (fromTs != null && t < fromTs) return false;
-      if (toTs != null && t > toTs) return false;
-      return true;
-    });
-  }, [alertTimes, range, fromDate, toDate]);
-
-  const visibleData = chartData;
-
-  const temperatureDomain = useMemo(() => {
-    const temps = visibleData
-      .map((d) => d.temperature)
-      .filter((v) => v != null && !Number.isNaN(v));
-    const tMin = threshold?.temperature?.min;
-    const tMax = threshold?.temperature?.max;
-
-    let min = temps.length > 0 ? Math.min(...temps) : null;
-    let max = temps.length > 0 ? Math.max(...temps) : null;
-
-    if (tMin != null) min = min == null ? tMin : Math.min(min, tMin);
-    if (tMax != null) max = max == null ? tMax : Math.max(max, tMax);
-
-    if (min == null || max == null) {
-      return { min: "auto", max: "auto" };
-    }
-
-    const rangeVal = max - min;
-    const pad = rangeVal > 0 ? rangeVal * 0.1 : 1;
-    return { min: min - pad, max: max + pad };
-  }, [visibleData, threshold?.temperature?.min, threshold?.temperature?.max]);
-
-  const toggle = () => setExpanded((v) => !v);
-
-  const applyQuickRange = (value) => {
-    if (!value) return;
-    setRange(value);
-  };
-
-  const timeSpanMs = useMemo(() => {
-    if (chartData.length === 0) return 0;
-    const minTs = chartData[0].ts;
-    const maxTs = chartData[chartData.length - 1].ts;
-    return Math.max(0, maxTs - minTs);
-  }, [chartData]);
-
-  // Adaptive tick count based on time span for better visibility
-  const getTickCount = () => {
-    if (chartData.length === 0) return 5;
-
-    // Pro mobilní zařízení méně ticků
-    if (isMobile) return 6;
-
-    // Pro desktop - adaptivní počet podle časového rozsahu
-    const hours = timeSpanMs / (60 * 60 * 1000);
-
-    if (hours <= 2) return 12; // 2 hodiny nebo méně: 12 značek
-    if (hours <= 6) return 15; // 6 hodin: 15 značek
-    if (hours <= 24) return 18; // 24 hodin: 18 značek
-    if (hours <= 168) return 20; // 7 dní: 20 značek
-    return 25; // delší období: 25 značek
-  };
-
-  const tickCount = getTickCount();
-
-  const formatAxisTime = (v) => {
-    const d = new Date(v);
-    const day = String(d.getDate()).padStart(2, "0");
-    const month = String(d.getMonth() + 1).padStart(2, "0");
-    const hours = String(d.getHours()).padStart(2, "0");
-    const minutes = String(d.getMinutes()).padStart(2, "0");
-    const seconds = String(d.getSeconds()).padStart(2, "0");
-
-    // Prefer day-level labels for multi-day ranges
-    if (timeSpanMs >= 24 * 60 * 60 * 1000) {
-      return `${day}.${month}`;
-    }
-
-    // Prefer more detailed time for very short ranges (~1h)
-    if (timeSpanMs <= 2 * 60 * 60 * 1000) {
-      return `${hours}:${minutes}:${seconds}`;
-    }
-
-    // Default: hour:minute
-    return `${hours}:${minutes}`;
-  };
-  const resetZoom = () => {
-    setZoomRange(null);
-  };
-
-  const sliderSpanMs = useMemo(() => {
-    if (!dataBounds) return 0;
-    return Math.max(0, dataBounds.maxTs - dataBounds.minTs);
-  }, [dataBounds]);
-
-  const formatSliderTime = (v) => {
-    if (!Number.isFinite(v)) return "-";
-    const d = new Date(v);
-    const day = String(d.getDate()).padStart(2, "0");
-    const month = String(d.getMonth() + 1).padStart(2, "0");
-    const hours = String(d.getHours()).padStart(2, "0");
-    const minutes = String(d.getMinutes()).padStart(2, "0");
-
-    if (sliderSpanMs >= 24 * 60 * 60 * 1000) {
-      return `${day}.${month} ${hours}:${minutes}`;
-    }
-    return `${hours}:${minutes}`;
-  };
+  const tickCount = getTickCount(timeSpanMs, isMobile);
+  const formatAxisTime = useMemo(() => createAxisFormatter(timeSpanMs), [timeSpanMs]);
+  const formatSliderTime = useMemo(() => createSliderFormatter(sliderSpanMs), [sliderSpanMs]);
 
   return (
     <Box
@@ -503,6 +235,7 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
 
         {dateFilteredData.length > 0 ? (
           <>
+            {/* Temperature chart */}
             <Card
               elevation={0}
               sx={{
@@ -664,6 +397,7 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
               </CardContent>
             </Card>
 
+            {/* Humidity chart */}
             <Card
               elevation={0}
               sx={{

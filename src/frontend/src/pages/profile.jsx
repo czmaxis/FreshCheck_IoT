@@ -1,4 +1,3 @@
-import React, { useState } from "react";
 import {
   Box,
   Typography,
@@ -18,23 +17,39 @@ import {
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import LockIcon from "@mui/icons-material/Lock";
-import { useAuth } from "../context/AuthContext.jsx";
-import { updateUser, changePassword } from "../services/authService.js";
+
+import { useProfileEdit } from "../hooks/useProfileEdit.js";
+import { usePasswordChange } from "../hooks/usePasswordChange.js";
 
 export default function Profile() {
-  const { user, token, setUser } = useAuth();
+  const {
+    user,
+    editing,
+    name,
+    setName,
+    email,
+    setEmail,
+    error,
+    loading,
+    handleEdit,
+    handleCancel,
+    handleSave,
+  } = useProfileEdit();
 
-  const [editing, setEditing] = useState(false);
-  const [name, setName] = useState(user?.name || "");
-  const [email, setEmail] = useState(user?.email || "");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [pwdOpen, setPwdOpen] = useState(false);
-  const [pwdOld, setPwdOld] = useState("");
-  const [pwdNew, setPwdNew] = useState("");
-  const [pwdNewConfirm, setPwdNewConfirm] = useState("");
-  const [pwdError, setPwdError] = useState("");
-  const [pwdLoading, setPwdLoading] = useState(false);
+  const {
+    pwdOpen,
+    pwdOld,
+    setPwdOld,
+    pwdNew,
+    setPwdNew,
+    pwdNewConfirm,
+    setPwdNewConfirm,
+    pwdError,
+    pwdLoading,
+    openPasswordDialog,
+    closePasswordDialog,
+    handleChangePassword,
+  } = usePasswordChange();
 
   if (!user) {
     return (
@@ -45,85 +60,6 @@ export default function Profile() {
       </Box>
     );
   }
-
-  const handleEdit = () => {
-    setEditing(true);
-    setName(user.name);
-    setEmail(user.email);
-    setError("");
-  };
-
-  const handleCancel = () => {
-    setEditing(false);
-    setName(user.name);
-    setEmail(user.email);
-    setError("");
-  };
-
-  const handleSave = async () => {
-    try {
-      setLoading(true);
-      setError("");
-
-      const payload = {
-        name: name || user.name,
-        email: email || user.email,
-      };
-
-      const res = await updateUser(user._id, payload, token);
-
-      const updatedUser = {
-        ...user,
-        ...payload,
-      };
-
-      setUser(updatedUser);
-
-      setEditing(false);
-    } catch (err) {
-      console.error("Profile update error:", err);
-      setError(
-        err.response?.data?.message || "Nepodařilo se uložit změny profilu.",
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const openPasswordDialog = () => {
-    setPwdOld("");
-    setPwdNew("");
-    setPwdNewConfirm("");
-    setPwdError("");
-    setPwdOpen(true);
-  };
-
-  const closePasswordDialog = () => {
-    if (!pwdLoading) setPwdOpen(false);
-  };
-
-  const handleChangePassword = async () => {
-    if (!pwdOld || !pwdNew || !pwdNewConfirm) {
-      setPwdError("Vyplňte všechna pole.");
-      return;
-    }
-    if (pwdNew !== pwdNewConfirm) {
-      setPwdError("Nová hesla se neshodují.");
-      return;
-    }
-
-    try {
-      setPwdLoading(true);
-      setPwdError("");
-      await changePassword({ oldPassword: pwdOld, password: pwdNew }, token);
-      setPwdOpen(false);
-    } catch (err) {
-      console.error("Password change error:", err);
-      setPwdError(err.response?.data?.message || "Nepodařilo se změnit heslo.");
-    } finally {
-      setPwdLoading(false);
-    }
-  };
 
   return (
     <>
