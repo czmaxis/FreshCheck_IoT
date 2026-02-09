@@ -8,6 +8,7 @@ import {
   MenuItem,
   ListItemIcon,
   ListItemText,
+  Tooltip,
 } from "@mui/material";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import ThermostatIcon from "@mui/icons-material/Thermostat";
@@ -260,51 +261,78 @@ export default function AlertCard({
                 }}
               >
                 {isActive && onResolve && (
-                  <MenuItem
-                    onClick={() => {
-                      setMenuAnchor(null);
-                      onResolve();
-                    }}
+                  <Tooltip
+                    title="Označí výstrahu jako vyřešenou a přesune ji do historie výstrah"
+                    placement="top"
+                    enterDelay={600}
+                    enterNextDelay={300}
+                    enterTouchDelay={400}
+                    leaveTouchDelay={3000}
                   >
-                    <ListItemIcon>
-                      <CheckCircleIcon
-                        fontSize="small"
-                        sx={{ color: "#66bb6a" }}
-                      />
-                    </ListItemIcon>
-                    <ListItemText>Potvrdit</ListItemText>
-                  </MenuItem>
+                    <MenuItem
+                      onClick={() => {
+                        setMenuAnchor(null);
+                        onResolve();
+                      }}
+                    >
+                      <ListItemIcon>
+                        <CheckCircleIcon
+                          fontSize="small"
+                          sx={{ color: "#66bb6a" }}
+                        />
+                      </ListItemIcon>
+                      <ListItemText>Potvrdit</ListItemText>
+                    </MenuItem>
+                  </Tooltip>
                 )}
                 {!isActive && onRestore && (
-                  <MenuItem
-                    onClick={() => {
-                      setMenuAnchor(null);
-                      onRestore();
-                    }}
+                  <Tooltip
+                    title="Vrátí výstrahu zpět mezi aktivní nevyřešené"
+                    placement="top"
+                    enterDelay={600}
+                    enterNextDelay={300}
+                    enterTouchDelay={400}
+                    leaveTouchDelay={3000}
                   >
-                    <ListItemIcon>
-                      <RestoreIcon fontSize="small" sx={{ color: "#42a5f5" }} />
-                    </ListItemIcon>
-                    <ListItemText>Vrátit do aktivního stavu</ListItemText>
-                  </MenuItem>
+                    <MenuItem
+                      onClick={() => {
+                        setMenuAnchor(null);
+                        onRestore();
+                      }}
+                    >
+                      <ListItemIcon>
+                        <RestoreIcon fontSize="small" sx={{ color: "#42a5f5" }} />
+                      </ListItemIcon>
+                      <ListItemText>Vrátit do aktivního stavu</ListItemText>
+                    </MenuItem>
+                  </Tooltip>
                 )}
                 {onDelete && (
-                  <MenuItem
-                    onClick={() => {
-                      setMenuAnchor(null);
-                      onDelete();
-                    }}
+                  <Tooltip
+                    title="Trvale smaže výstrahu, nebude viditelná v historii"
+                    placement="top"
+                    enterDelay={600}
+                    enterNextDelay={300}
+                    enterTouchDelay={400}
+                    leaveTouchDelay={3000}
                   >
-                    <ListItemIcon>
-                      <DeleteOutlineIcon
-                        fontSize="small"
-                        sx={{ color: "#ef5350" }}
-                      />
-                    </ListItemIcon>
-                    <ListItemText sx={{ color: "#ef5350" }}>
-                      Smazat
-                    </ListItemText>
-                  </MenuItem>
+                    <MenuItem
+                      onClick={() => {
+                        setMenuAnchor(null);
+                        onDelete();
+                      }}
+                    >
+                      <ListItemIcon>
+                        <DeleteOutlineIcon
+                          fontSize="small"
+                          sx={{ color: "#ef5350" }}
+                        />
+                      </ListItemIcon>
+                      <ListItemText sx={{ color: "#ef5350" }}>
+                        Smazat
+                      </ListItemText>
+                    </MenuItem>
+                  </Tooltip>
                 )}
               </Menu>
             </>

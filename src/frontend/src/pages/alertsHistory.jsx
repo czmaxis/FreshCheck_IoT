@@ -520,28 +520,46 @@ export default function AlertsHistory() {
 
   return (
     <>
-      <Box px={{ xs: 1, sm: 2, md: 3 }} py={2}>
+      <Box
+        px={{ xs: 1, sm: 2, md: 3 }}
+        py={2}
+        sx={{
+          width: "100%",
+          maxWidth: "100%",
+          overflowX: "hidden",
+          boxSizing: "border-box",
+        }}
+      >
         {/* HEADER */}
         <Box
           display="flex"
           justifyContent="space-between"
-          alignItems="center"
+          alignItems={{ xs: "stretch", sm: "center" }}
+          flexDirection={{ xs: "column", sm: "row" }}
           mb={2}
           flexWrap="wrap"
           gap={2}
         >
           <Typography variant="h4">Historie výstrah</Typography>
 
-          <Box display="flex" alignItems="center" gap={2} flexWrap="wrap">
+          <Box
+            display="flex"
+            alignItems="center"
+            gap={2}
+            flexWrap="wrap"
+            sx={{ width: { xs: "100%", sm: "auto" } }}
+          >
             {/* DEVICE SELECTOR */}
             <Box
               sx={{
-                minWidth: { xs: "100%", sm: 280 },
+                width: { xs: "100%", sm: "auto" },
+                minWidth: { xs: 0, sm: 280 },
                 p: 2,
                 borderRadius: 3,
                 backgroundColor: "background.paper",
                 boxShadow: "0 2px 12px rgba(0,0,0,0.1)",
                 transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                boxSizing: "border-box",
                 "&:hover": {
                   boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
                 },
@@ -679,6 +697,7 @@ export default function AlertsHistory() {
               label="Stav"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
+              sx={{ minWidth: 100, width: { xs: "100%", sm: "auto" } }}
             >
               <MenuItem value="all">Vše</MenuItem>
               <MenuItem value="active">Nevyřešené</MenuItem>
@@ -692,6 +711,7 @@ export default function AlertsHistory() {
               label="Typ"
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
+              sx={{ minWidth: 100, width: { xs: "100%", sm: "auto" } }}
             >
               <MenuItem value="all">Vše</MenuItem>
               <MenuItem value="temperature">Teplota</MenuItem>
@@ -709,6 +729,7 @@ export default function AlertsHistory() {
                 setDateTo("");
                 setDateRange([null, null]);
               }}
+              sx={{ width: { xs: "100%", sm: "auto" } }}
             >
               Reset filtrů
             </Button>
@@ -730,14 +751,14 @@ export default function AlertsHistory() {
 
         {/* ALERTS LIST */}
         {alertsLoading ? (
-          <Box px={3}>
+          <Box px={{ xs: 0, sm: 3 }}>
             <AlertCardSkeleton count={Math.min(3, perPage)} />
           </Box>
         ) : pagedAlerts.length === 0 ? (
           <Typography>Žádné výstrahy pro zvolené filtry.</Typography>
         ) : (
           <Box
-            px={3}
+            px={{ xs: 0, sm: 3 }}
             sx={{
               display: "grid",
               gridTemplateColumns: {

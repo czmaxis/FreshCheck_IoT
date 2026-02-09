@@ -357,12 +357,13 @@ export default function Dashboard() {
           <Box
             sx={{
               flex: 1,
-              minWidth: { xs: "100%", sm: 280 },
+              minWidth: { xs: 0, sm: 280 },
               p: 2,
               borderRadius: 3,
               backgroundColor: "background.paper",
               boxShadow: "0 2px 12px rgba(0,0,0,0.1)",
               transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+              boxSizing: "border-box",
               "&:hover": {
                 boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
               },
