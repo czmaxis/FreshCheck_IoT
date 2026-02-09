@@ -26,15 +26,14 @@ final class Bootstrap
         $appDir = __DIR__;
         $rootDir = dirname($appDir); // src/backend_nette
 
-        $configurator->setDebugMode(true);
-        $configurator->enableTracy($rootDir . '/log');
-
         // load .env if it exists (on Render, env vars are set via dashboard)
         if (file_exists($rootDir . '/.env')) {
             Dotenv::createImmutable($rootDir)->load();
         }
 
-        
+        $configurator->setDebugMode((bool) ($_ENV['APP_DEBUG'] ?? false));
+        $configurator->enableTracy($rootDir . '/log');
+
         $configurator->addDynamicParameters([
             'jwtSecret' => $_ENV['JWT_SECRET'] ?? null,
             'jwtTtl'    => (int) ($_ENV['JWT_TTL'] ?? 3600),
