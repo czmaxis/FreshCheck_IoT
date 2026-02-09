@@ -141,7 +141,6 @@ function getAccentColor(alert) {
 
 export default function AlertCard({
   alert,
-  actions,
   onResolve,
   onRestore,
   onDelete,
@@ -340,11 +339,6 @@ export default function AlertCard({
         </Typography>
       )}
 
-      {actions ? (
-        <Box display="flex" gap={1.5} mt={2}>
-          {actions}
-        </Box>
-      ) : null}
     </Box>
   );
 }

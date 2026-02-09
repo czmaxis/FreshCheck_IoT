@@ -233,7 +233,6 @@ export default function Dashboard() {
         onOpenLimits={openLimitsDialog}
         limitsLoading={limitsSaving}
       />
-      <p />
       {selectedDeviceId && (
         <Alerts
           activeAlerts={activeAlerts}

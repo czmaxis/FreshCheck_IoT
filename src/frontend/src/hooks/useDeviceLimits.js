@@ -77,10 +77,10 @@ export function useDeviceLimits(
       );
       setDevice(res.device);
 
-      setMinTemp(null);
-      setMaxTemp(null);
-      setMinHumidity(null);
-      setMaxHumidity(null);
+      setMinTemp("");
+      setMaxTemp("");
+      setMinHumidity("");
+      setMaxHumidity("");
       setLimitsOpen(false);
     } catch (err) {
       console.error("Chyba při ukládání limitů:", err);
