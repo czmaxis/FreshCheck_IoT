@@ -1,6 +1,12 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import "./services/axiosSetup.js";
 import Login from "./pages/login.jsx";
@@ -8,20 +14,37 @@ import Register from "./pages/register.jsx";
 import Dashboard from "./pages/dashboard.jsx";
 import Profile from "./pages/profile.jsx";
 import History from "./pages/alertsHistory.jsx";
+import PageTransition from "./components/PageTransition.jsx";
+import NavBar from "./pages/navBar.jsx";
+
+function AppContent() {
+  const location = useLocation();
+  const showNavBar =
+    location.pathname !== "/login" && location.pathname !== "/register";
+
+  return (
+    <>
+      {showNavBar && <NavBar />}
+      <PageTransition>
+        <Routes>
+          <Route path="/" element={<Navigate to="/login" />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/history" element={<History />} />
+        </Routes>
+      </PageTransition>
+    </>
+  );
+}
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 
 root.render(
   <BrowserRouter>
     <AuthProvider>
-      <Routes>
-        <Route path="/" element={<Navigate to="/login" />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />¨
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/history" element={<History />} />
-      </Routes>
+      <AppContent />
     </AuthProvider>
   </BrowserRouter>
 );

@@ -19,7 +19,6 @@ import {
 import EditIcon from "@mui/icons-material/Edit";
 import LockIcon from "@mui/icons-material/Lock";
 import { useAuth } from "../context/AuthContext.jsx";
-import NavBar from "./navBar.jsx";
 import { updateUser, changePassword } from "../services/authService.js";
 
 export default function Profile() {
@@ -128,7 +127,6 @@ export default function Profile() {
 
   return (
     <>
-      <NavBar />
       <Box
         display="flex"
         flexDirection="column"

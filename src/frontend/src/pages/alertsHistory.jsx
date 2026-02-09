@@ -19,7 +19,6 @@ import dayjs from "dayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import "dayjs/locale/cs";
-import NavBar from "./navBar.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { getDevices } from "../services/deviceService.js";
 import {
@@ -522,8 +521,6 @@ export default function AlertsHistory() {
 
   return (
     <>
-      <NavBar />
-
       <Box px={{ xs: 1, sm: 2, md: 3 }} py={2}>
         {/* HEADER */}
         <Box

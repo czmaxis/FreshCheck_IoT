@@ -30,7 +30,6 @@ import {
 
 import SensorData from "./sensorData.jsx";
 import DeviceCharts from "./deviceCharts.jsx";
-import NavBar from "./navBar.jsx";
 import Alerts from "./alerts.jsx";
 import DashboardSummary from "../components/DashboardSummary.jsx";
 export default function Dashboard() {
@@ -333,11 +332,9 @@ export default function Dashboard() {
   };
 
   return (
-    <>
-      <NavBar />
-      <Box
-        display="flex"
-        flexDirection="column"
+    <Box
+      display="flex"
+      flexDirection="column"
         alignItems="center"
         justifyContent="flex-start"
         minHeight="100vh"
@@ -798,6 +795,5 @@ export default function Dashboard() {
           </DialogActions>
         </Dialog>
       </Box>
-    </>
   );
 }
