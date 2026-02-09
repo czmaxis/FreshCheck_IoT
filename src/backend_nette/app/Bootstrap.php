@@ -29,8 +29,10 @@ final class Bootstrap
         $configurator->setDebugMode(true);
         $configurator->enableTracy($rootDir . '/log');
 
-        // load .env
-        Dotenv::createImmutable($rootDir)->load();
+        // load .env if it exists (on Render, env vars are set via dashboard)
+        if (file_exists($rootDir . '/.env')) {
+            Dotenv::createImmutable($rootDir)->load();
+        }
 
         
         $configurator->addDynamicParameters([
