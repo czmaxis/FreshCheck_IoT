@@ -55,13 +55,13 @@ export async function resolveAlert(alertId, token) {
 }
 
 /**
- * ? Obnoví alert (nastaví active = true)
+ *
  * @param {string} alertId
  * @param {string} token
  */
 export async function restoreAlert(alertId, token) {
   if (!alertId) {
-    throw new Error("alertId je povinný");
+    throw new Error("alertId je povinnÃ½");
   }
 
   const res = await axios.put(

@@ -64,18 +64,36 @@ export function toDateString(date) {
   return date ? date.toISOString().slice(0, 10) : "";
 }
 
-export function filterAlertsByDate(alerts, fromDate, toDate) {
-  return alerts.filter((a) => {
-    const ts = a.timestamp ? new Date(a.timestamp).getTime() : null;
+export function filterAlertsByDate(items, fromDate, toDate) {
+  return filterByTimestamp(items, fromDate, toDate);
+}
+
+export function filterByTimestamp(items, fromDate, toDate, timestampKey = "timestamp") {
+  if (!fromDate && !toDate) return items;
+  const fromTs = fromDate ? new Date(fromDate).setHours(0, 0, 0, 0) : null;
+  const toTs = toDate ? new Date(toDate).setHours(23, 59, 59, 999) : null;
+  return items.filter((item) => {
+    const raw = item[timestampKey];
+    const ts = raw ? new Date(raw).getTime() : null;
     if (!ts) return false;
-    if (fromDate) {
-      const fromTs = new Date(fromDate).setHours(0, 0, 0, 0);
-      if (ts < fromTs) return false;
-    }
-    if (toDate) {
-      const toTs = new Date(toDate).setHours(23, 59, 59, 999);
-      if (ts > toTs) return false;
-    }
+    if (fromTs != null && ts < fromTs) return false;
+    if (toTs != null && ts > toTs) return false;
+    return true;
+  });
+}
+
+export function filterByQuickRange(items, rangeValue, timestampKey = "timestamp") {
+  if (rangeValue === "all") return items;
+  const { from, to } = computeQuickRange(rangeValue);
+  if (!from && !to) return items;
+  const fromTs = from ? from.getTime() : null;
+  const toTs = to ? to.getTime() : null;
+  return items.filter((item) => {
+    const raw = item[timestampKey];
+    const ts = raw ? new Date(raw).getTime() : null;
+    if (!ts) return false;
+    if (fromTs != null && ts < fromTs) return false;
+    if (toTs != null && ts > toTs) return false;
     return true;
   });
 }

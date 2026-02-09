@@ -1,20 +1,11 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import dayjs from "dayjs";
-import { computeQuickRange, toDateString } from "../utils/dateRangeUtils.js";
-
-function parseDoorState(item) {
-  if (item?.doors === true || item?.doors === 1 || item?.doors === "1") {
-    return 1;
-  }
-  if (item?.doors === false || item?.doors === 0 || item?.doors === "0") {
-    return 0;
-  }
-
-  const illuminance = item?.illuminance;
-  if (illuminance === undefined || illuminance === null) return null;
-  if (Number.isNaN(Number(illuminance))) return null;
-  return Number(illuminance) > 0 ? 1 : 0;
-}
+import {
+  computeQuickRange,
+  toDateString,
+  filterByTimestamp,
+} from "../utils/dateRangeUtils.js";
+import { parseDoorState } from "../utils/doorStateUtils.js";
 
 export function useSensorData(sensorData, deviceId) {
   const [expanded, setExpanded] = useState(true);
@@ -58,19 +49,9 @@ export function useSensorData(sensorData, deviceId) {
   );
 
   const filteredData = useMemo(() => {
-    return data.filter((d) => {
-      const ts = d.timestamp ? new Date(d.timestamp).getTime() : null;
-      if (!ts) return false;
-      if (fromDate) {
-        const fromTs = new Date(fromDate).setHours(0, 0, 0, 0);
-        if (ts < fromTs) return false;
-      }
-      if (toDate) {
-        const toTs = new Date(toDate).setHours(23, 59, 59, 999);
-        if (ts > toTs) return false;
-      }
-
-      if (typeFilter === "all") return true;
+    const dateFiltered = filterByTimestamp(data, fromDate, toDate);
+    if (typeFilter === "all") return dateFiltered;
+    return dateFiltered.filter((d) => {
       if (typeFilter === "temperature") {
         return d.temperature != null && !Number.isNaN(Number(d.temperature));
       }

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { filterByQuickRange } from "../utils/dateRangeUtils.js";
 import {
   Box,
   Typography,
@@ -78,66 +79,10 @@ export default function DashboardSummary({
     return parts.length > 0 ? parts.join(" • ") : "-";
   }, [deviceThreshold]);
 
-  const filteredData = useMemo(() => {
-    if (!dataItems || dataItems.length === 0) return [];
-    if (range === "all") return dataItems;
-
-    const now = new Date();
-    let from = null;
-    let to = null;
-
-    if (range === "1h") {
-      from = new Date(now.getTime() - 60 * 60 * 1000);
-      to = now;
-    } else if (range === "6h") {
-      from = new Date(now.getTime() - 6 * 60 * 60 * 1000);
-      to = now;
-    } else if (range === "24h") {
-      from = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-      to = now;
-    } else if (range === "7d") {
-      from = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      to = now;
-    } else if (range === "yesterday") {
-      const y = new Date(now);
-      y.setDate(y.getDate() - 1);
-      from = new Date(y.getFullYear(), y.getMonth(), y.getDate(), 0, 0, 0, 0);
-      to = new Date(
-        y.getFullYear(),
-        y.getMonth(),
-        y.getDate(),
-        23,
-        59,
-        59,
-        999,
-      );
-    } else if (range === "thisWeek") {
-      const day = now.getDay() === 0 ? 7 : now.getDay();
-      const start = new Date(now);
-      start.setDate(now.getDate() - (day - 1));
-      from = new Date(
-        start.getFullYear(),
-        start.getMonth(),
-        start.getDate(),
-        0,
-        0,
-        0,
-        0,
-      );
-      to = now;
-    }
-
-    const fromTs = from ? from.getTime() : null;
-    const toTs = to ? to.getTime() : null;
-
-    return dataItems.filter((d) => {
-      const ts = d.timestamp ? new Date(d.timestamp).getTime() : null;
-      if (!ts) return false;
-      if (fromTs != null && ts < fromTs) return false;
-      if (toTs != null && ts > toTs) return false;
-      return true;
-    });
-  }, [dataItems, range]);
+  const filteredData = useMemo(
+    () => filterByQuickRange(dataItems, range),
+    [dataItems, range],
+  );
 
   const averages = useMemo(() => {
     if (filteredData.length === 0) {

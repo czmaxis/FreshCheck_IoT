@@ -1,30 +1,23 @@
-﻿import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Box,
   Typography,
   Button,
   Checkbox,
   useMediaQuery,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
 } from "@mui/material";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import "dayjs/locale/cs";
 import { useTheme } from "@mui/material/styles";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 
-import DateRangeSingleCalendar from "../components/DateRangeSingleCalendar.jsx";
-import AlertCard from "../components/AlertCard.jsx";
-import AlertFilters from "../components/AlertFilters.jsx";
-import AlertPagination from "../components/AlertPagination.jsx";
-import ConfirmDeleteDialog from "../components/ConfirmDeleteDialog.jsx";
-import AlertCardSkeleton from "../components/AlertCardSkeleton.jsx";
-import ActionSelector from "../components/ActionSelector.jsx";
-import PerPageSelector from "../components/PerPageSelector.jsx";
+import AlertCard from "./AlertCard.jsx";
+import AlertFilters from "./AlertFilters.jsx";
+import AlertPagination from "./AlertPagination.jsx";
+import ConfirmDeleteDialog from "./ConfirmDeleteDialog.jsx";
+import AlertCardSkeleton from "./AlertCardSkeleton.jsx";
+import PerPageSelector from "./PerPageSelector.jsx";
+import BulkActionControls from "./BulkActionControls.jsx";
+import BulkConfirmDialogs from "./BulkConfirmDialogs.jsx";
 
 import { useAlerts } from "../hooks/useAlerts.js";
 import { useBulkActions } from "../hooks/useBulkActions.js";
@@ -50,9 +43,6 @@ export default function Alerts({ activeAlerts, setAllAlerts, deviceId }) {
   const bulkDelete = useBulkActions(alerts, handleDeleteSelection);
   const bulkResolve = useBulkActions(alerts, handleResolveSelection);
 
-  const resetBulkDelete = bulkDelete.resetAll;
-  const resetBulkResolve = bulkResolve.resetAll;
-
   const {
     dateRange,
     setDateRange,
@@ -66,9 +56,9 @@ export default function Alerts({ activeAlerts, setAllAlerts, deviceId }) {
   } = useAlertFiltering(alerts, deviceId);
 
   useEffect(() => {
-    resetBulkDelete();
-    resetBulkResolve();
-  }, [deviceId, resetBulkDelete, resetBulkResolve]);
+    bulkDelete.resetAll();
+    bulkResolve.resetAll();
+  }, [deviceId, bulkDelete.resetAll, bulkResolve.resetAll]);
 
   if (alerts.length === 0) return null;
 
@@ -106,61 +96,11 @@ export default function Alerts({ activeAlerts, setAllAlerts, deviceId }) {
           flexWrap="wrap"
           sx={{ width: { xs: "100%", sm: "auto" } }}
         >
-          <ActionSelector
-            type="resolve"
-            selectionMode={bulkResolve.mode}
-            selectedIds={bulkResolve.selectedIds}
-            loading={bulkResolve.loading}
-            onRangeSelect={bulkResolve.handleRange}
-            onConfirmSelection={bulkResolve.requestSelected}
-            onCancelSelection={bulkResolve.cancelMode}
+          <BulkActionControls
+            bulkResolve={bulkResolve}
+            bulkDelete={bulkDelete}
+            isMobile={isMobile}
           />
-
-          <ActionSelector
-            type="delete"
-            selectionMode={bulkDelete.mode}
-            selectedIds={bulkDelete.selectedIds}
-            loading={bulkDelete.loading}
-            onRangeSelect={bulkDelete.handleRange}
-            onConfirmSelection={bulkDelete.requestSelected}
-            onCancelSelection={bulkDelete.cancelMode}
-          />
-
-          {bulkResolve.showCustomRange && !bulkResolve.mode && (
-            <Box sx={{ width: { xs: "100%", sm: "auto" } }}>
-              <LocalizationProvider
-                dateAdapter={AdapterDayjs}
-                adapterLocale="cs"
-              >
-                <DateRangeSingleCalendar
-                  value={bulkResolve.customDateRange}
-                  onChange={bulkResolve.setCustomDateRange}
-                  label="Od–do"
-                  size="small"
-                  fullWidth={isMobile}
-                  autoOpenKey={bulkResolve.calendarOpenKey}
-                />
-              </LocalizationProvider>
-            </Box>
-          )}
-
-          {bulkDelete.showCustomRange && !bulkDelete.mode && (
-            <Box sx={{ width: { xs: "100%", sm: "auto" } }}>
-              <LocalizationProvider
-                dateAdapter={AdapterDayjs}
-                adapterLocale="cs"
-              >
-                <DateRangeSingleCalendar
-                  value={bulkDelete.customDateRange}
-                  onChange={bulkDelete.setCustomDateRange}
-                  label="Od–do"
-                  size="small"
-                  fullWidth={isMobile}
-                  autoOpenKey={bulkDelete.calendarOpenKey}
-                />
-              </LocalizationProvider>
-            </Box>
-          )}
 
           <AlertFilters
             dateRange={dateRange}
@@ -197,24 +137,14 @@ export default function Alerts({ activeAlerts, setAllAlerts, deviceId }) {
           {pagedAlerts.map((alert) => (
             <Box key={alert._id} display="flex" alignItems="flex-start" gap={1}>
               {bulkDelete.mode && (
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    flexShrink: 0,
-                    pt: 1,
-                  }}
-                >
+                <Box sx={{ display: "flex", alignItems: "center", flexShrink: 0, pt: 1 }}>
                   <Checkbox
                     checked={bulkDelete.selectedIds.has(alert._id)}
                     onChange={(e) => {
                       bulkDelete.setSelectedIds((prev) => {
                         const next = new Set(prev);
-                        if (e.target.checked) {
-                          next.add(alert._id);
-                        } else {
-                          next.delete(alert._id);
-                        }
+                        if (e.target.checked) next.add(alert._id);
+                        else next.delete(alert._id);
                         return next;
                       });
                     }}
@@ -222,24 +152,14 @@ export default function Alerts({ activeAlerts, setAllAlerts, deviceId }) {
                 </Box>
               )}
               {bulkResolve.mode && (
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    flexShrink: 0,
-                    pt: 1,
-                  }}
-                >
+                <Box sx={{ display: "flex", alignItems: "center", flexShrink: 0, pt: 1 }}>
                   <Checkbox
                     checked={bulkResolve.selectedIds.has(alert._id)}
                     onChange={(e) => {
                       bulkResolve.setSelectedIds((prev) => {
                         const next = new Set(prev);
-                        if (e.target.checked) {
-                          next.add(alert._id);
-                        } else {
-                          next.delete(alert._id);
-                        }
+                        if (e.target.checked) next.add(alert._id);
+                        else next.delete(alert._id);
                         return next;
                       });
                     }}
@@ -286,63 +206,7 @@ export default function Alerts({ activeAlerts, setAllAlerts, deviceId }) {
         }}
       />
 
-      <Dialog
-        open={Boolean(bulkDelete.confirmScope)}
-        onClose={() => bulkDelete.setConfirmScope(null)}
-        maxWidth="xs"
-        fullWidth
-      >
-        <DialogTitle>Smazat výstrahy?</DialogTitle>
-        <DialogContent>
-          <Typography variant="body2">
-            {bulkDelete.confirmScope?.type === "selected"
-              ? `Opravdu chcete smazat vybrané výstrahy? Po smazání se výstrahy nezobrazí v historii výstrah! (${bulkDelete.confirmScope.ids.length})`
-              : `Opravdu chcete smazat výstrahy pro zvolený rozsah? Po smazání se výstrahy nezobrazí v historii výstrah!(${bulkDelete.confirmScope?.ids?.length ?? 0})`}
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => bulkDelete.setConfirmScope(null)}>
-            Zrušit
-          </Button>
-          <Button
-            color="error"
-            variant="contained"
-            onClick={bulkDelete.confirmAction}
-            disabled={bulkDelete.loading}
-          >
-            Smazat
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      <Dialog
-        open={Boolean(bulkResolve.confirmScope)}
-        onClose={() => bulkResolve.setConfirmScope(null)}
-        maxWidth="xs"
-        fullWidth
-      >
-        <DialogTitle>Potvrdit výstrahy?</DialogTitle>
-        <DialogContent>
-          <Typography variant="body2">
-            {bulkResolve.confirmScope?.type === "selected"
-              ? `Opravdu chcete potvrdit vybrané výstrahy? (${bulkResolve.confirmScope.ids.length})`
-              : `Opravdu chcete potvrdit výstrahy pro zvolený rozsah? (${bulkResolve.confirmScope?.ids?.length ?? 0})`}
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => bulkResolve.setConfirmScope(null)}>
-            Zrušit
-          </Button>
-          <Button
-            color="primary"
-            variant="contained"
-            onClick={bulkResolve.confirmAction}
-            disabled={bulkResolve.loading}
-          >
-            Potvrdit
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <BulkConfirmDialogs bulkDelete={bulkDelete} bulkResolve={bulkResolve} />
     </Box>
   );
 }

@@ -6,7 +6,7 @@ export function emitLogout(reason = "token_expired") {
       new CustomEvent(AUTH_LOGOUT_EVENT, { detail: { reason } }),
     );
   } catch (e) {
-    // no-op
+    console.error("Failed to emit logout event", e);
   }
 }
 

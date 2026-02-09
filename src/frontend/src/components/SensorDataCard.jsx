@@ -1,9 +1,9 @@
-import React from "react";
 import { Box, Typography, Stack, Chip } from "@mui/material";
 import DeviceThermostatIcon from "@mui/icons-material/DeviceThermostat";
 import OpacityIcon from "@mui/icons-material/Opacity";
 import DoorFrontIcon from "@mui/icons-material/DoorFront";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import { getDoorStateFromItem } from "../utils/doorStateUtils.js";
 
 function formatTimestamp(ts) {
   if (!ts) return "-";
@@ -11,31 +11,10 @@ function formatTimestamp(ts) {
   const day = String(d.getDate()).padStart(2, "0");
   const month = String(d.getMonth() + 1).padStart(2, "0");
   const year = d.getFullYear();
-  const hours = String(d.getHours() + 1).padStart(2, "0");
+  const hours = String(d.getHours()).padStart(2, "0");
   const minutes = String(d.getMinutes()).padStart(2, "0");
   const seconds = String(d.getSeconds()).padStart(2, "0");
   return `${day}.${month}.${year} ${hours}:${minutes}:${seconds}`;
-}
-
-function parseDoorState(item) {
-  if (item?.doors === true || item?.doors === 1 || item?.doors === "1") {
-    return 1;
-  }
-  if (item?.doors === false || item?.doors === 0 || item?.doors === "0") {
-    return 0;
-  }
-
-  const illuminance = item?.illuminance;
-  if (illuminance === undefined || illuminance === null) return null;
-  if (Number.isNaN(Number(illuminance))) return null;
-  return Number(illuminance) > 0 ? 1 : 0;
-}
-
-function getDoorStateFromItem(item) {
-  const state = parseDoorState(item);
-  if (state == null) return { label: "—", color: "default" };
-  if (state === 0) return { label: "Zavřeno", color: "success" };
-  return { label: "Otevřeno", color: "warning" };
 }
 
 /**
