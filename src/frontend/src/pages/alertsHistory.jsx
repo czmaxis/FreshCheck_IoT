@@ -31,7 +31,6 @@ import AlertCard from "../components/AlertCard.jsx";
 import AlertCardSkeleton from "../components/AlertCardSkeleton.jsx";
 import AlertFilters from "../components/AlertFilters.jsx";
 import AlertPagination from "../components/AlertPagination.jsx";
-import AlertActions from "../components/AlertActions.jsx";
 import ConfirmDeleteDialog from "../components/ConfirmDeleteDialog.jsx";
 import DateRangeSingleCalendar from "../components/DateRangeSingleCalendar.jsx";
 import ActionSelector from "../components/ActionSelector.jsx";
@@ -535,27 +534,68 @@ export default function AlertsHistory() {
 
           <Box display="flex" alignItems="center" gap={2} flexWrap="wrap">
             {/* DEVICE SELECTOR */}
-            <FormControl variant="standard" sx={{ minWidth: 220 }}>
-              <InputLabel id="device-select-label">Vyber zařízení</InputLabel>
-              <Select
-                labelId="device-select-label"
-                value={selectedDeviceId ?? ""}
-                label="Vyber zařízení"
-                onChange={(e) => setSelectedDeviceId(e.target.value)}
+            <Box
+              sx={{
+                minWidth: { xs: "100%", sm: 280 },
+                p: 2,
+                borderRadius: 3,
+                backgroundColor: "background.paper",
+                boxShadow: "0 2px 12px rgba(0,0,0,0.1)",
+                transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                "&:hover": {
+                  boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+                },
+              }}
+            >
+              <FormControl
+                variant="standard"
+                fullWidth
+                sx={{
+                  "& .MuiInputLabel-root": {
+                    fontSize: "0.875rem",
+                    fontWeight: 600,
+                    color: "text.secondary",
+                    "&.Mui-focused": {
+                      color: "primary.main",
+                    },
+                  },
+                  "& .MuiInput-root": {
+                    fontSize: "1rem",
+                    fontWeight: 500,
+                    "&:before": {
+                      borderBottom: "none",
+                    },
+                    "&:after": {
+                      borderBottom: "2px solid",
+                      borderColor: "primary.main",
+                    },
+                    "&:hover:not(.Mui-disabled):before": {
+                      borderBottom: "none",
+                    },
+                  },
+                }}
               >
-                {devices && devices.length > 0 ? (
-                  devices.map((d) => (
-                    <MenuItem key={d._id} value={d._id}>
-                      {d.name} — {d.location}
+                <InputLabel id="device-select-label">Vyber zařízení</InputLabel>
+                <Select
+                  labelId="device-select-label"
+                  value={selectedDeviceId ?? ""}
+                  label="Vyber zařízení"
+                  onChange={(e) => setSelectedDeviceId(e.target.value)}
+                >
+                  {devices && devices.length > 0 ? (
+                    devices.map((d) => (
+                      <MenuItem key={d._id} value={d._id}>
+                        {d.name} — {d.location}
+                      </MenuItem>
+                    ))
+                  ) : (
+                    <MenuItem disabled value="">
+                      Žádná zařízení
                     </MenuItem>
-                  ))
-                ) : (
-                  <MenuItem disabled value="">
-                    Žádná zařízení
-                  </MenuItem>
-                )}
-              </Select>
-            </FormControl>
+                  )}
+                </Select>
+              </FormControl>
+            </Box>
 
             <Box
               display="flex"
@@ -769,14 +809,9 @@ export default function AlertsHistory() {
                   <Box sx={{ flexGrow: 1, minWidth: 0 }}>
                     <AlertCard
                       alert={alert}
-                      actions={
-                        <AlertActions
-                          isResolved={!alert.active}
-                          onResolve={() => handleResolve(alert._id)}
-                          onRestore={() => handleRestore(alert._id)}
-                          onDelete={() => openDeleteConfirm(alert._id)}
-                        />
-                      }
+                      onResolve={() => handleResolve(alert._id)}
+                      onRestore={() => handleRestore(alert._id)}
+                      onDelete={() => openDeleteConfirm(alert._id)}
                     />
                   </Box>
                 )}

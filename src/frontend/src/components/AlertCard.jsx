@@ -1,9 +1,23 @@
-﻿import { Box, Typography, Chip } from "@mui/material";
+﻿import { useState } from "react";
+import {
+  Box,
+  Typography,
+  Chip,
+  IconButton,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
+} from "@mui/material";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import ThermostatIcon from "@mui/icons-material/Thermostat";
 import WaterDropIcon from "@mui/icons-material/WaterDrop";
 import DoorFrontIcon from "@mui/icons-material/DoorFront";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import RestoreIcon from "@mui/icons-material/Restore";
 
 function getTitle(alert) {
   const value = alert.value;
@@ -143,10 +157,20 @@ function getAccentColor(alert) {
   }
 }
 
-export default function AlertCard({ alert, actions }) {
+export default function AlertCard({
+  alert,
+  actions,
+  onResolve,
+  onRestore,
+  onDelete,
+}) {
   const isActive = Boolean(alert.active);
   const alertTresholdText = formatAlertTreshold(alert);
   const accentColor = getAccentColor(alert);
+  const hasMenu = Boolean(onResolve || onRestore || onDelete);
+
+  const [menuAnchor, setMenuAnchor] = useState(null);
+  const menuOpen = Boolean(menuAnchor);
 
   return (
     <Box
@@ -158,13 +182,19 @@ export default function AlertCard({ alert, actions }) {
         backgroundColor: "background.paper",
         boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
         transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+        position: "relative",
         "&:hover": {
           boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
           transform: "translateY(-2px) scale(1.005)",
         },
       }}
     >
-      <Box display="flex" alignItems="center" justifyContent="space-between" mb={1.5}>
+      <Box
+        display="flex"
+        alignItems="center"
+        justifyContent="space-between"
+        mb={1.5}
+      >
         <Box display="flex" alignItems="center" gap={1.5}>
           <Box
             sx={{
@@ -184,18 +214,102 @@ export default function AlertCard({ alert, actions }) {
           </Typography>
         </Box>
 
-        {!isActive && (
-          <Chip
-            size="small"
-            label="Vyřešená"
-            sx={{
-              backgroundColor: "#66bb6a20",
-              color: "#66bb6a",
-              fontWeight: 600,
-              border: "1px solid #66bb6a40",
-            }}
-          />
-        )}
+        <Box display="flex" alignItems="center" gap={1}>
+          {!isActive && (
+            <Chip
+              size="small"
+              label="Vyřešená"
+              sx={{
+                backgroundColor: "#66bb6a20",
+                color: "#66bb6a",
+                fontWeight: 600,
+                border: "1px solid #66bb6a40",
+              }}
+            />
+          )}
+
+          {hasMenu && (
+            <>
+              <IconButton
+                size="small"
+                onClick={(e) => setMenuAnchor(e.currentTarget)}
+                sx={{
+                  color: "text.secondary",
+                  "&:hover": {
+                    backgroundColor: `${accentColor}15`,
+                    color: accentColor,
+                  },
+                }}
+              >
+                <MoreVertIcon fontSize="small" />
+              </IconButton>
+              <Menu
+                anchorEl={menuAnchor}
+                open={menuOpen}
+                onClose={() => setMenuAnchor(null)}
+                anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+                transformOrigin={{ vertical: "top", horizontal: "right" }}
+                slotProps={{
+                  paper: {
+                    sx: {
+                      borderRadius: 2,
+                      boxShadow: "0 4px 20px rgba(0,0,0,0.12)",
+                      minWidth: 180,
+                    },
+                  },
+                }}
+              >
+                {isActive && onResolve && (
+                  <MenuItem
+                    onClick={() => {
+                      setMenuAnchor(null);
+                      onResolve();
+                    }}
+                  >
+                    <ListItemIcon>
+                      <CheckCircleIcon
+                        fontSize="small"
+                        sx={{ color: "#66bb6a" }}
+                      />
+                    </ListItemIcon>
+                    <ListItemText>Potvrdit</ListItemText>
+                  </MenuItem>
+                )}
+                {!isActive && onRestore && (
+                  <MenuItem
+                    onClick={() => {
+                      setMenuAnchor(null);
+                      onRestore();
+                    }}
+                  >
+                    <ListItemIcon>
+                      <RestoreIcon fontSize="small" sx={{ color: "#42a5f5" }} />
+                    </ListItemIcon>
+                    <ListItemText>Vrátit do aktivního stavu</ListItemText>
+                  </MenuItem>
+                )}
+                {onDelete && (
+                  <MenuItem
+                    onClick={() => {
+                      setMenuAnchor(null);
+                      onDelete();
+                    }}
+                  >
+                    <ListItemIcon>
+                      <DeleteOutlineIcon
+                        fontSize="small"
+                        sx={{ color: "#ef5350" }}
+                      />
+                    </ListItemIcon>
+                    <ListItemText sx={{ color: "#ef5350" }}>
+                      Smazat
+                    </ListItemText>
+                  </MenuItem>
+                )}
+              </Menu>
+            </>
+          )}
+        </Box>
       </Box>
 
       <Box sx={{ mb: 1.5, ml: 0.5 }}>{renderValue(alert)}</Box>
@@ -208,7 +322,11 @@ export default function AlertCard({ alert, actions }) {
       </Box>
 
       {alertTresholdText && (
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, ml: 0.5 }}>
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          sx={{ mt: 0.5, ml: 0.5 }}
+        >
           {alertTresholdText}
         </Typography>
       )}

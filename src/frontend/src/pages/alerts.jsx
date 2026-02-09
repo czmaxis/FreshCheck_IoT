@@ -18,7 +18,6 @@ import DateRangeSingleCalendar from "../components/DateRangeSingleCalendar.jsx";
 import AlertCard from "../components/AlertCard.jsx";
 import AlertFilters from "../components/AlertFilters.jsx";
 import AlertPagination from "../components/AlertPagination.jsx";
-import AlertActions from "../components/AlertActions.jsx";
 import ConfirmDeleteDialog from "../components/ConfirmDeleteDialog.jsx";
 import AlertCardSkeleton from "../components/AlertCardSkeleton.jsx";
 import ActionSelector from "../components/ActionSelector.jsx";
@@ -621,14 +620,8 @@ export default function Alerts({ deviceId, refreshKey, onAlertsChanged }) {
                 ) : (
                   <AlertCard
                     alert={alert}
-                    actions={
-                      <AlertActions
-                        isResolved={false}
-                        onResolve={() => handleResolve(alert._id)}
-                        onRestore={() => {}}
-                        onDelete={() => openDeleteConfirm(alert._id)}
-                      />
-                    }
+                    onResolve={() => handleResolve(alert._id)}
+                    onDelete={() => openDeleteConfirm(alert._id)}
                   />
                 )}
               </Box>
