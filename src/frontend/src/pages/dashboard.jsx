@@ -19,9 +19,9 @@ import {
 import SettingsIcon from "@mui/icons-material/Settings";
 import LimitsSkeleton from "../components/LimitsSkeleton.jsx";
 
-import SensorData from "./sensorData.jsx";
-import DeviceCharts from "./deviceCharts.jsx";
-import Alerts from "./alerts.jsx";
+import SensorData from "../components/SensorData.jsx";
+import DeviceCharts from "../components/DeviceCharts.jsx";
+import Alerts from "../components/Alerts.jsx";
 import DashboardSummary from "../components/DashboardSummary.jsx";
 
 import { useAuth } from "../context/AuthContext.jsx";

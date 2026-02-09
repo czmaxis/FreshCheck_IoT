@@ -15,7 +15,7 @@ import Dashboard from "./pages/dashboard.jsx";
 import Profile from "./pages/profile.jsx";
 import History from "./pages/alertsHistory.jsx";
 import PageTransition from "./components/PageTransition.jsx";
-import NavBar from "./pages/navBar.jsx";
+import NavBar from "./components/NavBar.jsx";
 
 function AppContent() {
   const location = useLocation();
