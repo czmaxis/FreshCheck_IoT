@@ -31,7 +31,7 @@ import { useBulkActions } from "../hooks/useBulkActions.js";
 import { useAlertFiltering } from "../hooks/useAlertFiltering.js";
 import { PER_PAGE_OPTIONS_ACTIVE } from "../utils/dateRangeUtils.js";
 
-export default function Alerts({ deviceId, refreshKey, onAlertsChanged }) {
+export default function Alerts({ activeAlerts, setAllAlerts, deviceId }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [visible, setVisible] = useState(true);
@@ -45,7 +45,7 @@ export default function Alerts({ deviceId, refreshKey, onAlertsChanged }) {
     handleDelete,
     handleDeleteSelection,
     handleResolveSelection,
-  } = useAlerts(deviceId, refreshKey, { active: true }, onAlertsChanged);
+  } = useAlerts(activeAlerts, setAllAlerts);
 
   const bulkDelete = useBulkActions(alerts, handleDeleteSelection);
   const bulkResolve = useBulkActions(alerts, handleResolveSelection);

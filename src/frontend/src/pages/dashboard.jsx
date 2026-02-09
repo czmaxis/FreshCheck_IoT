@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState, useCallback } from "react";
+﻿import React, { useEffect, useState } from "react";
 import {
   Box,
   Typography,
@@ -24,17 +24,15 @@ import DeviceCharts from "../components/DeviceCharts.jsx";
 import Alerts from "../components/Alerts.jsx";
 import DashboardSummary from "../components/DashboardSummary.jsx";
 
-import { useAuth } from "../context/AuthContext.jsx";
 import { useDashboardDevices } from "../hooks/useDashboardDevices.js";
+import { useDashboardData } from "../hooks/useDashboardData.js";
 import { useDeviceLimits } from "../hooks/useDeviceLimits.js";
 
 export default function Dashboard() {
-  const { token } = useAuth();
   const {
     devices,
     setDevices,
     selectedDeviceId,
-    selectedDevice,
     error,
     setError,
     handleSelectDevice,
@@ -63,8 +61,27 @@ export default function Dashboard() {
     handleRemoveCancel,
   } = useDashboardDevices();
 
+  const [refreshTick, setRefreshTick] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setRefreshTick((v) => v + 1);
+    }, 60 * 1000);
+    return () => clearInterval(id);
+  }, []);
+
   const {
-    limitsVersion,
+    sensorData,
+    setSensorData,
+    allAlerts,
+    setAllAlerts,
+    activeAlerts,
+    device,
+    setDevice,
+    dataLoading,
+  } = useDashboardData(selectedDeviceId, refreshTick);
+
+  const {
     limitsSaving,
     limitsOpen,
     limitsError,
@@ -79,21 +96,7 @@ export default function Dashboard() {
     openLimitsDialog,
     handleLimitsConfirm,
     handleLimitsCancel,
-  } = useDeviceLimits(selectedDeviceId, selectedDevice, setDevices, setError);
-
-  const [refreshTick, setRefreshTick] = useState(0);
-  const [alertsRefreshKey, setAlertsRefreshKey] = useState(0);
-
-  useEffect(() => {
-    const id = setInterval(() => {
-      setRefreshTick((v) => v + 1);
-    }, 60 * 1000);
-    return () => clearInterval(id);
-  }, []);
-
-  const handleAlertsChanged = useCallback(() => {
-    setAlertsRefreshKey((v) => v + 1);
-  }, []);
+  } = useDeviceLimits(selectedDeviceId, device, setDevice, setDevices, setError);
 
   return (
     <Box
@@ -222,18 +225,20 @@ export default function Dashboard() {
         </Menu>
       </Box>
       <DashboardSummary
+        sensorData={sensorData}
+        activeAlerts={activeAlerts}
+        device={device}
+        loading={dataLoading}
         deviceId={selectedDeviceId}
-        token={token}
         onOpenLimits={openLimitsDialog}
-        refreshKey={limitsVersion + refreshTick + alertsRefreshKey}
         limitsLoading={limitsSaving}
       />
       <p />
       {selectedDeviceId && (
         <Alerts
+          activeAlerts={activeAlerts}
+          setAllAlerts={setAllAlerts}
           deviceId={selectedDeviceId}
-          refreshKey={refreshTick}
-          onAlertsChanged={handleAlertsChanged}
           sx={{ mb: 2, mt: 2 }}
         />
       )}
@@ -246,13 +251,18 @@ export default function Dashboard() {
         {selectedDeviceId ? (
           <>
             <DeviceCharts
+              sensorData={sensorData}
+              allAlerts={allAlerts}
+              device={device}
               deviceId={selectedDeviceId}
-              refreshKey={limitsVersion + refreshTick}
+              loading={dataLoading}
               limitsLoading={limitsSaving}
             />
             <SensorData
+              sensorData={sensorData}
+              setSensorData={setSensorData}
               deviceId={selectedDeviceId}
-              refreshKey={refreshTick}
+              loading={dataLoading}
             />
           </>
         ) : (

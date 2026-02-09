@@ -39,7 +39,7 @@ import {
   getTickCount,
 } from "../utils/chartUtils.js";
 
-export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
+export default function DeviceCharts({ sensorData, allAlerts, device, deviceId, loading, limitsLoading }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
@@ -49,8 +49,6 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
     range,
     dateRange,
     setDateRange,
-    loading,
-    error,
     expanded,
     toggle,
     zoomRange,
@@ -63,7 +61,7 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
     sliderSpanMs,
     applyQuickRange,
     resetZoom,
-  } = useChartData(deviceId, refreshKey);
+  } = useChartData(sensorData, allAlerts, device, deviceId);
 
   const tickCount = getTickCount(timeSpanMs, isMobile);
   const formatAxisTime = useMemo(() => createAxisFormatter(timeSpanMs), [timeSpanMs]);
@@ -154,12 +152,6 @@ export default function DeviceCharts({ deviceId, refreshKey, limitsLoading }) {
       </Box>
 
       {loading && <CircularProgress sx={{ mt: 2 }} />}
-
-      {error && (
-        <Typography color="error" sx={{ mt: 2 }}>
-          {error}
-        </Typography>
-      )}
 
       <Collapse in={expanded}>
         {dateFilteredData.length > 0 && dataBounds && (

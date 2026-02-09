@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Box,
   Typography,
@@ -17,9 +17,6 @@ import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import EqualizerIcon from "@mui/icons-material/Equalizer";
 import DoorFrontIcon from "@mui/icons-material/DoorFront";
 import LimitsSkeleton from "./LimitsSkeleton.jsx";
-import { getSensorData } from "../services/sensorDataService.js";
-import { getAlerts } from "../services/alertService.js";
-import { getDevice } from "../services/deviceService.js";
 
 const RANGES = [
   { label: "1h", value: "1h" },
@@ -31,57 +28,24 @@ const RANGES = [
 ];
 
 export default function DashboardSummary({
+  sensorData,
+  activeAlerts,
+  device,
+  loading,
   deviceId,
-  token,
   onOpenLimits,
-  refreshKey,
   limitsLoading,
 }) {
-  const [summary, setSummary] = useState({
-    latest: null,
-    activeAlerts: 0,
-    loading: false,
-  });
-  const [deviceThreshold, setDeviceThreshold] = useState(null);
-  const [dataItems, setDataItems] = useState([]);
   const [range, setRange] = useState("24h");
 
-  useEffect(() => {
-    async function loadSummary() {
-      if (!deviceId) {
-        setSummary({ latest: null, activeAlerts: 0, loading: false });
-        setDataItems([]);
-        return;
-      }
+  const dataItems = useMemo(
+    () => (Array.isArray(sensorData) ? sensorData : []),
+    [sensorData],
+  );
 
-      try {
-        setSummary((s) => ({ ...s, loading: true }));
-        const [data, activeAlerts, device] = await Promise.all([
-          getSensorData(deviceId, token),
-          getAlerts(deviceId, { active: true }, token),
-          getDevice(deviceId, token),
-        ]);
-
-        const items = Array.isArray(data) ? data : [data];
-        const latest = items.length > 0 ? items[0] : null;
-
-        setDataItems(items);
-        setDeviceThreshold(device?.threshold ?? null);
-        setSummary({
-          latest,
-          activeAlerts: Array.isArray(activeAlerts) ? activeAlerts.length : 0,
-          loading: false,
-        });
-      } catch (err) {
-        console.error("Chyba při načítání přehledu:", err);
-        setSummary({ latest: null, activeAlerts: 0, loading: false });
-        setDataItems([]);
-        setDeviceThreshold(null);
-      }
-    }
-
-    loadSummary();
-  }, [deviceId, token, refreshKey]);
+  const alertCount = Array.isArray(activeAlerts) ? activeAlerts.length : 0;
+  const latest = dataItems.length > 0 ? dataItems[0] : null;
+  const deviceThreshold = device?.threshold ?? null;
 
   const limitsText = useMemo(() => {
     if (!deviceThreshold) return "-";
@@ -225,9 +189,9 @@ export default function DashboardSummary({
     return `před ${diffDays} dny`;
   };
 
-  const statusColor = summary.activeAlerts > 0 ? "#ff9800" : "#66bb6a";
+  const statusColor = alertCount > 0 ? "#ff9800" : "#66bb6a";
   const statusIcon =
-    summary.activeAlerts > 0 ? (
+    alertCount > 0 ? (
       <WarningAmberIcon fontSize="small" sx={{ color: statusColor }} />
     ) : (
       <CheckCircleIcon fontSize="small" sx={{ color: statusColor }} />
@@ -316,7 +280,7 @@ export default function DashboardSummary({
         <Stack direction="row" spacing={1.5} flexWrap="wrap" sx={{ rowGap: 1.5 }}>
           <Chip
             icon={statusIcon}
-            label={`${summary.activeAlerts > 0 ? "Pozor" : "OK"}`}
+            label={`${alertCount > 0 ? "Pozor" : "OK"}`}
             sx={{
               backgroundColor: `${statusColor}15`,
               border: `1px solid ${statusColor}30`,
@@ -327,13 +291,13 @@ export default function DashboardSummary({
           />
           <Chip
             icon={<WarningAmberIcon />}
-            label={`${summary.activeAlerts} aktivních výstrah`}
+            label={`${alertCount} aktivních výstrah`}
             sx={{
-              backgroundColor: summary.activeAlerts > 0 ? "#ff980015" : "#9e9e9e15",
-              border: summary.activeAlerts > 0 ? "1px solid #ff980030" : "1px solid #9e9e9e30",
+              backgroundColor: alertCount > 0 ? "#ff980015" : "#9e9e9e15",
+              border: alertCount > 0 ? "1px solid #ff980030" : "1px solid #9e9e9e30",
               fontWeight: 600,
-              "& .MuiChip-icon": { color: summary.activeAlerts > 0 ? "#ff9800" : "#9e9e9e" },
-              "& .MuiChip-label": { color: summary.activeAlerts > 0 ? "#ff9800" : "#9e9e9e" },
+              "& .MuiChip-icon": { color: alertCount > 0 ? "#ff9800" : "#9e9e9e" },
+              "& .MuiChip-label": { color: alertCount > 0 ? "#ff9800" : "#9e9e9e" },
             }}
           />
         </Stack>
@@ -350,7 +314,7 @@ export default function DashboardSummary({
         <Stack direction="row" spacing={1.5} flexWrap="wrap" sx={{ rowGap: 1.5 }}>
           <Chip
             icon={<ThermostatIcon />}
-            label={`${summary.latest?.temperature ?? "-"} °C`}
+            label={`${latest?.temperature ?? "-"} °C`}
             sx={{
               backgroundColor: "#ef535015",
               border: "1px solid #ef535030",
@@ -361,7 +325,7 @@ export default function DashboardSummary({
           />
           <Chip
             icon={<OpacityIcon />}
-            label={`${summary.latest?.humidity ?? "-"} %`}
+            label={`${latest?.humidity ?? "-"} %`}
             sx={{
               backgroundColor: "#42a5f515",
               border: "1px solid #42a5f530",
@@ -372,7 +336,7 @@ export default function DashboardSummary({
           />
           <Chip
             icon={<AccessTimeIcon />}
-            label={summary.latest?.timestamp ? formatRelativeTime(summary.latest.timestamp) : "-"}
+            label={latest?.timestamp ? formatRelativeTime(latest.timestamp) : "-"}
             size="small"
             sx={{
               backgroundColor: "#9e9e9e15",
@@ -432,7 +396,7 @@ export default function DashboardSummary({
         </Stack>
       </Box>
 
-      {summary.loading && (
+      {loading && (
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           Načítám přehled…
         </Typography>

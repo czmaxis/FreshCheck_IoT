@@ -1,9 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import dayjs from "dayjs";
-import { useAuth } from "../context/AuthContext.jsx";
-import { getSensorData } from "../services/sensorDataService.js";
-import { getAlerts } from "../services/alertService.js";
-import { getDevice } from "../services/deviceService.js";
 import {
   parseTimestamp,
   filterByRange,
@@ -13,70 +9,37 @@ import {
   clampZoom,
 } from "../utils/chartUtils.js";
 
-export function useChartData(deviceId, refreshKey) {
-  const { token } = useAuth();
-
-  const [rawData, setRawData] = useState([]);
-  const [threshold, setThreshold] = useState(null);
-  const [alertTimes, setAlertTimes] = useState([]);
+export function useChartData(sensorData, allAlerts, device, deviceId) {
   const [range, setRange] = useState("7d");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [dateRange, setDateRange] = useState([null, null]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const [expanded, setExpanded] = useState(true);
   const [zoomRange, setZoomRange] = useState(null);
 
-  // --- Data fetching ---
-  useEffect(() => {
-    if (!deviceId) return;
-    let cancelled = false;
+  const threshold = device?.threshold ?? null;
 
-    async function load() {
-      setLoading(true);
-      setError("");
+  // --- Derive rawData from sensorData prop ---
+  const rawData = useMemo(
+    () =>
+      (sensorData || []).map((it) => ({
+        ts: parseTimestamp(it.timestamp).getTime(),
+        temperature: it.temperature != null ? Number(it.temperature) : null,
+        humidity: it.humidity != null ? Number(it.humidity) : null,
+      })),
+    [sensorData],
+  );
 
-      try {
-        const [data, alerts, device] = await Promise.all([
-          getSensorData(deviceId, token),
-          getAlerts(deviceId, {}, token),
-          getDevice(deviceId, token),
-        ]);
-        if (cancelled) return;
-
-        setRawData(
-          data.map((it) => ({
-            ts: parseTimestamp(it.timestamp).getTime(),
-            temperature: it.temperature != null ? Number(it.temperature) : null,
-            humidity: it.humidity != null ? Number(it.humidity) : null,
-          })),
-        );
-        setThreshold(device?.threshold ?? null);
-        const alertTs = Array.isArray(alerts)
-          ? alerts
-              .map((a) => parseTimestamp(a.timestamp).getTime())
-              .filter((t) => !Number.isNaN(t))
-          : [];
-        setAlertTimes(alertTs);
-      } catch (err) {
-        if (!cancelled) {
-          setError(
-            err.response?.data?.message ||
-              err.message ||
-              "Chyba při načítání dat",
-          );
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [deviceId, token, refreshKey]);
+  // --- Derive alertTimes from allAlerts prop ---
+  const alertTimes = useMemo(
+    () =>
+      Array.isArray(allAlerts)
+        ? allAlerts
+            .map((a) => parseTimestamp(a.timestamp).getTime())
+            .filter((t) => !Number.isNaN(t))
+        : [],
+    [allAlerts],
+  );
 
   // --- Date range sync ---
   useEffect(() => {
@@ -175,8 +138,6 @@ export function useChartData(deviceId, refreshKey) {
     range,
     dateRange,
     setDateRange,
-    loading,
-    error,
     expanded,
     toggle,
     zoomRange,

@@ -1,7 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import dayjs from "dayjs";
-import { useAuth } from "../context/AuthContext.jsx";
-import { getSensorData } from "../services/sensorDataService.js";
 import { computeQuickRange, toDateString } from "../utils/dateRangeUtils.js";
 
 function parseDoorState(item) {
@@ -18,12 +16,7 @@ function parseDoorState(item) {
   return Number(illuminance) > 0 ? 1 : 0;
 }
 
-export function useSensorData(deviceId, refreshKey) {
-  const { token } = useAuth();
-
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+export function useSensorData(sensorData, deviceId) {
   const [expanded, setExpanded] = useState(true);
   const [typeFilter, setTypeFilter] = useState("all");
   const [page, setPage] = useState(1);
@@ -36,36 +29,6 @@ export function useSensorData(deviceId, refreshKey) {
     setPage(1);
     setExpanded(true);
   }, [deviceId]);
-
-  useEffect(() => {
-    if (!deviceId) return;
-    let cancelled = false;
-
-    async function load() {
-      setLoading(true);
-      setError("");
-      try {
-        const resp = await getSensorData(deviceId, token);
-        const arr = Array.isArray(resp) ? resp : [resp];
-        if (!cancelled) setData(arr);
-      } catch (err) {
-        console.error("Chyba při načítání sensor dat:", err);
-        if (!cancelled)
-          setError(
-            err.response?.data?.message ||
-              err.message ||
-              "Chyba při načítání sensor dat.",
-          );
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [deviceId, token, refreshKey]);
 
   useEffect(() => {
     const [start, end] = dateRange;
@@ -88,6 +51,11 @@ export function useSensorData(deviceId, refreshKey) {
       toStr ? dayjs(toStr) : null,
     ]);
   }, []);
+
+  const data = useMemo(
+    () => (Array.isArray(sensorData) ? sensorData : []),
+    [sensorData],
+  );
 
   const filteredData = useMemo(() => {
     return data.filter((d) => {
@@ -139,10 +107,6 @@ export function useSensorData(deviceId, refreshKey) {
 
   return {
     data,
-    setData,
-    loading,
-    error,
-    setError,
     expanded,
     toggleExpandAll,
     typeFilter,

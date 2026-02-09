@@ -1,4 +1,5 @@
-﻿import {
+﻿import { useState } from "react";
+import {
   Box,
   Typography,
   CircularProgress,
@@ -28,16 +29,14 @@ import { useTheme, useMediaQuery } from "@mui/material";
 import { useSensorData } from "../hooks/useSensorData.js";
 import { useSensorDelete } from "../hooks/useSensorDelete.js";
 
-export default function SensorData({ deviceId, refreshKey }) {
+export default function SensorData({ sensorData, setSensorData, deviceId, loading }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
+  const [error, setError] = useState("");
+
   const {
     data,
-    setData,
-    loading,
-    error,
-    setError,
     expanded,
     toggleExpandAll,
     typeFilter,
@@ -54,7 +53,7 @@ export default function SensorData({ deviceId, refreshKey }) {
     totalPages,
     startIndex,
     endIndex,
-  } = useSensorData(deviceId, refreshKey);
+  } = useSensorData(sensorData, deviceId);
 
   const {
     deleteMode,
@@ -71,7 +70,7 @@ export default function SensorData({ deviceId, refreshKey }) {
     requestDeleteSelected,
     confirmDelete,
     cancelDeleteMode,
-  } = useSensorDelete(deviceId, data, setData, setError);
+  } = useSensorDelete(deviceId, data, setSensorData, setError);
 
   return (
     <Box

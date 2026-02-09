@@ -1,19 +1,17 @@
-import { useEffect, useState, useCallback } from "react";
-import { getDevice, updateDevice } from "../services/deviceService.js";
+import { useState, useCallback } from "react";
+import { updateDevice } from "../services/deviceService.js";
 import { useAuth } from "../context/AuthContext.jsx";
 
 export function useDeviceLimits(
   selectedDeviceId,
-  selectedDevice,
+  device,
+  setDevice,
   setDevices,
   setError,
 ) {
   const { token } = useAuth();
 
-  const [summaryDeviceThreshold, setSummaryDeviceThreshold] = useState(null);
-  const [limitsVersion, setLimitsVersion] = useState(0);
   const [limitsSaving, setLimitsSaving] = useState(false);
-
   const [limitsOpen, setLimitsOpen] = useState(false);
   const [limitsError, setLimitsError] = useState("");
   const [maxTemp, setMaxTemp] = useState("");
@@ -21,31 +19,7 @@ export function useDeviceLimits(
   const [maxHumidity, setMaxHumidity] = useState("");
   const [minHumidity, setMinHumidity] = useState("");
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadThreshold() {
-      if (!selectedDeviceId) {
-        setSummaryDeviceThreshold(null);
-        return;
-      }
-      try {
-        const device = await getDevice(selectedDeviceId, token);
-        if (!cancelled) {
-          setSummaryDeviceThreshold(device?.threshold ?? null);
-        }
-      } catch {
-        if (!cancelled) {
-          setSummaryDeviceThreshold(null);
-        }
-      }
-    }
-
-    loadThreshold();
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedDeviceId, token]);
+  const summaryDeviceThreshold = device?.threshold ?? null;
 
   const openLimitsDialog = useCallback(() => {
     if (!selectedDeviceId) {
@@ -53,7 +27,7 @@ export function useDeviceLimits(
       return;
     }
 
-    const t = summaryDeviceThreshold ?? selectedDevice?.threshold ?? null;
+    const t = summaryDeviceThreshold;
     if (t) {
       setMaxTemp(t?.temperature?.max ?? "");
       setMinTemp(t?.temperature?.min ?? "");
@@ -68,7 +42,7 @@ export function useDeviceLimits(
 
     setLimitsError("");
     setLimitsOpen(true);
-  }, [selectedDeviceId, summaryDeviceThreshold, selectedDevice, setError]);
+  }, [selectedDeviceId, summaryDeviceThreshold, setError]);
 
   const handleLimitsConfirm = useCallback(async () => {
     if (!selectedDeviceId) return;
@@ -101,8 +75,7 @@ export function useDeviceLimits(
       setDevices((prev) =>
         prev.map((d) => (d._id === selectedDeviceId ? res.device : d)),
       );
-      setSummaryDeviceThreshold(res.device?.threshold ?? null);
-      setLimitsVersion((v) => v + 1);
+      setDevice(res.device);
 
       setMinTemp(null);
       setMaxTemp(null);
@@ -125,6 +98,7 @@ export function useDeviceLimits(
     maxHumidity,
     token,
     setDevices,
+    setDevice,
     setError,
   ]);
 
@@ -134,7 +108,6 @@ export function useDeviceLimits(
 
   return {
     summaryDeviceThreshold,
-    limitsVersion,
     limitsSaving,
     limitsOpen,
     limitsError,
