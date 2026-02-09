@@ -6,47 +6,33 @@ namespace App\Presentation;
 
 use App\Service\DeviceService;
 use App\Service\JwtService;
-use Nette\Application\UI\Presenter;
-use Nette\Http\IRequest;
 
-final class DevicePresenter extends Presenter
+final class DevicePresenter extends BaseApiPresenter
 {
     private DeviceService $devices;
-    private JwtService $jwt;
-    private IRequest $httpRequest;
 
     public function __construct(
         DeviceService $devices,
-        JwtService $jwt,
-        IRequest $httpRequest
+        JwtService $jwt
     ) {
-        parent::__construct();
+        parent::__construct($jwt);
         $this->devices = $devices;
-        $this->jwt = $jwt;
-        $this->httpRequest = $httpRequest;
     }
 
     public function actionDefault(): void
     {
-        $method = $this->httpRequest->getMethod();
+        $method = $this->getHttpRequest()->getMethod();
         $userId = $this->getUserIdFromJwt();
 
-        // -------------------------
         // GET /devices
-        // -------------------------
         if ($method === 'GET') {
             $devices = $this->devices->getDevicesForUser($userId);
-
-            $this->sendJson(
-               $devices,
-            );
+            $this->sendJson($devices);
         }
 
-        // -------------------------
         // POST /devices
-        // -------------------------
         if ($method === 'POST') {
-            $raw = $this->httpRequest->getRawBody();
+            $raw = $this->getHttpRequest()->getRawBody();
             $data = json_decode($raw, true);
 
             if (!is_array($data)) {
@@ -57,11 +43,11 @@ final class DevicePresenter extends Presenter
                 $this->error('Missing required fields', 400);
             }
 
-           $device = $this->devices->create(
-            $userId,
-            $data['name'],
-            $data['location'] ?? null,
-            $data['threshold'] ?? []
+            $device = $this->devices->create(
+                $userId,
+                $data['name'],
+                $data['location'] ?? null,
+                $data['threshold'] ?? []
             );
             $this->sendJson($device);
         }
@@ -69,7 +55,7 @@ final class DevicePresenter extends Presenter
         $this->error('Method not allowed', 405);
     }
 
-     /**
+    /**
      * GET /devices/{id}
      */
     public function actionDetail(string $id): void
@@ -85,107 +71,52 @@ final class DevicePresenter extends Presenter
         $this->sendJson($device);
     }
 
+    /**
+     * DELETE /devices/{id}
+     */
+    public function actionDelete(string $id): void
+    {
+        $userId = $this->getUserIdFromJwt();
+
+        $this->devices->deleteDevice($userId, $id);
+
+        $this->sendJson([
+            'deleted' => true,
+            'id' => $id,
+        ]);
+    }
 
     /**
-     * get userId from JWT token
+     * PUT /devices/{id}
      */
- protected function getUserIdFromJwt(): string
-{
-    $authHeader = $this->getHttpRequest()->getHeader('Authorization');
+    public function actionUpdate(string $id): void
+    {
+        $raw = trim($this->getHttpRequest()->getRawBody());
 
-    if (!$authHeader || !str_starts_with($authHeader, 'Bearer ')) {
-        $this->error('Missing Authorization header', 401);
-    }
+        if ($raw === '') {
+            $data = [];
+        } else {
+            $data = json_decode($raw, true);
 
-    $token = substr($authHeader, 7);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $this->error('Invalid JSON', 400);
+            }
+        }
 
-    try {
-        $payload = \Firebase\JWT\JWT::decode(
-            $token,
-            new \Firebase\JWT\Key($_ENV['JWT_SECRET'], 'HS256')
+        $userId = $this->getUserIdFromJwt();
+
+        $device = $this->devices->updateDevice(
+            $id,
+            $userId,
+            $data
         );
-    } catch (\Throwable $e) {
-        $this->error('Invalid token', 401);
+
+        if (!$device) {
+            $this->error('Device not found', 404);
+        }
+
+        $this->sendJson([
+            'device' => $device,
+        ]);
     }
-
-    return (string) $payload->sub;
-}
-        /**
-         * DELETE /devices/{id}
-         */
-  public function actionDelete(string $id): void
-{
-    $userId = $this->getUserIdFromJwt();
-
-    $result = $this->devices->deleteDevice($userId, $id);
-
-    $this->sendJson([
-        'deleted' => true,
-        'id' => $id,
-    ]);
-}
-public function actionCreate(): void
-{
-    $userId = $this->getUserIdFromJwt();
-
-    $data = json_decode(
-        $this->getHttpRequest()->getRawBody(),
-        true
-    );
-
-    if (!is_array($data)) {
-        $this->error('Invalid JSON', 400);
-    }
-
-    if (!isset($data['name'])) {
-        $this->error('Missing required fields', 400);
-    }
-
-
-   
-
-     $device = $this->deviceService->create(
-        $this->userId, // from JWT
-        $data['name'],
-        $data['location'] ?? null,
-        $data['threshold'] ?? []
-    );
-
-    $this->sendJson($device);
-}
-  /**
-         *PUT /devices/{id}
-         */
-public function actionUpdate(string $id): void
-{
-    $raw = $this->getHttpRequest()->getRawBody();
- $raw = trim($this->getHttpRequest()->getRawBody());
-
-if ($raw === '') {
-    $data = []; 
-} else {
-    $data = json_decode($raw, true);
-
-    if (json_last_error() !== JSON_ERROR_NONE) {
-        $this->error('Invalid JSON', 400);
-    }
-}
-
-    
-    $userId = $this->getUserIdFromJwt();
-
-    $device = $this->devices->updateDevice(
-        $id,
-        $userId,
-        $data
-    );
-
-    if (!$device) {
-        $this->error('Device not found', 404);
-    }
-
- $this->sendJson([
-        'device' => $device,
-    ]);
-}
 }

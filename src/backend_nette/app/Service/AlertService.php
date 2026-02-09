@@ -4,8 +4,6 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\Repository\AlertRepository;
-use DateTimeImmutable;
-use DateTimeZone;
 
 final class AlertService
 {
@@ -33,11 +31,6 @@ final class AlertService
             $data['alertTreshold'] ?? null
         );
     }
-/*
-    public function getActiveByDevice(string $deviceId): array
-    {
-        return $this->alerts->findActiveByDevice($deviceId);
-    }*/
 public function resolve(string $userId, string $alertId): ?array
 {
     return $this->alerts->resolve($userId, $alertId);
@@ -133,41 +126,4 @@ public function evaluate(array $device, array $sensorData): void
     }
 }
 
-private function createAlert(
-    string $userId,
-    array $device,
-    string $type,
-    float|int $value,
-    array $threshold
-): void {
-    $now = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
-
-    $this->alerts->insert([
-        'deviceId'   => new \MongoDB\BSON\ObjectId($device['_id']),
-        'userId'     => new \MongoDB\BSON\ObjectId($userId),
-        'type'       => $type,
-        'value'      => $value,
-        'alertTreshold' => $threshold,
-        'active'     => true,
-        'timestamp'  => $now->format(\DATE_ATOM),
-        'resolvedAt' => null,
-    ]);
-}
-
-
-
-    public function ingest(array $sensorData): void
-{
-    $device = $this->deviceRepository->findById($sensorData['deviceId']);
-
-    if (!$device) {
-        return;
-    }
-
-   
-    $this->sensorDataRepository->insert($sensorData);
-
-    
-    $this->alertService->evaluate($device, $sensorData);
-}
 }

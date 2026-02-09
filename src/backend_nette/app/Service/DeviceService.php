@@ -5,12 +5,11 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\Repository\DeviceRepository;
-use MongoDB\BSON\ObjectId; 
+use MongoDB\BSON\ObjectId;
+use Nette\Application\BadRequestException;
 
 final class DeviceService
 {
-    private DeviceRepository $devices;
-
     public function __construct(
         private DeviceRepository $deviceRepository
     ) {}

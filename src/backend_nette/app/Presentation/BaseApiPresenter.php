@@ -39,15 +39,6 @@ abstract class BaseApiPresenter extends Presenter
         }
 
         if (!$auth || !preg_match('~^Bearer\s+(.+)$~i', $auth, $m)) {
-            \Tracy\Debugger::log([
-                'authHeader' => $auth,
-                'serverAuth' => [
-                    'HTTP_AUTHORIZATION' => $_SERVER['HTTP_AUTHORIZATION'] ?? null,
-                    'REDIRECT_HTTP_AUTHORIZATION' => $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? null,
-                    'Authorization' => $_SERVER['Authorization'] ?? null,
-                ],
-                'headers' => function_exists('getallheaders') ? getallheaders() : null,
-            ], 'auth');
             $this->error('Unauthorized', 401);
         }
 
