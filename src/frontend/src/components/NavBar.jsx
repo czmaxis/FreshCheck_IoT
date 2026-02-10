@@ -16,6 +16,7 @@ import { useTheme } from "@mui/material/styles";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import HistoryIcon from "@mui/icons-material/History";
+import ScienceIcon from "@mui/icons-material/Science";
 import PersonIcon from "@mui/icons-material/Person";
 import LogoutIcon from "@mui/icons-material/Logout";
 import DevicesIcon from "@mui/icons-material/Devices";
@@ -162,6 +163,33 @@ export default function NavBar() {
             }}
           >
             {isMobile ? "Historie" : "Historie výstrah"}
+          </Button>
+          <Button
+            component={Link}
+            to="/mock-data"
+            startIcon={!isMobile && <ScienceIcon />}
+            color="inherit"
+            size={isMobile ? "small" : "medium"}
+            sx={{
+              minWidth: 0,
+              px: { xs: 1.5, sm: 2 },
+              py: 1,
+              borderRadius: 2,
+              fontSize: { xs: "0.8rem", sm: "0.875rem" },
+              fontWeight: 600,
+              textTransform: "none",
+              whiteSpace: "nowrap",
+              backgroundColor: isActive("/mock-data")
+                ? "rgba(255, 255, 255, 0.2)"
+                : "transparent",
+              transition: "all 0.3s ease",
+              "&:hover": {
+                backgroundColor: "rgba(255, 255, 255, 0.15)",
+                transform: "translateY(-2px)",
+              },
+            }}
+          >
+            {isMobile ? "Mock data" : "Mock data"}
           </Button>
         </Box>
 

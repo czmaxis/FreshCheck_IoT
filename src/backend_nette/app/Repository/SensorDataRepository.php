@@ -18,9 +18,13 @@ final class SensorDataRepository
 
    public function create(string $userId, array $data): array
 {
-    $timestamp = (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))
-        ->format('Y-m-d\TH:i:s.v\Z');
-    
+    if (!empty($data['timestamp'])) {
+        $timestamp = $data['timestamp'];
+    } else {
+        $timestamp = (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))
+            ->format('Y-m-d\TH:i:s.v\Z');
+    }
+
     $document = [
         'deviceId'  => new ObjectId($data['deviceId']),
         'timestamp' => $timestamp,

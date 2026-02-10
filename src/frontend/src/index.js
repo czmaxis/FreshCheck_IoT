@@ -14,6 +14,7 @@ import Register from "./pages/register.jsx";
 import Dashboard from "./pages/dashboard.jsx";
 import Profile from "./pages/profile.jsx";
 import History from "./pages/alertsHistory.jsx";
+import MockDataGenerator from "./pages/mockDataGenerator.jsx";
 import PageTransition from "./components/PageTransition.jsx";
 import NavBar from "./components/NavBar.jsx";
 
@@ -55,6 +56,7 @@ function AppContent() {
           <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
           <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
           <Route path="/history" element={<PrivateRoute><History /></PrivateRoute>} />
+          <Route path="/mock-data" element={<PrivateRoute><MockDataGenerator /></PrivateRoute>} />
         </Routes>
       </PageTransition>
     </>
