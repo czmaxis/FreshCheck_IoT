@@ -31,20 +31,12 @@ export function AuthProvider({ children }) {
     localStorage.setItem("user", JSON.stringify(user));
   };
 
-  const logoutContext = (redirect = true) => {
+  const logoutContext = () => {
     setToken(null);
     setUser(null);
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    if (redirect) {
-      try {
-        if (window.location.pathname !== "/login") {
-          window.location.assign("/login");
-        }
-      } catch (e) {
-        // no-op
-      }
-    }
+    // PrivateRoute handles redirect to /login automatically
   };
 
   const updateUserContext = (updatedUser) => {
@@ -90,7 +82,7 @@ export function AuthProvider({ children }) {
   };
 
   useEffect(() => {
-    const unsubscribe = onLogout(() => logoutContext(true));
+    const unsubscribe = onLogout(() => logoutContext());
     return () => unsubscribe();
   }, []);
 
