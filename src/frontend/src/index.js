@@ -34,6 +34,11 @@ function GuestRoute({ children }) {
   return children;
 }
 
+function RootRedirect() {
+  const { isAuthenticated } = useAuth();
+  return <Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />;
+}
+
 function AppContent() {
   const location = useLocation();
   const showNavBar =
@@ -44,7 +49,7 @@ function AppContent() {
       {showNavBar && <NavBar />}
       <PageTransition>
         <Routes>
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/" element={<RootRedirect />} />
           <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
           <Route path="/register" element={<GuestRoute><Register /></GuestRoute>} />
           <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
