@@ -7,7 +7,7 @@ import {
   Navigate,
   useLocation,
 } from "react-router-dom";
-import { AuthProvider } from "./context/AuthContext.jsx";
+import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
 import "./services/axiosSetup.js";
 import Login from "./pages/login.jsx";
 import Register from "./pages/register.jsx";
@@ -16,6 +16,23 @@ import Profile from "./pages/profile.jsx";
 import History from "./pages/alertsHistory.jsx";
 import PageTransition from "./components/PageTransition.jsx";
 import NavBar from "./components/NavBar.jsx";
+
+function PrivateRoute({ children }) {
+  const { isAuthenticated } = useAuth();
+  const location = useLocation();
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+  return children;
+}
+
+function GuestRoute({ children }) {
+  const { isAuthenticated } = useAuth();
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return children;
+}
 
 function AppContent() {
   const location = useLocation();
@@ -27,12 +44,12 @@ function AppContent() {
       {showNavBar && <NavBar />}
       <PageTransition>
         <Routes>
-          <Route path="/" element={<Navigate to="/login" />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/history" element={<History />} />
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
+          <Route path="/register" element={<GuestRoute><Register /></GuestRoute>} />
+          <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+          <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
+          <Route path="/history" element={<PrivateRoute><History /></PrivateRoute>} />
         </Routes>
       </PageTransition>
     </>
