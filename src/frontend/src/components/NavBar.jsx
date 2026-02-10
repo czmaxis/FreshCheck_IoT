@@ -41,7 +41,7 @@ export default function NavBar() {
   const handleLogout = () => {
     handleCloseUserMenu();
     logout();
-    navigate("/login");
+    // PrivateRoute handles redirect to /login automatically
   };
 
   const isActive = (path) => location.pathname === path;
