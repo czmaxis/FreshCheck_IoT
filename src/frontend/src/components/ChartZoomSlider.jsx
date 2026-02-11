@@ -7,7 +7,6 @@ export default function ChartZoomSlider({
   formatSliderTime,
   onSliderChange,
   isPending,
-  isAnimating,
 }) {
   const sliderValue = localZoom ?? [dataBounds.minTs, dataBounds.maxTs];
 
@@ -74,7 +73,7 @@ export default function ChartZoomSlider({
           }}
         />
       </Box>
-      {(isPending || isAnimating) && (
+      {isPending && (
         <Typography
           variant="caption"
           color="text.secondary"

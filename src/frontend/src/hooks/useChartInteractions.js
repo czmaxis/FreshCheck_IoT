@@ -10,10 +10,6 @@ export function useChartInteractions(zoomRange, setZoomRange, isMobile) {
     setLocalZoom(zoomRange);
   }, [zoomRange]);
 
-  // --- Animation tracking (no onAnimationStart to avoid render loops) ---
-  const [isAnimating, setIsAnimating] = useState(false);
-  const animCountRef = useRef(0);
-
   const handleSliderChange = useCallback((_, value) => {
     if (!Array.isArray(value) || value.length !== 2) return;
     const start = Math.min(value[0], value[1]);
@@ -22,8 +18,6 @@ export function useChartInteractions(zoomRange, setZoomRange, isMobile) {
     setIsPending(true);
     clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      animCountRef.current = 2; // expecting 2 Line animations
-      setIsAnimating(true);
       setZoomRange([start, end]);
       setIsPending(false);
     }, 1000);
@@ -31,20 +25,12 @@ export function useChartInteractions(zoomRange, setZoomRange, isMobile) {
 
   useEffect(() => () => clearTimeout(debounceRef.current), []);
 
-  const handleAnimationEnd = useCallback(() => {
-    animCountRef.current = Math.max(0, animCountRef.current - 1);
-    if (animCountRef.current === 0) {
-      setIsAnimating(false);
-    }
-  }, []);
-
   // --- Debounced chart hover: block Recharts pointer-events via direct DOM ---
   const tempChartRef = useRef(null);
   const humChartRef = useRef(null);
   const hoverTimerRef = useRef(null);
   const lastPosRef = useRef(null);
   const syntheticRef = useRef(false);
-  const processingRef = useRef(false);
 
   const setHoverBlock = useCallback((blocked) => {
     const value = blocked ? "none" : "";
@@ -56,18 +42,13 @@ export function useChartInteractions(zoomRange, setZoomRange, isMobile) {
 
   const handleChartMouseMove = useCallback((e) => {
     if (syntheticRef.current) return;
-    if (processingRef.current) return;
     lastPosRef.current = { x: e.clientX, y: e.clientY };
     setHoverBlock(true);
     clearTimeout(hoverTimerRef.current);
     hoverTimerRef.current = setTimeout(() => {
-      processingRef.current = true;
       setHoverBlock(false);
       requestAnimationFrame(() => {
-        if (!lastPosRef.current) {
-          processingRef.current = false;
-          return;
-        }
+        if (!lastPosRef.current) return;
         syntheticRef.current = true;
         const el = document.elementFromPoint(lastPosRef.current.x, lastPosRef.current.y);
         if (el) {
@@ -78,9 +59,6 @@ export function useChartInteractions(zoomRange, setZoomRange, isMobile) {
           }));
         }
         setTimeout(() => { syntheticRef.current = false; }, 0);
-        requestAnimationFrame(() => {
-          processingRef.current = false;
-        });
       });
     }, 200);
   }, [setHoverBlock]);
@@ -93,20 +71,17 @@ export function useChartInteractions(zoomRange, setZoomRange, isMobile) {
 
   useEffect(() => () => clearTimeout(hoverTimerRef.current), []);
 
+  // contain: layout paint style — isolates chart rendering from page scroll/layout
   const chartBoxSx = useMemo(() => ({
     width: "100%",
     height: isMobile ? 260 : 300,
-    "& .recharts-wrapper": {
-      pointerEvents: isAnimating ? "none" : "auto",
-    },
-  }), [isMobile, isAnimating]);
+    contain: "layout paint style",
+  }), [isMobile]);
 
   return {
     localZoom,
     isPending,
-    isAnimating,
     handleSliderChange,
-    handleAnimationEnd,
     tempChartRef,
     humChartRef,
     chartBoxSx,

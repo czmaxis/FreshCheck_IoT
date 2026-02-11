@@ -54,9 +54,7 @@ export default function DeviceCharts({ sensorData, allAlerts, device, deviceId, 
   const {
     localZoom,
     isPending,
-    isAnimating,
     handleSliderChange,
-    handleAnimationEnd,
     tempChartRef,
     humChartRef,
     chartBoxSx,
@@ -162,7 +160,6 @@ export default function DeviceCharts({ sensorData, allAlerts, device, deviceId, 
             formatSliderTime={formatSliderTime}
             onSliderChange={handleSliderChange}
             isPending={isPending}
-            isAnimating={isAnimating}
           />
         )}
 
@@ -180,7 +177,6 @@ export default function DeviceCharts({ sensorData, allAlerts, device, deviceId, 
               tickCount={tickCount}
               latest={latest}
               threshold={threshold}
-              onAnimationEnd={handleAnimationEnd}
             />
 
             <HumidityChart
@@ -194,7 +190,6 @@ export default function DeviceCharts({ sensorData, allAlerts, device, deviceId, 
               tickCount={tickCount}
               latest={latest}
               threshold={threshold}
-              onAnimationEnd={handleAnimationEnd}
             />
           </>
         ) : (

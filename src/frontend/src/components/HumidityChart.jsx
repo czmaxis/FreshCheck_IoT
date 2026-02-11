@@ -15,7 +15,7 @@ import {
 import { COLOR_HUMIDITY, COLOR_DEFAULT, chipSx } from "../constants/colors.js";
 import { formatTime } from "../utils/chartUtils.js";
 
-export default function HumidityChart({
+const HumidityChart = React.memo(function HumidityChart({
   chartRef,
   chartBoxSx,
   onMouseMove,
@@ -26,7 +26,6 @@ export default function HumidityChart({
   tickCount,
   latest,
   threshold,
-  onAnimationEnd,
 }) {
   return (
     <Card
@@ -177,7 +176,7 @@ export default function HumidityChart({
                 stroke="#1aa6c8"
                 dot={!isMobile}
                 connectNulls={true}
-                onAnimationEnd={onAnimationEnd}
+                isAnimationActive={false}
               />
             </LineChart>
           </ResponsiveContainer>
@@ -185,4 +184,6 @@ export default function HumidityChart({
       </CardContent>
     </Card>
   );
-}
+});
+
+export default HumidityChart;

@@ -15,7 +15,7 @@ import {
 import { COLOR_TEMPERATURE, COLOR_DEFAULT, chipSx } from "../constants/colors.js";
 import { formatTime } from "../utils/chartUtils.js";
 
-export default function TemperatureChart({
+const TemperatureChart = React.memo(function TemperatureChart({
   chartRef,
   chartBoxSx,
   onMouseMove,
@@ -27,7 +27,6 @@ export default function TemperatureChart({
   tickCount,
   latest,
   threshold,
-  onAnimationEnd,
 }) {
   return (
     <Card
@@ -183,7 +182,7 @@ export default function TemperatureChart({
                 stroke="#ff5a3c"
                 dot={!isMobile}
                 connectNulls={true}
-                onAnimationEnd={onAnimationEnd}
+                isAnimationActive={false}
               />
             </LineChart>
           </ResponsiveContainer>
@@ -191,4 +190,6 @@ export default function TemperatureChart({
       </CardContent>
     </Card>
   );
-}
+});
+
+export default TemperatureChart;
