@@ -67,16 +67,9 @@ export function getTickCount(timeSpanMs, isMobile) {
 }
 
 export function filterByRange(sorted, range) {
-  if (range === "all") {
-    return sorted.map((d) => ({
-      ...d,
-      time: formatTime(new Date(d.ts)),
-    }));
-  }
+  if (range === "all") return sorted;
   const from = Date.now() - RANGE_DIFF_MS[range];
-  return sorted
-    .filter((d) => d.ts >= from)
-    .map((d) => ({ ...d, time: formatTime(new Date(d.ts)) }));
+  return sorted.filter((d) => d.ts >= from);
 }
 
 export function filterByDate(data, fromDate, toDate) {
@@ -127,6 +120,79 @@ export function computeTemperatureDomain(visibleData, threshold) {
   const rangeVal = max - min;
   const pad = rangeVal > 0 ? rangeVal * 0.1 : 1;
   return { min: min - pad, max: max + pad };
+}
+
+/**
+ * LTTB (Largest Triangle Three Buckets) downsampling.
+ * Reduces data to `threshold` points while preserving visual shape.
+ * Uses combined temperature+humidity for triangle area calculation.
+ */
+export function lttbDecimate(data, threshold) {
+  const len = data.length;
+  if (len <= threshold) return data;
+
+  const out = [data[0]]; // always keep first
+  const bucketSize = (len - 2) / (threshold - 2);
+
+  let prevIdx = 0;
+
+  for (let i = 0; i < threshold - 2; i++) {
+    // Bucket range for current
+    const bStart = Math.floor((i + 0) * bucketSize) + 1;
+    const bEnd = Math.min(Math.floor((i + 1) * bucketSize) + 1, len);
+
+    // Next bucket average (for triangle calculation)
+    const nStart = Math.floor((i + 1) * bucketSize) + 1;
+    const nEnd = Math.min(Math.floor((i + 2) * bucketSize) + 1, len);
+
+    let avgTs = 0, avgTemp = 0, avgHum = 0, nCount = 0;
+    for (let j = nStart; j < nEnd; j++) {
+      avgTs += data[j].ts;
+      avgTemp += (data[j].temperature ?? 0);
+      avgHum += (data[j].humidity ?? 0);
+      nCount++;
+    }
+    if (nCount > 0) {
+      avgTs /= nCount;
+      avgTemp /= nCount;
+      avgHum /= nCount;
+    }
+
+    // Pick point in current bucket with largest triangle area
+    const pTs = data[prevIdx].ts;
+    const pTemp = data[prevIdx].temperature ?? 0;
+    const pHum = data[prevIdx].humidity ?? 0;
+
+    let maxArea = -1;
+    let bestIdx = bStart;
+
+    for (let j = bStart; j < bEnd; j++) {
+      const cTs = data[j].ts;
+      const cTemp = data[j].temperature ?? 0;
+      const cHum = data[j].humidity ?? 0;
+
+      // Area for temperature dimension
+      const areaTemp = Math.abs(
+        (pTs - avgTs) * (cTemp - pTemp) - (pTs - cTs) * (avgTemp - pTemp)
+      );
+      // Area for humidity dimension
+      const areaHum = Math.abs(
+        (pTs - avgTs) * (cHum - pHum) - (pTs - cTs) * (avgHum - pHum)
+      );
+
+      const area = areaTemp + areaHum;
+      if (area > maxArea) {
+        maxArea = area;
+        bestIdx = j;
+      }
+    }
+
+    out.push(data[bestIdx]);
+    prevIdx = bestIdx;
+  }
+
+  out.push(data[len - 1]); // always keep last
+  return out;
 }
 
 export function clampZoom(zoomRange, dataBounds) {

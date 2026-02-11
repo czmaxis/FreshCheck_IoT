@@ -7,6 +7,7 @@ import {
   filterAlertTimesByRange,
   computeTemperatureDomain,
   clampZoom,
+  lttbDecimate,
 } from "../utils/chartUtils.js";
 
 export function useChartData(sensorData, allAlerts, device, deviceId) {
@@ -19,14 +20,16 @@ export function useChartData(sensorData, allAlerts, device, deviceId) {
 
   const threshold = device?.threshold ?? null;
 
-  // --- Derive rawData from sensorData prop ---
-  const rawData = useMemo(
+  // --- Derive sorted data from sensorData prop (single pass: map + sort) ---
+  const sorted = useMemo(
     () =>
-      (sensorData || []).map((it) => ({
-        ts: parseTimestamp(it.timestamp).getTime(),
-        temperature: it.temperature != null ? Number(it.temperature) : null,
-        humidity: it.humidity != null ? Number(it.humidity) : null,
-      })),
+      (sensorData || [])
+        .map((it) => ({
+          ts: parseTimestamp(it.timestamp).getTime(),
+          temperature: it.temperature != null ? Number(it.temperature) : null,
+          humidity: it.humidity != null ? Number(it.humidity) : null,
+        }))
+        .sort((a, b) => a.ts - b.ts),
     [sensorData],
   );
 
@@ -47,12 +50,6 @@ export function useChartData(sensorData, allAlerts, device, deviceId) {
     setFromDate(start ? dayjs(start).format("YYYY-MM-DD") : "");
     setToDate(end ? dayjs(end).format("YYYY-MM-DD") : "");
   }, [dateRange]);
-
-  // --- Sorted raw data ---
-  const sorted = useMemo(
-    () => [...rawData].sort((a, b) => a.ts - b.ts),
-    [rawData],
-  );
 
   const latest = sorted.length > 0 ? sorted[sorted.length - 1] : null;
 
@@ -90,12 +87,18 @@ export function useChartData(sensorData, allAlerts, device, deviceId) {
     }
   }, [zoomRange, dataBounds]);
 
-  const chartData = useMemo(() => {
+  const chartDataFull = useMemo(() => {
     if (!zoomRange) return dateFilteredData;
     const start = Math.min(zoomRange[0], zoomRange[1]);
     const end = Math.max(zoomRange[0], zoomRange[1]);
     return dateFilteredData.filter((d) => d.ts >= start && d.ts <= end);
   }, [dateFilteredData, zoomRange]);
+
+  const MAX_CHART_POINTS = 150;
+  const chartData = useMemo(
+    () => lttbDecimate(chartDataFull, MAX_CHART_POINTS),
+    [chartDataFull],
+  );
 
   const filteredAlertTimes = useMemo(
     () => filterAlertTimesByRange(alertTimes, range, fromDate, toDate),
