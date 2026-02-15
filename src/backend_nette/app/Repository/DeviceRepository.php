@@ -30,7 +30,7 @@ final class DeviceRepository
 
     $document['_id'] = (string) $result->getInsertedId();
 
-    return $document;
+    return $this->normalize($document);
 }
 
 

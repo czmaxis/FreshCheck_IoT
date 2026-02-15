@@ -3,7 +3,7 @@ import axios from "axios";
 const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:8000";
 
 export async function getDevices(token) {
-  const url = `${API_BASE}/devices/`;
+  const url = `${API_BASE}/devices`;
   const headers = token
     ? { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }
     : { "Content-Type": "application/json" };

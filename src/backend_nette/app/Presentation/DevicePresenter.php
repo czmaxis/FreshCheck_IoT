@@ -49,7 +49,7 @@ final class DevicePresenter extends BaseApiPresenter
                 $data['location'] ?? null,
                 $data['threshold'] ?? []
             );
-            $this->sendJson($device);
+            $this->sendJson(['device' => $device]);
         }
 
         $this->error('Method not allowed', 405);
