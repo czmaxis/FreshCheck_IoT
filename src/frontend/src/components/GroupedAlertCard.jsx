@@ -9,87 +9,20 @@ import {
   ListItemIcon,
   ListItemText,
   Collapse,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  LinearProgress,
 } from "@mui/material";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
-import ThermostatIcon from "@mui/icons-material/Thermostat";
-import WaterDropIcon from "@mui/icons-material/WaterDrop";
-import DoorFrontIcon from "@mui/icons-material/DoorFront";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
-import {
-  COLOR_TEMPERATURE,
-  COLOR_HUMIDITY,
-  COLOR_DOOR_OPEN,
-  COLOR_DEFAULT,
-  COLOR_DOOR_CLOSED,
-  chipSx,
-} from "../constants/colors.js";
+import { COLOR_TEMPERATURE, COLOR_DOOR_CLOSED, chipSx } from "../constants/colors.js";
+import { getAccentColor, getUnit, getValueIcon, formatThreshold } from "../utils/alertTypeUtils.js";
 
 import AlertCard from "./AlertCard.jsx";
 import AlertCardSkeleton from "./AlertCardSkeleton.jsx";
-
-function getAccentColor(type) {
-  switch (type) {
-    case "temperature":
-      return COLOR_TEMPERATURE;
-    case "humidity":
-      return COLOR_HUMIDITY;
-    case "door":
-    case "doorOpen":
-      return COLOR_DOOR_OPEN;
-    default:
-      return COLOR_DEFAULT;
-  }
-}
-
-function getUnit(type) {
-  if (type === "temperature") return " °C";
-  if (type === "humidity") return " %";
-  if (type === "door" || type === "doorOpen") return " s";
-  return "";
-}
-
-function getValueIcon(type) {
-  if (type === "temperature") return <ThermostatIcon />;
-  if (type === "humidity") return <WaterDropIcon />;
-  if (type === "door" || type === "doorOpen") return <DoorFrontIcon />;
-  return null;
-}
-
-function formatThreshold(group) {
-  const t = group.threshold;
-  if (!t) return null;
-
-  if (group.type === "temperature") {
-    const min = t?.temperature?.min;
-    const max = t?.temperature?.max;
-    if (min == null && max == null) return null;
-    if (min != null && max != null) return `Limit teploty ${min}–${max} °C`;
-    if (min != null) return `Limit teploty ≥ ${min} °C`;
-    return `Limit teploty ≤ ${max} °C`;
-  }
-
-  if (group.type === "humidity") {
-    const min = t?.humidity?.min;
-    const max = t?.humidity?.max;
-    if (min == null && max == null) return null;
-    if (min != null && max != null) return `Limit vlhkosti ${min}–${max} %`;
-    if (min != null) return `Limit vlhkosti ≥ ${min} %`;
-    return `Limit vlhkosti ≤ ${max} %`;
-  }
-
-  return null;
-}
+import GroupConfirmDialog from "./GroupConfirmDialog.jsx";
 
 export default function GroupedAlertCard({
   group,
@@ -101,7 +34,7 @@ export default function GroupedAlertCard({
 }) {
   const [expanded, setExpanded] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState(null);
-  const [confirmAction, setConfirmAction] = useState(null); // "resolve" | "delete"
+  const [confirmAction, setConfirmAction] = useState(null);
   const [batchLoading, setBatchLoading] = useState(false);
   const [batchProgress, setBatchProgress] = useState(null);
 
@@ -341,61 +274,16 @@ export default function GroupedAlertCard({
         </Collapse>
       </Box>
 
-      {/* Confirm dialog for group actions */}
-      <Dialog
+      <GroupConfirmDialog
         open={Boolean(confirmAction)}
-        onClose={batchLoading ? undefined : () => setConfirmAction(null)}
-        maxWidth="xs"
-        fullWidth
-      >
-        <DialogTitle>
-          {confirmAction === "resolve"
-            ? `Potvrdit všechny výstrahy (${group.count})?`
-            : `Smazat všechny výstrahy (${group.count})?`}
-        </DialogTitle>
-        <DialogContent>
-          <Typography variant="body2">
-            {confirmAction === "resolve"
-              ? `Všech ${group.count} výstrah typu „${group.title}" bude označeno jako vyřešené.`
-              : `Všech ${group.count} výstrah typu „${group.title}" bude trvale smazáno a nezobrazí se v historii.`}
-          </Typography>
-          {batchProgress && (
-            <Box sx={{ mt: 2 }}>
-              <Box display="flex" justifyContent="space-between" mb={0.5}>
-                <Typography variant="body2" color="text.secondary">
-                  {batchProgress.done} / {batchProgress.total}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {Math.round((batchProgress.done / batchProgress.total) * 100)} %
-                </Typography>
-              </Box>
-              <LinearProgress
-                variant="determinate"
-                value={Math.round((batchProgress.done / batchProgress.total) * 100)}
-                sx={{ borderRadius: 1, height: 6 }}
-              />
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={() => setConfirmAction(null)}
-            disabled={batchLoading}
-          >
-            Zrušit
-          </Button>
-          <Button
-            color={confirmAction === "delete" ? "error" : "primary"}
-            variant="contained"
-            onClick={handleConfirm}
-            disabled={batchLoading}
-          >
-            {confirmAction === "resolve"
-              ? `Potvrdit vše (${group.count})`
-              : `Smazat vše (${group.count})`}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        action={confirmAction}
+        groupTitle={group.title}
+        groupCount={group.count}
+        loading={batchLoading}
+        progress={batchProgress}
+        onClose={() => setConfirmAction(null)}
+        onConfirm={handleConfirm}
+      />
     </>
   );
 }
