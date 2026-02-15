@@ -166,6 +166,8 @@ export default function Alerts({ activeAlerts, setAllAlerts, deviceId }) {
                 group={group}
                 onResolve={handleResolve}
                 onDelete={(id) => setConfirmDeleteId(id)}
+                onBatchResolve={handleResolveSelection}
+                onBatchDelete={handleDeleteSelection}
                 pendingIds={pendingIds}
               />
             ),

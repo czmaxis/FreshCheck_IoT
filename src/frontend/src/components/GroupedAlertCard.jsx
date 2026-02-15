@@ -14,6 +14,7 @@ import {
   DialogContent,
   DialogActions,
   Button,
+  LinearProgress,
 } from "@mui/material";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import ThermostatIcon from "@mui/icons-material/Thermostat";
@@ -94,11 +95,15 @@ export default function GroupedAlertCard({
   group,
   onResolve,
   onDelete,
+  onBatchResolve,
+  onBatchDelete,
   pendingIds,
 }) {
   const [expanded, setExpanded] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [confirmAction, setConfirmAction] = useState(null); // "resolve" | "delete"
+  const [batchLoading, setBatchLoading] = useState(false);
+  const [batchProgress, setBatchProgress] = useState(null);
 
   const accentColor = getAccentColor(group.type);
   const unit = getUnit(group.type);
@@ -113,13 +118,21 @@ export default function GroupedAlertCard({
   const latest = new Date(group.latestTimestamp).toLocaleString("cs-CZ");
   const timeLabel = oldest === latest ? oldest : `${oldest}  –  ${latest}`;
 
-  const handleConfirm = () => {
-    if (confirmAction === "resolve") {
-      group.alerts.forEach((a) => onResolve(a._id));
-    } else if (confirmAction === "delete") {
-      group.alerts.forEach((a) => onDelete(a._id));
+  const handleConfirm = async () => {
+    const ids = group.alerts.map((a) => a._id);
+    setBatchLoading(true);
+    setBatchProgress({ done: 0, total: ids.length });
+    try {
+      if (confirmAction === "resolve") {
+        await onBatchResolve(ids, (p) => setBatchProgress(p));
+      } else if (confirmAction === "delete") {
+        await onBatchDelete(ids, (p) => setBatchProgress(p));
+      }
+    } finally {
+      setBatchLoading(false);
+      setBatchProgress(null);
+      setConfirmAction(null);
     }
-    setConfirmAction(null);
   };
 
   return (
@@ -331,7 +344,7 @@ export default function GroupedAlertCard({
       {/* Confirm dialog for group actions */}
       <Dialog
         open={Boolean(confirmAction)}
-        onClose={() => setConfirmAction(null)}
+        onClose={batchLoading ? undefined : () => setConfirmAction(null)}
         maxWidth="xs"
         fullWidth
       >
@@ -346,13 +359,36 @@ export default function GroupedAlertCard({
               ? `Všech ${group.count} výstrah typu „${group.title}" bude označeno jako vyřešené.`
               : `Všech ${group.count} výstrah typu „${group.title}" bude trvale smazáno a nezobrazí se v historii.`}
           </Typography>
+          {batchProgress && (
+            <Box sx={{ mt: 2 }}>
+              <Box display="flex" justifyContent="space-between" mb={0.5}>
+                <Typography variant="body2" color="text.secondary">
+                  {batchProgress.done} / {batchProgress.total}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {Math.round((batchProgress.done / batchProgress.total) * 100)} %
+                </Typography>
+              </Box>
+              <LinearProgress
+                variant="determinate"
+                value={Math.round((batchProgress.done / batchProgress.total) * 100)}
+                sx={{ borderRadius: 1, height: 6 }}
+              />
+            </Box>
+          )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setConfirmAction(null)}>Zrušit</Button>
+          <Button
+            onClick={() => setConfirmAction(null)}
+            disabled={batchLoading}
+          >
+            Zrušit
+          </Button>
           <Button
             color={confirmAction === "delete" ? "error" : "primary"}
             variant="contained"
             onClick={handleConfirm}
+            disabled={batchLoading}
           >
             {confirmAction === "resolve"
               ? `Potvrdit vše (${group.count})`
