@@ -86,10 +86,16 @@ export function AuthProvider({ children }) {
     return () => unsubscribe();
   }, []);
 
+  const logoutTimeoutRef = useRef(null);
+
   useEffect(() => {
     if (warningTimeoutRef.current) {
       clearTimeout(warningTimeoutRef.current);
       warningTimeoutRef.current = null;
+    }
+    if (logoutTimeoutRef.current) {
+      clearTimeout(logoutTimeoutRef.current);
+      logoutTimeoutRef.current = null;
     }
 
     if (!token) {
@@ -101,6 +107,19 @@ export function AuthProvider({ children }) {
     if (!expMs) return;
 
     const now = Date.now();
+
+    // Token already expired → logout immediately
+    if (expMs <= now) {
+      logoutContext();
+      return;
+    }
+
+    // Schedule auto-logout at expiration
+    logoutTimeoutRef.current = setTimeout(() => {
+      logoutContext();
+    }, expMs - now);
+
+    // Warning 3 minutes before expiry
     const warnAt = expMs - 3 * 60 * 1000;
     const delay = warnAt - now;
 
@@ -123,6 +142,10 @@ export function AuthProvider({ children }) {
       if (warningTimeoutRef.current) {
         clearTimeout(warningTimeoutRef.current);
         warningTimeoutRef.current = null;
+      }
+      if (logoutTimeoutRef.current) {
+        clearTimeout(logoutTimeoutRef.current);
+        logoutTimeoutRef.current = null;
       }
     };
   }, [token]);
