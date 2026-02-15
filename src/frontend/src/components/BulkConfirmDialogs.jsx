@@ -5,28 +5,57 @@ import {
   DialogContent,
   DialogActions,
   Typography,
+  LinearProgress,
+  Box,
 } from "@mui/material";
+
+function ProgressInfo({ progress }) {
+  if (!progress) return null;
+  const percent = Math.round((progress.done / progress.total) * 100);
+
+  return (
+    <Box sx={{ mt: 2 }}>
+      <Box display="flex" justifyContent="space-between" mb={0.5}>
+        <Typography variant="body2" color="text.secondary">
+          {progress.done} / {progress.total}
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          {percent} %
+        </Typography>
+      </Box>
+      <LinearProgress
+        variant="determinate"
+        value={percent}
+        sx={{ borderRadius: 1, height: 6 }}
+      />
+    </Box>
+  );
+}
 
 export default function BulkConfirmDialogs({ bulkDelete, bulkResolve }) {
   return (
     <>
       <Dialog
         open={Boolean(bulkDelete.confirmScope)}
-        onClose={() => bulkDelete.setConfirmScope(null)}
+        onClose={bulkDelete.loading ? undefined : () => bulkDelete.setConfirmScope(null)}
         maxWidth="xs"
         fullWidth
       >
-        <DialogTitle>Smazat v\u00fdstrahy?</DialogTitle>
+        <DialogTitle>Smazat výstrahy?</DialogTitle>
         <DialogContent>
           <Typography variant="body2">
             {bulkDelete.confirmScope?.type === "selected"
-              ? `Opravdu chcete smazat vybran\u00e9 v\u00fdstrahy? Po smaz\u00e1n\u00ed se v\u00fdstrahy nezobraz\u00ed v historii v\u00fdstrah! (${bulkDelete.confirmScope.ids.length})`
-              : `Opravdu chcete smazat v\u00fdstrahy pro zvolen\u00fd rozsah? Po smaz\u00e1n\u00ed se v\u00fdstrahy nezobraz\u00ed v historii v\u00fdstrah! (${bulkDelete.confirmScope?.ids?.length ?? 0})`}
+              ? `Opravdu chcete smazat vybrané výstrahy? Po smazání se výstrahy nezobrazí v historii výstrah! (${bulkDelete.confirmScope.ids.length})`
+              : `Opravdu chcete smazat výstrahy pro zvolený rozsah? Po smazání se výstrahy nezobrazí v historii výstrah! (${bulkDelete.confirmScope?.ids?.length ?? 0})`}
           </Typography>
+          <ProgressInfo progress={bulkDelete.progress} />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => bulkDelete.setConfirmScope(null)}>
-            Zru\u0161it
+          <Button
+            onClick={() => bulkDelete.setConfirmScope(null)}
+            disabled={bulkDelete.loading}
+          >
+            Zrušit
           </Button>
           <Button
             color="error"
@@ -41,21 +70,25 @@ export default function BulkConfirmDialogs({ bulkDelete, bulkResolve }) {
 
       <Dialog
         open={Boolean(bulkResolve.confirmScope)}
-        onClose={() => bulkResolve.setConfirmScope(null)}
+        onClose={bulkResolve.loading ? undefined : () => bulkResolve.setConfirmScope(null)}
         maxWidth="xs"
         fullWidth
       >
-        <DialogTitle>Potvrdit v\u00fdstrahy?</DialogTitle>
+        <DialogTitle>Potvrdit výstrahy?</DialogTitle>
         <DialogContent>
           <Typography variant="body2">
             {bulkResolve.confirmScope?.type === "selected"
-              ? `Opravdu chcete potvrdit vybran\u00e9 v\u00fdstrahy? (${bulkResolve.confirmScope.ids.length})`
-              : `Opravdu chcete potvrdit v\u00fdstrahy pro zvolen\u00fd rozsah? (${bulkResolve.confirmScope?.ids?.length ?? 0})`}
+              ? `Opravdu chcete potvrdit vybrané výstrahy? (${bulkResolve.confirmScope.ids.length})`
+              : `Opravdu chcete potvrdit výstrahy pro zvolený rozsah? (${bulkResolve.confirmScope?.ids?.length ?? 0})`}
           </Typography>
+          <ProgressInfo progress={bulkResolve.progress} />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => bulkResolve.setConfirmScope(null)}>
-            Zru\u0161it
+          <Button
+            onClick={() => bulkResolve.setConfirmScope(null)}
+            disabled={bulkResolve.loading}
+          >
+            Zrušit
           </Button>
           <Button
             color="primary"

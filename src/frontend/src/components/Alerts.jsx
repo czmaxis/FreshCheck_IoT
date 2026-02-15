@@ -1,9 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Box,
   Typography,
   Button,
-  Checkbox,
   useMediaQuery,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
@@ -11,6 +10,7 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 
 import AlertCard from "./AlertCard.jsx";
+import GroupedAlertCard from "./GroupedAlertCard.jsx";
 import TimeRangeSelector from "./TimeRangeSelector.jsx";
 import AlertPagination from "./AlertPagination.jsx";
 import ConfirmDeleteDialog from "./ConfirmDeleteDialog.jsx";
@@ -22,7 +22,8 @@ import BulkConfirmDialogs from "./BulkConfirmDialogs.jsx";
 import { useAlerts } from "../hooks/useAlerts.js";
 import { useBulkActions } from "../hooks/useBulkActions.js";
 import { useAlertFiltering } from "../hooks/useAlertFiltering.js";
-import { PER_PAGE_OPTIONS_ACTIVE } from "../utils/dateRangeUtils.js";
+import { PER_PAGE_OPTIONS_ACTIVE, paginate } from "../utils/dateRangeUtils.js";
+import { groupAlerts } from "../utils/alertGrouping.js";
 
 export default function Alerts({ activeAlerts, setAllAlerts, deviceId }) {
   const theme = useTheme();
@@ -51,9 +52,20 @@ export default function Alerts({ activeAlerts, setAllAlerts, deviceId }) {
     setPerPage,
     page,
     setPage,
-    pagedAlerts,
-    totalItems,
+    filteredAlerts,
   } = useAlertFiltering(alerts, deviceId);
+
+  // Group filtered alerts by type+direction
+  const groups = useMemo(
+    () => groupAlerts(filteredAlerts),
+    [filteredAlerts],
+  );
+
+  const totalGroups = groups.length;
+  const pagedGroups = useMemo(
+    () => paginate(groups, page, perPage),
+    [groups, page, perPage],
+  );
 
   useEffect(() => {
     bulkDelete.resetAll();
@@ -135,57 +147,35 @@ export default function Alerts({ activeAlerts, setAllAlerts, deviceId }) {
 
       {visible && (
         <Box px={{ xs: 1.5, sm: 3 }}>
-          {pagedAlerts.map((alert) => (
-            <Box key={alert._id} display="flex" alignItems="flex-start" gap={1}>
-              {bulkDelete.mode && (
-                <Box sx={{ display: "flex", alignItems: "center", flexShrink: 0, pt: 1 }}>
-                  <Checkbox
-                    checked={bulkDelete.selectedIds.has(alert._id)}
-                    onChange={(e) => {
-                      bulkDelete.setSelectedIds((prev) => {
-                        const next = new Set(prev);
-                        if (e.target.checked) next.add(alert._id);
-                        else next.delete(alert._id);
-                        return next;
-                      });
-                    }}
-                  />
-                </Box>
-              )}
-              {bulkResolve.mode && (
-                <Box sx={{ display: "flex", alignItems: "center", flexShrink: 0, pt: 1 }}>
-                  <Checkbox
-                    checked={bulkResolve.selectedIds.has(alert._id)}
-                    onChange={(e) => {
-                      bulkResolve.setSelectedIds((prev) => {
-                        const next = new Set(prev);
-                        if (e.target.checked) next.add(alert._id);
-                        else next.delete(alert._id);
-                        return next;
-                      });
-                    }}
-                  />
-                </Box>
-              )}
-              <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                {pendingIds.includes(alert._id) ? (
+          {pagedGroups.map((group) =>
+            group.count === 1 ? (
+              <Box key={group.key}>
+                {pendingIds.includes(group.alerts[0]._id) ? (
                   <AlertCardSkeleton count={1} />
                 ) : (
                   <AlertCard
-                    alert={alert}
-                    onResolve={() => handleResolve(alert._id)}
-                    onDelete={() => setConfirmDeleteId(alert._id)}
+                    alert={group.alerts[0]}
+                    onResolve={() => handleResolve(group.alerts[0]._id)}
+                    onDelete={() => setConfirmDeleteId(group.alerts[0]._id)}
                   />
                 )}
               </Box>
-            </Box>
-          ))}
+            ) : (
+              <GroupedAlertCard
+                key={group.key}
+                group={group}
+                onResolve={handleResolve}
+                onDelete={(id) => setConfirmDeleteId(id)}
+                pendingIds={pendingIds}
+              />
+            ),
+          )}
         </Box>
       )}
 
       {visible && (
         <AlertPagination
-          totalItems={totalItems}
+          totalItems={totalGroups}
           perPage={perPage}
           page={page}
           onPageChange={setPage}

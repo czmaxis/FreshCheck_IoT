@@ -62,8 +62,9 @@ public function evaluate(array $device, array $sensorData): void
     }
 
     $threshold = $device['threshold'];
-    $now = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
-    $timestamp = $now->format(\DATE_ATOM);
+    $timestamp = !empty($sensorData['timestamp'])
+        ? $sensorData['timestamp']
+        : (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))->format(\DATE_ATOM);
 
     //  TEMPERATURE
     if (

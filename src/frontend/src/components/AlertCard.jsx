@@ -28,7 +28,7 @@ import {
   chipSx,
 } from "../constants/colors.js";
 
-function getTitle(alert) {
+export function getAlertTitle(alert) {
   const value = alert.value;
   const min =
     alert.alertTreshold?.[alert.type]?.min ??
@@ -191,7 +191,7 @@ export default function AlertCard({
             <WarningAmberIcon fontSize="small" sx={{ color: accentColor }} />
           </Box>
           <Typography variant="subtitle1" fontWeight={600}>
-            {getTitle(alert)}
+            {getAlertTitle(alert)}
           </Typography>
         </Box>
 

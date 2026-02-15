@@ -12,6 +12,7 @@ export function useBulkActions(
   const [mode, setMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState(() => new Set());
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(null);
   const [confirmScope, setConfirmScope] = useState(null);
   const [customDateRange, setCustomDateRange] = useState([null, null]);
   const [showCustomRange, setShowCustomRange] = useState(false);
@@ -54,11 +55,13 @@ export function useBulkActions(
     }
     try {
       setLoading(true);
-      await onExecute(confirmScope.ids);
+      setProgress({ done: 0, total: confirmScope.ids.length });
+      await onExecute(confirmScope.ids, (p) => setProgress(p));
       setSelectedIds(new Set());
       setMode(false);
     } finally {
       setLoading(false);
+      setProgress(null);
       setConfirmScope(null);
     }
   }, [confirmScope, onExecute]);
@@ -80,6 +83,7 @@ export function useBulkActions(
     selectedIds,
     setSelectedIds,
     loading,
+    progress,
     confirmScope,
     setConfirmScope,
     customDateRange,

@@ -55,10 +55,17 @@ export function useAlerts(activeAlerts, setAllAlerts) {
   );
 
   const handleDeleteSelection = useCallback(
-    async (ids) => {
+    async (ids, onProgress) => {
       if (!ids.length) return;
+      const BATCH = 10;
+      let done = 0;
       try {
-        await Promise.all(ids.map((id) => deleteAlert(id, token)));
+        for (let i = 0; i < ids.length; i += BATCH) {
+          const batch = ids.slice(i, i + BATCH);
+          await Promise.all(batch.map((id) => deleteAlert(id, token)));
+          done += batch.length;
+          onProgress?.({ done, total: ids.length });
+        }
         setAlerts((prev) => prev.filter((a) => !ids.includes(a._id)));
         setAllAlerts((prev) => prev.filter((a) => !ids.includes(a._id)));
       } catch (err) {
@@ -71,10 +78,17 @@ export function useAlerts(activeAlerts, setAllAlerts) {
   );
 
   const handleResolveSelection = useCallback(
-    async (ids) => {
+    async (ids, onProgress) => {
       if (!ids.length) return;
+      const BATCH = 10;
+      let done = 0;
       try {
-        await Promise.all(ids.map((id) => resolveAlert(id, token)));
+        for (let i = 0; i < ids.length; i += BATCH) {
+          const batch = ids.slice(i, i + BATCH);
+          await Promise.all(batch.map((id) => resolveAlert(id, token)));
+          done += batch.length;
+          onProgress?.({ done, total: ids.length });
+        }
         setAlerts((prev) => prev.filter((a) => !ids.includes(a._id)));
         setAllAlerts((prev) =>
           prev.map((a) =>
