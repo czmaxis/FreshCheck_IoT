@@ -240,9 +240,9 @@ export default function Login() {
               color="text.secondary"
               sx={{ fontFamily: "monospace" }}
             >
-              Email: nette@example.com
+              Email: demo@example.com
               <br />
-              Heslo: 123456
+              Heslo: demo123
             </Typography>
           </Box>
         </CardContent>
